@@ -3,1583 +3,1240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ashes & Crowns</title>
+<title>Ashes &amp; Crowns</title>
 <style>
-:root {
-  --bg:#0a0906; --panel:#13110a; --panel2:#1c190f; --border:#2e2818;
-  --gold:#c9a84c; --gold-dim:#6a5820; --gold-faint:#2a2008;
-  --red:#c03030; --red-faint:#1a0000;
-  --green:#4a9a4a; --green-faint:#001800;
-  --blue:#4a7abf; --blue-faint:#00102a;
-  --text:#cfc49a; --text-dim:#5a5238; --text-bright:#ede0b8;
+:root{
+  --stone:#1a1714;
+  --stone2:#232019;
+  --parch:#cdbf9a;
+  --parch2:#a89875;
+  --ink:#0d0b09;
+  --blood:#7a1a14;
+  --blood2:#b8281c;
+  --rust:#8a5a2b;
+  --gold:#c9a24a;
+  --green:#5a7a3a;
+  --steel:#6b7680;
+  --shadow:#000;
+  --panel:#1e1b16;
+  --border:#3a3228;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
-
-/* ── TITLE ── */
-h1{font-size:2.5rem;color:var(--gold);text-align:center;padding:1.2rem 1rem .2rem;letter-spacing:.12em;text-shadow:0 0 30px #c9a84c33;}
-.sub{color:var(--text-dim);text-align:center;font-style:italic;font-size:.88rem;margin-bottom:1.2rem;}
-
-/* ── SCREENS ── */
-.screen{width:100%;max-width:1020px;padding:0 1rem 2rem;display:none;}
-.screen.active{display:block;}
-
-/* ── PANELS ── */
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:.9rem;}
-.ptitle{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-dim);border-bottom:1px solid var(--border);padding-bottom:.35rem;margin-bottom:.7rem;}
-.srow{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;margin-bottom:.38rem;}
-.srow span:first-child{color:var(--text-dim);}
-.srow span:last-child{color:var(--text-bright);font-weight:bold;}
-
-/* ── CLASS SELECT ── */
-#s-select .grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;margin-top:.7rem;}
-.cc{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:1rem .9rem;cursor:pointer;text-align:center;transition:border-color .2s,box-shadow .2s;}
-.cc:hover{border-color:var(--gold);box-shadow:0 0 14px #c9a84c1a;}
-.cc .ci{font-size:2.1rem;display:block;margin-bottom:.3rem;}
-.cc .cn{font-size:1rem;color:var(--gold);font-weight:bold;}
-.cc .cd{font-size:.72rem;margin:.2rem 0 .45rem;}
-.cc .cx{font-size:.74rem;color:var(--text-dim);line-height:1.45;}
-.d1{color:#f44}.d2{color:#f84}.d3{color:#fc3}.d4{color:#8d4}.d5{color:#4c4}
-
-/* ── PLAY LAYOUT ── */
-.pg{display:grid;grid-template-columns:200px 1fr 220px;gap:.8rem;align-items:start;}
-@media(max-width:740px){.pg{grid-template-columns:1fr;}}
-
-/* ── BARS ── */
-.bwrap{margin-bottom:.55rem;}
-.blbl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-dim);margin-bottom:2px;}
-.bar{height:7px;background:#0e0c08;border-radius:3px;overflow:hidden;border:1px solid #211d12;}
-.bar-fill{height:100%;border-radius:3px;transition:width .3s;}
-.b-hp   .bar-fill{background:linear-gradient(90deg,#6a0808,#c03030);}
-.b-stam .bar-fill{background:linear-gradient(90deg,#1a3a1a,#4a9a4a);}
-.b-xp   .bar-fill{background:linear-gradient(90deg,#2a1a5a,#8050c0);}
-.b-enemy .bar-fill{background:linear-gradient(90deg,#5a0000,#d04040);}
-.b-atimer .bar-fill{background:linear-gradient(90deg,#3a2800,#c9a84c);transition:width .1s linear;}
-.b-etimer .bar-fill{background:linear-gradient(90deg,#5a0000,#f05050);transition:width .1s linear;}
-
-/* ── LOG ── */
-#log{height:170px;overflow-y:auto;font-size:.8rem;line-height:1.5;}
-#log::-webkit-scrollbar{width:3px;}
-#log::-webkit-scrollbar-thumb{background:var(--border);}
-.le{padding:.2rem 0;border-bottom:1px solid #19160e;}
-.l-good{color:#5c5;} .l-bad{color:#d44;} .l-info{color:var(--text-dim);}
-.l-gold{color:var(--gold);} .l-hit{color:#f84;} .l-block{color:#58f;}
-
-/* ── LIVE COMBAT ── */
-#combat-zone{display:none;margin-bottom:.8rem;}
-#combat-zone.active{display:block;}
-.combat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;}
-.enemy-nameplate{font-size:1rem;color:var(--red);}
-.enemy-icon{font-size:2rem;}
-.combat-bars{margin-bottom:.7rem;}
-.timer-row{margin-top:.5rem;}
-.timer-label{font-size:.68rem;color:var(--text-dim);margin-bottom:2px;}
-.combat-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.7rem;}
-.cbt-btn{position:relative;background:#1a160c;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.55rem .4rem;cursor:pointer;font-family:'Georgia',serif;font-size:.82rem;overflow:hidden;transition:border-color .2s;}
-.cbt-btn:hover:not(:disabled){border-color:var(--gold);}
-.cbt-btn:disabled{opacity:.35;cursor:not-allowed;}
-.cbt-btn .cd-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--gold);transition:width .1s linear;}
-.cbt-btn.active-block{border-color:var(--blue);color:var(--blue);}
-.cbt-btn.active-dodge{border-color:var(--green);color:var(--green);}
-.follower-combat{margin-top:.6rem;border-top:1px solid var(--border);padding-top:.5rem;}
-.fc-row{display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.25rem;color:var(--text-dim);}
-.fc-atk{color:var(--green);font-size:.7rem;}
-
-/* ── LOCATION ── */
-.loc-name{font-size:.95rem;color:var(--gold);margin-bottom:.25rem;}
-.loc-desc{font-size:.76rem;color:var(--text-dim);line-height:1.5;margin-bottom:.55rem;}
-.loc-exits{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;}
-.loc-exits button{background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:4px;color:var(--gold);padding:.3rem .6rem;cursor:pointer;font-family:'Georgia',serif;font-size:.75rem;transition:background .2s;}
-.loc-exits button:hover{background:#3a2c10;}
-.loc-actions{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;}
-.la-btn{background:#181510;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.5rem .55rem;cursor:pointer;font-family:'Georgia',serif;font-size:.78rem;text-align:left;transition:border-color .2s,background .2s;}
-.la-btn:hover:not(:disabled){border-color:var(--gold);background:#221e0e;}
-.la-btn:disabled{opacity:.3;cursor:not-allowed;}
-.la-btn .an{color:var(--gold);display:block;font-weight:bold;font-size:.82rem;}
-.la-btn .ac{color:var(--text-dim);font-size:.7rem;}
-.rest-btn{width:100%;margin-top:.5rem;padding:.55rem;background:#181410;border:1px solid var(--gold-dim);border-radius:5px;color:var(--gold);cursor:pointer;font-family:'Georgia',serif;font-size:.85rem;transition:background .2s;}
-.rest-btn:hover{background:#26200e;}
-
-/* ── QUESTS ── */
-.quest-item{background:#16130c;border:1px solid var(--border);border-radius:4px;padding:.5rem .65rem;margin-bottom:.4rem;font-size:.78rem;}
-.qi-title{color:var(--gold);font-weight:bold;margin-bottom:.2rem;}
-.qi-desc{color:var(--text-dim);line-height:1.45;margin-bottom:.3rem;}
-.qi-reward{color:var(--green);font-size:.72rem;}
-.qi-action button{margin-top:.3rem;background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:3px;color:var(--gold);padding:.2rem .5rem;cursor:pointer;font-family:'Georgia',serif;font-size:.72rem;}
-.qi-action button:hover{background:#3a2c10;}
-.no-quest{color:var(--text-dim);font-size:.78rem;font-style:italic;}
-
-/* ── FOLLOWERS ── */
-.follower-item{background:#16130c;border:1px solid var(--border);border-radius:4px;padding:.45rem .6rem;margin-bottom:.35rem;}
-.fi-name{color:var(--text-bright);font-size:.8rem;font-weight:bold;}
-.fi-stats{color:var(--text-dim);font-size:.7rem;margin-top:.1rem;}
-.fi-hp{font-size:.7rem;margin-top:.2rem;}
-.hire-btn{width:100%;margin-top:.5rem;background:#0e1808;border:1px solid #2a4a1a;border-radius:4px;color:var(--green);padding:.4rem;cursor:pointer;font-family:'Georgia',serif;font-size:.78rem;transition:background .2s;}
-.hire-btn:hover:not(:disabled){background:#162210;}
-.hire-btn:disabled{opacity:.3;cursor:not-allowed;}
-
-/* ── INVENTORY ── */
-.inv-item{background:#16130c;border:1px solid var(--border);border-radius:4px;padding:.35rem .55rem;margin-bottom:.3rem;display:flex;justify-content:space-between;align-items:center;font-size:.76rem;}
-.ii-n{color:var(--text-bright);}
-.ii-t{color:var(--text-dim);font-size:.68rem;}
-.ii-acts span{color:var(--gold);font-size:.7rem;cursor:pointer;margin-left:.4rem;}
-.ii-acts span:hover{text-decoration:underline;}
-.tag-eq{font-size:.64rem;background:#001a00;color:#5c5;border:1px solid #1a5a1a;padding:0 4px;border-radius:2px;margin-left:3px;}
-
-/* ── REP BADGE ── */
-.rep-badge{text-align:center;font-size:.72rem;padding:.2rem .5rem;border-radius:3px;margin-bottom:.5rem;}
-.rep-0{background:#1a1a1a;color:#666;border:1px solid #333;}
-.rep-1{background:#1a1200;color:#a08020;border:1px solid #5a4010;}
-.rep-2{background:#001a10;color:#3a8a5a;border:1px solid #1a5a3a;}
-.rep-3{background:#00102a;color:#4a6aaa;border:1px solid #1a3a7a;}
-.rep-4{background:#1a0a2a;color:#8a50c0;border:1px solid #4a2a8a;}
-
-/* ── MODAL ── */
-#modal-ov{display:none;position:fixed;inset:0;background:#000a;z-index:200;align-items:center;justify-content:center;padding:1rem;}
-#modal-ov.active{display:flex;}
-#modal-box{background:var(--panel);border:1px solid var(--gold-dim);border-radius:8px;max-width:430px;width:100%;padding:1.3rem;box-shadow:0 0 40px #0009;}
-#modal-title{font-size:1.1rem;color:var(--gold);margin-bottom:.4rem;}
-#modal-desc{font-size:.82rem;color:var(--text);line-height:1.6;margin-bottom:1rem;}
-#modal-choices{display:flex;flex-direction:column;gap:.45rem;}
-.mc-btn{background:#1a170e;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.6rem .85rem;cursor:pointer;font-family:'Georgia',serif;font-size:.8rem;text-align:left;transition:border-color .2s;}
-.mc-btn:hover{border-color:var(--gold);background:#26210e;}
-.mc-hint{color:var(--text-dim);font-size:.7rem;display:block;margin-top:2px;}
-
-/* ── LEVEL UP ── */
-#lvlup-ov{display:none;position:fixed;inset:0;background:#000c;z-index:300;align-items:center;justify-content:center;}
-#lvlup-ov.active{display:flex;}
-#lvlup-box{background:var(--panel);border:2px solid var(--gold);border-radius:8px;max-width:340px;width:90%;padding:1.5rem;text-align:center;box-shadow:0 0 40px #c9a84c22;}
-#lvlup-box h2{color:var(--gold);font-size:1.5rem;margin-bottom:.3rem;}
-#lvlup-box p{color:var(--text-dim);margin-bottom:.9rem;font-style:italic;font-size:.85rem;}
-.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.8rem;}
-.sp-btn{background:#1e1a10;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.6rem .4rem;cursor:pointer;font-family:'Georgia',serif;font-size:.8rem;transition:border-color .2s,background .2s;}
-.sp-btn:hover{border-color:var(--gold);background:#2a2510;color:var(--gold);}
-
-/* ── DEATH ── */
-#s-death{text-align:center;padding:2rem 1rem;}
-#death-title{font-size:2.3rem;color:var(--red);margin-bottom:.4rem;}
-#death-sub{font-size:.92rem;color:var(--text-dim);margin-bottom:1.3rem;font-style:italic;}
-#death-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;display:inline-block;padding:1rem 1.8rem;margin-bottom:1.3rem;text-align:left;min-width:240px;}
-#death-card p{margin-bottom:.35rem;font-size:.84rem;}
-#death-card span{color:var(--gold);}
-.main-btn{background:#1e1a0e;border:1px solid var(--gold-dim);border-radius:6px;color:var(--gold);padding:.75rem 2rem;cursor:pointer;font-family:'Georgia',serif;font-size:.95rem;letter-spacing:.07em;transition:box-shadow .2s;}
-.main-btn:hover{box-shadow:0 0 12px #c9a84c22;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--stone);
+  color:var(--parch);
+  font-family:"Georgia","Times New Roman",serif;
+  font-size:15px;
+  line-height:1.45;
+  background-image:radial-gradient(circle at 50% 0%, #2a251d 0%, var(--stone) 70%);
+}
+#app{max-width:920px;margin:0 auto;padding:14px;min-height:100%}
+h1,h2,h3{font-family:"Georgia",serif;color:var(--gold);letter-spacing:1px}
+h1{font-size:30px;text-align:center;text-shadow:0 2px 6px #000;margin-bottom:4px}
+.subtitle{text-align:center;color:var(--parch2);font-style:italic;margin-bottom:18px;font-size:14px}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.4);
+}
+.panel h2{font-size:18px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.panel h3{font-size:15px;margin:8px 0 4px}
+.panel h4{font-size:13px;margin:8px 0 2px;font-family:Georgia,serif}
+button{
+  font-family:inherit;
+  font-size:14px;
+  background:linear-gradient(#332b20,#241e16);
+  color:var(--parch);
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:8px 12px;
+  cursor:pointer;
+  margin:3px;
+  position:relative;
+  overflow:hidden;
+  text-align:left;
+  transition:border-color .1s, background .1s;
+}
+button:hover:not(:disabled){border-color:var(--gold);background:linear-gradient(#3d3327,#2a231a)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.danger{border-color:var(--blood)}
+button.danger:hover:not(:disabled){border-color:var(--blood2)}
+button.gold{border-color:var(--rust)}
+.btnrow{display:flex;flex-wrap:wrap;gap:2px}
+.cd-overlay{position:absolute;left:0;top:0;bottom:0;background:rgba(0,0,0,.55);pointer-events:none;width:0%}
+.stat-line{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dotted #2a251d}
+.stat-line span:last-child{color:#e6d8b0;font-weight:bold}
+.bar{height:14px;background:#0d0b09;border:1px solid var(--border);border-radius:2px;overflow:hidden;position:relative;margin:3px 0}
+.bar > div{height:100%;transition:width .12s linear}
+.bar-label{position:absolute;left:6px;top:0;font-size:11px;line-height:14px;color:#ddd;text-shadow:0 0 2px #000;z-index:2}
+.hp-fill{background:linear-gradient(var(--blood2),var(--blood))}
+.stam-fill{background:linear-gradient(#c9a24a,#8a6a1a)}
+.foe-hp-fill{background:linear-gradient(#9a3a2a,#5a1810)}
+#log{
+  height:200px;overflow-y:auto;background:#100e0b;border:1px solid var(--border);
+  padding:8px;font-size:13.5px;border-radius:3px;
+}
+#log p{margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid #1a1714}
+.l-hit{color:#e07a5a}
+.l-good{color:#9ac070}
+.l-bad{color:#d84a3a;font-weight:bold}
+.l-info{color:var(--parch2)}
+.l-gold{color:var(--gold)}
+.l-wound{color:#ff6a3a;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:8px;border:1px solid var(--border);margin-left:6px}
+.tag-bleed{color:#ff6a3a;border-color:#7a1a14}
+.tag-infect{color:#9a6acc;border-color:#5a3a8a}
+.tag-perm{color:#ff4a3a;border-color:var(--blood);font-weight:bold}
+.tag-heal{color:#9ac070;border-color:var(--green)}
+.wound-item{padding:6px;border-left:3px solid var(--blood);background:#170d0b;margin-bottom:5px;border-radius:2px}
+.wound-item.perm{border-left-color:#ff3a2a;background:#1a0a08}
+.telegraph{height:26px;background:#0d0b09;border:2px solid #3a1a14;border-radius:3px;overflow:hidden;position:relative;margin:6px 0}
+.telegraph > div{height:100%;width:0%;transition:width .05s linear}
+.foe-state{text-align:center;font-weight:bold;font-size:17px;letter-spacing:2px;padding:4px;text-transform:uppercase}
+.fs-idle{color:var(--parch2)}
+.fs-wind{color:#ff8a3a;animation:pulse .6s infinite}
+.fs-strike{color:#ff2a1a}
+.fs-recover{color:#9ac070}
+.fs-stagger{color:#6aa0cc}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.class-card{cursor:pointer;border:1px solid var(--border);padding:12px;border-radius:4px;background:#1e1b16;transition:all .12s}
+.class-card:hover{border-color:var(--gold);background:#28231a;transform:translateY(-2px)}
+.class-card h3{color:var(--gold)}
+.diff{font-size:12px;font-style:italic}
+.diff-easy{color:#9ac070}.diff-mid{color:var(--gold)}.diff-hard{color:#d84a3a}
+.notif{position:fixed;top:0;left:0;right:0;text-align:center;padding:14px;font-size:18px;font-weight:bold;z-index:100;color:#fff;text-shadow:0 0 8px #000;animation:slidein .3s}
+.notif.wound{background:rgba(122,26,20,.95);border-bottom:2px solid #ff4a3a}
+.notif.death{background:rgba(0,0,0,.97);color:#b8281c;font-size:26px}
+.notif.info{background:rgba(40,35,26,.95);border-bottom:2px solid var(--gold)}
+@keyframes slidein{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.event-box{border:1px solid var(--rust);background:#1a160f;padding:14px;border-radius:4px;margin-bottom:12px}
+.event-box p.scene{font-style:italic;color:#d8c89a;margin-bottom:10px;font-size:15px}
+.muted{color:var(--parch2);font-size:13px}
+.shop-item{display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid #2a251d}
+.foe-row{display:flex;gap:14px;align-items:flex-start}
+.foe-col{flex:1}
+hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.center{text-align:center}
+.big-btn{font-size:16px;padding:12px 20px;text-align:center}
+.equip-slot{font-size:13px;color:var(--parch2)}
+.equip-slot b{color:#e6d8b0}
+.foe-portrait{font-size:40px;text-align:center}
+.followers-list .f-item{padding:5px;border-bottom:1px solid #2a251d;font-size:13px}
 </style>
 </head>
 <body>
-<h1>⚔ Ashes &amp; Crowns</h1>
-<p class="sub">Medieval life simulation — one life, one chance</p>
-
-<!-- CLASS SELECT -->
-<div id="s-select" class="screen active">
-  <p style="text-align:center;color:var(--text-dim);font-size:.85rem;margin-bottom:.8rem;">Choose your station in life. Difficulty is determined by where you start.</p>
-  <div class="grid5">
-    <div class="cc" onclick="startGame('peasant')">
-      <span class="ci">🌾</span><div class="cn">Peasant</div>
-      <div class="cd d1">★★★★★ Hardest</div>
-      <div class="cx">Nothing but your hands and hunger. Survive the fields, the taxes, and those who prey on the weak.</div>
-    </div>
-    <div class="cc" onclick="startGame('soldier')">
-      <span class="ci">🗡️</span><div class="cn">Soldier</div>
-      <div class="cd d2">★★★★☆ Hard</div>
-      <div class="cx">A trained fighter with iron and discipline. You serve a lord, earn wages, and look for a better life.</div>
-    </div>
-    <div class="cc" onclick="startGame('knight')">
-      <span class="ci">🛡️</span><div class="cn">Knight</div>
-      <div class="cd d3">★★★☆☆ Medium</div>
-      <div class="cx">Land, honor, and a coat of arms. You command a small household and answer to your liege.</div>
-    </div>
-    <div class="cc" onclick="startGame('lord')">
-      <span class="ci">🏰</span><div class="cn">Lord</div>
-      <div class="cd d4">★★☆☆☆ Easy</div>
-      <div class="cx">A manor, tenants, and loyal men-at-arms. Politics and prosperity are yours to shape.</div>
-    </div>
-    <div class="cc" onclick="startGame('king')">
-      <span class="ci">👑</span><div class="cn">King</div>
-      <div class="cd d5">★☆☆☆☆ Easiest</div>
-      <div class="cx">The crown and the treasury. Command armies, settle disputes, and hold the realm together.</div>
-    </div>
-  </div>
-</div>
-
-<!-- PLAY SCREEN -->
-<div id="s-play" class="screen">
-  <div class="pg">
-
-    <!-- LEFT: CHARACTER -->
-    <div>
-      <div class="panel">
-        <div class="ptitle" id="char-title">Character</div>
-        <div class="srow"><span>Name</span><span id="c-name">—</span></div>
-        <div class="srow"><span>Class</span><span id="c-class">—</span></div>
-        <div class="srow"><span>Level</span><span id="c-level">—</span></div>
-        <div class="srow"><span>Gold</span><span id="c-gold">—</span></div>
-        <div class="srow"><span>Age</span><span id="c-age">—</span></div>
-        <div style="margin-top:.7rem;">
-          <div class="bwrap b-hp">
-            <div class="blbl"><span>Health</span><span id="c-hp">—</span></div>
-            <div class="bar"><div class="bar-fill" id="b-hp"></div></div>
-          </div>
-          <div class="bwrap b-stam">
-            <div class="blbl"><span>Stamina</span><span id="c-stam">—</span></div>
-            <div class="bar"><div class="bar-fill" id="b-stam"></div></div>
-          </div>
-          <div class="bwrap b-xp">
-            <div class="blbl"><span>Experience</span><span id="c-xp">—</span></div>
-            <div class="bar"><div class="bar-fill" id="b-xp"></div></div>
-          </div>
-        </div>
-        <div class="ptitle" style="margin-top:.7rem;">Attributes</div>
-        <div class="srow"><span>Strength</span><span id="a-str">—</span></div>
-        <div class="srow"><span>Agility</span><span id="a-agi">—</span></div>
-        <div class="srow"><span>Endurance</span><span id="a-end">—</span></div>
-        <div class="srow"><span>Wits</span><span id="a-wit">—</span></div>
-        <div class="srow"><span>Presence</span><span id="a-pre">—</span></div>
-        <div class="ptitle" style="margin-top:.7rem;">Combat Stats</div>
-        <div class="srow"><span>Attack</span><span id="c-atk">—</span></div>
-        <div class="srow"><span>Defence</span><span id="c-def">—</span></div>
-        <div class="srow"><span>Speed</span><span id="c-spd">—</span></div>
-      </div>
-    </div>
-
-    <!-- CENTER -->
-    <div>
-      <!-- Reputation -->
-      <div id="rep-badge" class="rep-badge rep-0">Unknown</div>
-      <div class="srow" style="margin-bottom:.6rem;font-size:.8rem;"><span style="color:var(--text-dim)">Reputation</span><span id="c-rep" style="color:var(--text-bright);">—</span></div>
-
-      <!-- LIVE COMBAT ZONE -->
-      <div id="combat-zone" class="panel">
-        <div class="combat-header">
-          <div>
-            <div class="enemy-nameplate" id="e-name">Enemy</div>
-            <div style="font-size:.72rem;color:var(--text-dim)" id="e-desc"></div>
-          </div>
-          <div class="enemy-icon" id="e-icon">⚔️</div>
-        </div>
-        <div class="combat-bars">
-          <div class="bwrap b-enemy">
-            <div class="blbl"><span>Enemy Health</span><span id="e-hp-txt">—</span></div>
-            <div class="bar"><div class="bar-fill" id="b-enemy-hp"></div></div>
-          </div>
-          <div class="timer-row">
-            <div class="timer-label">⚔ Enemy attacks in…</div>
-            <div class="bwrap b-etimer" style="margin-bottom:0">
-              <div class="bar"><div class="bar-fill" id="b-etimer" style="width:100%"></div></div>
-            </div>
-          </div>
-        </div>
-        <!-- Follower combat display -->
-        <div class="follower-combat" id="follower-combat-display"></div>
-        <!-- Combat log -->
-        <div class="panel" style="background:#0d0b08;margin:.5rem 0;">
-          <div id="log"></div>
-        </div>
-        <!-- Player combat actions -->
-        <div class="combat-actions" id="combat-actions">
-          <button class="cbt-btn" id="btn-strike" onclick="combatStrike()">
-            ⚔ Strike<br><small style="color:var(--text-dim);font-size:.68rem">Attack</small>
-            <div class="cd-bar" id="cd-strike" style="width:0%"></div>
-          </button>
-          <button class="cbt-btn" id="btn-block" onclick="combatBlock()">
-            🛡 Block<br><small style="color:var(--text-dim);font-size:.68rem">Reduce damage</small>
-            <div class="cd-bar" id="cd-block" style="width:0%"></div>
-          </button>
-          <button class="cbt-btn" id="btn-dodge" onclick="combatDodge()">
-            💨 Dodge<br><small style="color:var(--text-dim);font-size:.68rem">Avoid next hit</small>
-            <div class="cd-bar" id="cd-dodge" style="width:0%"></div>
-          </button>
-          <button class="cbt-btn" id="btn-shove" onclick="combatShove()">
-            👊 Shove<br><small style="color:var(--text-dim);font-size:.68rem">Stagger enemy</small>
-            <div class="cd-bar" id="cd-shove" style="width:0%"></div>
-          </button>
-          <button class="cbt-btn" id="btn-potion" onclick="combatPotion()">
-            🍶 Potion<br><small style="color:var(--text-dim);font-size:.68rem">Heal yourself</small>
-            <div class="cd-bar" id="cd-potion" style="width:0%"></div>
-          </button>
-          <button class="cbt-btn" id="btn-flee" onclick="combatFlee()">
-            🏃 Flee<br><small style="color:var(--text-dim);font-size:.68rem">Try to escape</small>
-            <div class="cd-bar" id="cd-flee" style="width:0%"></div>
-          </button>
-        </div>
-      </div>
-
-      <!-- LOCATION (shown when not in combat) -->
-      <div id="world-zone" class="panel">
-        <div class="loc-name" id="loc-name">—</div>
-        <div class="loc-desc" id="loc-desc">—</div>
-        <div class="loc-exits" id="loc-exits"></div>
-        <div class="ptitle">Actions</div>
-        <div class="loc-actions" id="loc-actions"></div>
-        <button class="rest-btn" onclick="doRest()">🌙 Rest — recover health &amp; stamina, pass time</button>
-      </div>
-
-      <!-- LOG (shown when not in combat) -->
-      <div class="panel" style="margin-top:.7rem;" id="world-log-panel">
-        <div id="log2" style="height:140px;overflow-y:auto;font-size:.8rem;line-height:1.5;"></div>
-      </div>
-    </div>
-
-    <!-- RIGHT: FOLLOWERS + INVENTORY -->
-    <div>
-      <!-- Followers -->
-      <div class="panel" style="margin-bottom:.7rem;">
-        <div class="ptitle">Followers</div>
-        <div id="follower-list"></div>
-        <div id="hire-section"></div>
-      </div>
-      <!-- Quests -->
-      <div class="panel" style="margin-bottom:.7rem;">
-        <div class="ptitle">Quests</div>
-        <div id="quest-list"></div>
-      </div>
-      <!-- Inventory -->
-      <div class="panel">
-        <div class="ptitle">Inventory <span id="inv-count" style="color:var(--text-dim);font-weight:normal;"></span></div>
-        <div id="inv-list"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- DEATH -->
-<div id="s-death" class="screen">
-  <div id="death-title">☠ You Have Fallen</div>
-  <div id="death-sub">—</div>
-  <div id="death-card"></div>
-  <button class="main-btn" onclick="resetGame()">Begin a New Chronicle</button>
-</div>
-
-<!-- MODAL -->
-<div id="modal-ov">
-  <div id="modal-box">
-    <div id="modal-title"></div>
-    <div id="modal-desc"></div>
-    <div id="modal-choices"></div>
-  </div>
-</div>
-
-<!-- LEVEL UP -->
-<div id="lvlup-ov">
-  <div id="lvlup-box">
-    <h2>⬆ Level Up!</h2>
-    <p id="lu-msg">Choose a stat to improve.</p>
-    <div class="sp-grid" id="sp-grid"></div>
-  </div>
-</div>
-
+<div id="app"></div>
 <script>
-// ══════════════════════════════════════════════════════════════
-// DATA
-// ══════════════════════════════════════════════════════════════
+"use strict";
 
+/* ============================================================
+   ASHES & CROWNS — medieval permadeath life sim
+   ============================================================ */
+
+let G = null;
+let combat = null;
+let combatIntervals = [];
+let pendingEvent = null;
+
+/* ---------- DATA: CLASSES ---------- */
 const CLASSES = {
-  peasant:{ label:'Peasant', icon:'🌾',
-    str:4, agi:5, end:4, wit:4, pre:2,
-    hp:60, stam:70, gold:4, age:18, rep:0,
-    startItems:['Worn Knife','Rough Tunic'],
-    startLoc:'village', diff:5 },
-  soldier:{ label:'Soldier', icon:'🗡️',
-    str:9, agi:7, end:8, wit:5, pre:4,
-    hp:85, stam:90, gold:22, age:20, rep:10,
-    startItems:['Iron Sword','Leather Vest'],
-    startLoc:'barracks', diff:4 },
-  knight:{ label:'Knight', icon:'🛡️',
-    str:12, agi:8, end:10, wit:7, pre:8,
-    hp:110, stam:100, gold:90, age:26, rep:30,
-    startItems:['Steel Sword','Chainmail','Wooden Shield'],
-    startLoc:'manor', diff:3 },
-  lord:{ label:'Lord', icon:'🏰',
-    str:8, agi:6, end:8, wit:11, pre:13,
-    hp:95, stam:90, gold:320, age:32, rep:55,
-    startItems:['Fine Sword','Leather Vest','Signet Ring'],
-    startLoc:'manor', diff:2 },
-  king:{ label:'King', icon:'👑',
-    str:9, agi:7, end:9, wit:13, pre:16,
-    hp:120, stam:110, gold:1200, age:38, rep:80,
-    startItems:['Royal Sword','Chainmail','Signet Ring','Healing Salve','Healing Salve'],
-    startLoc:'great_hall', diff:1 },
+  peasant:{
+    name:"Peasant", icon:"🌾", diff:"Brutally Hard", diffClass:"diff-hard",
+    desc:"You own nothing but your back and the dirt under your nails. Every silver is a battle.",
+    stats:{str:5,agi:5,wit:4,end:6}, hp:55, gold:3, rep:0, loc:"village",
+    gear:{weapon:"fists",armor:"rags",shield:"none"}, inv:["bandage"]
+  },
+  soldier:{
+    name:"Soldier", icon:"⚔️", diff:"Hard", diffClass:"diff-hard",
+    desc:"A spear in the line, a wage in your purse. You know how to fight, but you answer to others.",
+    stats:{str:7,agi:6,wit:5,end:7}, hp:75, gold:18, rep:10, loc:"barracks",
+    gear:{weapon:"shortsword",armor:"gambeson",shield:"buckler"}, inv:["bandage","bandage"]
+  },
+  knight:{
+    name:"Knight", icon:"🛡️", diff:"Moderate", diffClass:"diff-mid",
+    desc:"Sworn to a lord, sword at your hip, a name people half-respect. Duty and danger in equal measure.",
+    stats:{str:8,agi:6,wit:6,end:7}, hp:90, gold:55, rep:35, loc:"manor",
+    gear:{weapon:"longsword",armor:"mail",shield:"kite"}, inv:["bandage","bandage","salve"]
+  },
+  lord:{
+    name:"Lord", icon:"🏰", diff:"Comfortable", diffClass:"diff-easy",
+    desc:"Lands, tenants, a steward who fears you. Coin flows — but so do enemies who covet what you hold.",
+    stats:{str:6,agi:5,wit:8,end:6}, hp:80, gold:220, rep:55, loc:"manor",
+    gear:{weapon:"arming_sword",armor:"mail",shield:"heater"}, inv:["bandage","bandage","salve","salve"]
+  },
+  king:{
+    name:"King", icon:"👑", diff:"Easiest", diffClass:"diff-easy",
+    desc:"The realm is yours. Wealth beyond counting, men sworn to die for you. Yet a crown is a target.",
+    stats:{str:7,agi:6,wit:9,end:7}, hp:100, gold:800, rep:75, loc:"court",
+    gear:{weapon:"kings_blade",armor:"fine_plate",shield:"heater"}, inv:["bandage","bandage","bandage","salve","salve"]
+  }
 };
 
-const ITEMS = {
-  'Worn Knife':      { type:'weapon', atk:3,  def:0,  spd:1,  sell:1  },
-  'Hunting Knife':   { type:'weapon', atk:5,  def:1,  spd:2,  sell:6  },
-  'Iron Sword':      { type:'weapon', atk:9,  def:0,  spd:0,  sell:14 },
-  'Steel Sword':     { type:'weapon', atk:15, def:0,  spd:0,  sell:45 },
-  'Fine Sword':      { type:'weapon', atk:19, def:1,  spd:1,  sell:90 },
-  'Royal Sword':     { type:'weapon', atk:25, def:2,  spd:1,  sell:220},
-  'Woodcutter Axe':  { type:'weapon', atk:13, def:-1, spd:-1, sell:10 },
-  'Mace':            { type:'weapon', atk:11, def:0,  spd:-1, sell:18 },
-  'Spear':           { type:'weapon', atk:12, def:2,  spd:1,  sell:22 },
-  'Crossbow':        { type:'weapon', atk:16, def:0,  spd:-2, sell:35 },
-  'Rough Tunic':     { type:'armor',  atk:0,  def:0,  spd:0,  sell:0  },
-  'Padded Coat':     { type:'armor',  atk:0,  def:3,  spd:0,  sell:5  },
-  'Leather Vest':    { type:'armor',  atk:0,  def:5,  spd:0,  sell:12 },
-  'Chainmail':       { type:'armor',  atk:0,  def:10, spd:-1, sell:55 },
-  'Plate Armour':    { type:'armor',  atk:0,  def:17, spd:-2, sell:170},
-  'Wooden Shield':   { type:'shield', atk:0,  def:5,  spd:0,  sell:9  },
-  'Iron Shield':     { type:'shield', atk:0,  def:9,  spd:-1, sell:35 },
-  'Signet Ring':     { type:'acc',    atk:0,  def:0,  spd:0,  pre:3,  sell:55 },
-  'Healing Salve':   { type:'potion', hp:30,  sell:14 },
-  'Strong Tonic':    { type:'potion', hp:55,  sell:30 },
-  'Ration Pack':     { type:'potion', stam:40, sell:5 },
+/* ---------- DATA: EQUIPMENT ---------- */
+const WEAPONS = {
+  fists:{name:"Bare Fists", dmg:[3,6], speed:1, str:0, price:0, desc:"Knuckles and desperation."},
+  knife:{name:"Belt Knife", dmg:[5,9], speed:1.1, str:0, price:6, desc:"Short, mean, quick."},
+  club:{name:"Wooden Club", dmg:[6,11], speed:.95, str:1, price:8, desc:"Blunt and ugly."},
+  shortsword:{name:"Shortsword", dmg:[8,14], speed:1, str:1, price:24, desc:"A soldier's steel."},
+  arming_sword:{name:"Arming Sword", dmg:[10,17], speed:1, str:2, price:48, desc:"Balanced, reliable."},
+  longsword:{name:"Longsword", dmg:[12,20], speed:.9, str:3, price:75, desc:"Long reach, heavy bite."},
+  mace:{name:"Iron Mace", dmg:[11,21], speed:.8, str:3, price:60, desc:"Crushes mail and bone."},
+  axe:{name:"War Axe", dmg:[13,22], speed:.85, str:3, price:68, desc:"Splits shields and skulls."},
+  spear:{name:"Footman's Spear", dmg:[9,16], speed:1.05, str:1, price:30, desc:"Keeps foes at distance."},
+  kings_blade:{name:"The King's Blade", dmg:[15,25], speed:1, str:4, price:400, desc:"A blade fit for a crown."},
+};
+const ARMORS = {
+  rags:{name:"Peasant Rags", soak:0, agi:0, price:0, desc:"Cloth and patches."},
+  leather:{name:"Boiled Leather", soak:3, agi:0, price:30, desc:"Turns a glancing blow."},
+  gambeson:{name:"Padded Gambeson", soak:5, agi:0, price:45, desc:"Thick quilted cloth."},
+  mail:{name:"Chain Mail", soak:9, agi:-1, price:120, desc:"Rings against the edge."},
+  brigandine:{name:"Brigandine", soak:11, agi:-1, price:180, desc:"Plates riveted in cloth."},
+  fine_plate:{name:"Fine Plate", soak:15, agi:-2, price:450, desc:"A wall of polished steel."},
+};
+const SHIELDS = {
+  none:{name:"No Shield", block:0, price:0, desc:"Nothing but your guard."},
+  buckler:{name:"Buckler", block:4, price:18, desc:"Small, fast fist-shield."},
+  heater:{name:"Heater Shield", block:7, price:40, desc:"Sturdy and broad."},
+  kite:{name:"Kite Shield", block:9, price:55, desc:"Covers from chin to shin."},
+  tower:{name:"Tower Shield", block:12, price:90, desc:"A door you carry."},
 };
 
-// Mundane medieval enemies — no monsters
+/* ---------- DATA: ENEMIES ---------- */
 const ENEMIES = {
-  pickpocket:  { name:'Pickpocket',        icon:'🤏', hp:18,  atk:4,  def:1,  speed:2200, xp:10, gold:[1,4],   drop:null,           flee:75 },
-  thug:        { name:'Street Thug',       icon:'🥊', hp:30,  atk:8,  def:2,  speed:2000, xp:18, gold:[3,10],  drop:'Worn Knife',    flee:60 },
-  brigand:     { name:'Road Brigand',      icon:'🗡️', hp:45,  atk:13, def:4,  speed:1900, xp:28, gold:[8,20],  drop:'Hunting Knife', flee:50 },
-  bandit:      { name:'Bandit',            icon:'⚔️', hp:58,  atk:16, def:6,  speed:1800, xp:38, gold:[12,30], drop:'Iron Sword',    flee:45 },
-  deserter:    { name:'Deserter Soldier',  icon:'🪖', hp:72,  atk:18, def:9,  speed:1700, xp:55, gold:[15,35], drop:'Leather Vest',  flee:40 },
-  mercenary:   { name:'Hired Mercenary',   icon:'🛡️', hp:90,  atk:22, def:13, speed:1700, xp:75, gold:[25,55], drop:'Chainmail',    flee:30 },
-  rival_man:   { name:"Rival's Man",       icon:'⚔️', hp:80,  atk:20, def:10, speed:1800, xp:65, gold:[20,45], drop:'Iron Sword',    flee:35 },
-  enforcer:    { name:'Tax Enforcer',      icon:'🔨', hp:95,  atk:24, def:14, speed:1600, xp:90, gold:[30,70], drop:'Mace',          flee:25 },
-  assassin:    { name:'Assassin',          icon:'🗡️', hp:70,  atk:28, def:8,  speed:1400, xp:110,gold:[35,70], drop:'Hunting Knife', flee:20 },
-  rival_knight:{ name:'Rival Knight',      icon:'🏇', hp:120, atk:26, def:18, speed:1700, xp:140,gold:[50,110],drop:'Chainmail',     flee:15 },
+  pickpocket:{name:"Pickpocket",icon:"🦝",hp:30,dmg:[3,7],windup:[1000,1200],soak:0,agi:7,gold:[3,9],desc:"a wiry cutpurse with quick fingers"},
+  thug:{name:"Street Thug",icon:"👊",hp:45,dmg:[5,10],windup:[850,1100],soak:1,agi:4,gold:[4,12],desc:"a broad-shouldered brute"},
+  brigand:{name:"Brigand",icon:"🪓",hp:55,dmg:[7,13],windup:[800,1050],soak:2,agi:5,gold:[8,18],desc:"a road-robber in stolen leathers"},
+  bandit:{name:"Bandit",icon:"🗡️",hp:60,dmg:[8,15],windup:[800,1000],soak:3,agi:5,gold:[10,22],desc:"a hardened bandit with a notched blade"},
+  deserter:{name:"Army Deserter",icon:"🪖",hp:70,dmg:[9,16],windup:[750,1000],soak:5,agi:5,gold:[12,26],desc:"a deserter still in faded colours"},
+  mercenary:{name:"Mercenary",icon:"⚔️",hp:80,dmg:[10,18],windup:[750,950],soak:7,agi:6,gold:[18,35],desc:"a scarred sellsword who fights for coin"},
+  enforcer:{name:"Enforcer",icon:"💪",hp:90,dmg:[11,19],windup:[700,950],soak:6,agi:5,gold:[20,40],desc:"a debt-lord's enforcer, all muscle and menace"},
+  rivalsman:{name:"Rival's Man",icon:"🎭",hp:75,dmg:[10,17],windup:[750,950],soak:6,agi:7,gold:[16,32],desc:"a man sent by someone who hates you"},
+  killer:{name:"Hired Killer",icon:"🔪",hp:85,dmg:[12,21],windup:[700,900],soak:5,agi:8,gold:[25,50],desc:"a quiet, watchful man with a thin knife"},
+  assassin:{name:"Assassin",icon:"🥷",hp:80,dmg:[14,24],windup:[700,850],soak:4,agi:9,gold:[30,60],desc:"a shadow that came for your life"},
 };
 
-// Rep tiers
-const REP_TIERS = [
-  { min:0,  label:'Unknown',   cls:'rep-0' },
-  { min:20, label:'Known',     cls:'rep-1' },
-  { min:40, label:'Respected', cls:'rep-2' },
-  { min:60, label:'Honoured',  cls:'rep-3' },
-  { min:80, label:'Renowned',  cls:'rep-4' },
-];
+/* ---------- DATA: FOLLOWERS ---------- */
+const FOLLOWER_TYPES = {
+  farmhand:{name:"Farmhand",repReq:20,hire:8,wage:2,hp:40,dmg:[3,7],speed:1500,desc:"pitchfork, loyal but weak"},
+  watchman:{name:"Town Watchman",repReq:35,hire:20,wage:4,hp:55,dmg:[5,10],speed:1300,desc:"a club and a steady nerve"},
+  hiredsword:{name:"Hired Sword",repReq:50,hire:55,wage:9,hp:70,dmg:[8,14],speed:1200,desc:"steel and skill"},
+  veteran:{name:"Veteran",repReq:70,hire:110,wage:16,hp:90,dmg:[11,18],speed:1100,desc:"battle-hardened, dependable"},
+  knightatarms:{name:"Knight-at-Arms",repReq:85,hire:280,wage:32,hp:120,dmg:[14,24],speed:1000,desc:"elite, deadly, costly"},
+};
 
-// Hireable followers — unlocked by rep tier
-const FOLLOWER_TYPES = [
-  { id:'farmhand', name:'Farmhand',     icon:'🌾', atk:5,  hp:30, speed:2800, cost:8,  upkeep:2, repMin:15,  desc:'A stout local with a pitchfork.' },
-  { id:'watchman', name:'Town Watchman',icon:'🪵', atk:9,  hp:45, speed:2500, cost:20, upkeep:4, repMin:30,  desc:'A capable watchman with a club.' },
-  { id:'swordsman',name:'Swordsman',    icon:'🗡️', atk:16, hp:65, speed:2200, cost:50, upkeep:8, repMin:50,  desc:'A professional fighter for hire.' },
-  { id:'veteran',  name:'Veteran',      icon:'🪖', atk:22, hp:85, speed:2000, cost:100,upkeep:15,repMin:70,  desc:'Battle-hardened and reliable.' },
-  { id:'knight_f', name:'Knight',       icon:'🏇', atk:30, hp:110,speed:1900, cost:250,upkeep:30,repMin:85,  desc:'A mounted knight pledges service.' },
-];
-
-// Mundane locations
+/* ---------- DATA: LOCATIONS ---------- */
 const LOCATIONS = {
-  village:    { name:'🏘 The Village',    desc:'A cluster of thatched cottages. Farmers and merchants go about their day. The smell of bread and mud fills the air.',
-    exits:['road','market_town','inn'], enemies:['pickpocket','thug','brigand'], events:['rent_overdue','barn_dispute','stolen_pig','help_harvest'] },
-  barracks:   { name:'⚔️ The Barracks',   desc:'Stone buildings and a dusty drill yard. Soldiers eat, train, and grumble about their pay.',
-    exits:['road','market_town'], enemies:['thug','brigand','deserter'], events:['soldier_fight','pay_dispute','deserter_tip'] },
-  road:       { name:'🛤 The King\'s Road', desc:'A rutted road through open fields. Merchants and travellers move quickly, keeping an eye on the treeline.',
-    exits:['village','market_town','inn','manor'], enemies:['brigand','bandit','deserter'], events:['ambush_road','lost_merchant','stranded_cart'] },
-  market_town:{ name:'🏪 The Market Town', desc:'Stalls line the cobblestones. Butchers, blacksmiths, and cloth merchants haggle over prices.',
-    exits:['village','road','inn','manor'], enemies:['pickpocket','thug'], events:['cheated_deal','market_dispute','debt_collect'], shop:true },
-  inn:        { name:'🍺 The Roadside Inn', desc:'A warm hearth, cheap ale, and cheaper beds. Travellers share news and trouble in equal measure.',
-    exits:['village','road','market_town'], enemies:['thug','brigand'], events:['brawl_inn','card_game','traveller_warning'], shop:true },
-  manor:      { name:'🏰 The Manor House',  desc:'Stone walls, a modest hall, and nervous servants. The seat of local power.',
-    exits:['road','market_town','great_hall'], enemies:['rival_man','deserter'], events:['tenant_complaint','steward_fraud','rival_letter'] },
-  great_hall: { name:'👑 The Great Hall',  desc:'Tapestries, cold stone, and the weight of authority. Lords and their retainers conduct the business of the realm.',
-    exits:['manor','road'], enemies:['assassin','rival_knight','rival_man'], events:['court_petition','trade_negotiation','assassination_plot'] },
+  village:{name:"The Village", desc:"Mud lanes, thatched roofs, the smell of woodsmoke and dung. Home, of a sort."},
+  market:{name:"Market Town", desc:"Stalls and shouting, the physician's door, the tavern's warmth. Coin changes hands here."},
+  barracks:{name:"The Garrison", desc:"Drill yards and armouries, the sergeant's bark, men sharpening steel."},
+  road:{name:"The Road", desc:"Open country between safe walls. Here, anything can find you."},
+  manor:{name:"The Manor House", desc:"Stone halls, the steward's ledgers, the lord's court. Power and its weight."},
+  square:{name:"The Town Square", desc:"Where the town gathers — and where its dramas play out before all eyes."},
+  court:{name:"The Great Hall", desc:"Throne and banners, kneeling petitioners, whispering nobles. The realm itself."},
+};
+const TRAVEL = {
+  village:["market","road","square"],
+  market:["village","road","square","manor"],
+  barracks:["market","road","square"],
+  road:["village","market","barracks","manor","square"],
+  manor:["market","road","square","court"],
+  square:["village","market","barracks","road","manor"],
+  court:["manor","square"],
 };
 
-// ── MUNDANE QUESTS ─────────────────────────────────────────────
-const QUEST_TEMPLATES = [
-  { title:'Collect the Miller\'s Debt',
-    desc:'The miller owes three months of rent. Ride to the mill and collect what is owed — by persuasion or by force.',
-    type:'fight', enemy:'thug', target:1, gold:25, rep:8, xp:20,
-    action:'Go to the mill' },
-  { title:'Guard the Merchant\'s Stall',
-    desc:'A cloth merchant fears thieves will strike at market. Stand watch over his stall for the afternoon.',
-    type:'fight', enemy:'pickpocket', target:2, gold:18, rep:6, xp:15,
-    action:'Stand guard' },
-  { title:'Break Up a Fight',
-    desc:'Two men are brawling in the courtyard over a land boundary. Step in and restore order.',
-    type:'fight', enemy:'thug', target:1, gold:10, rep:10, xp:12,
-    action:'Intervene' },
-  { title:'Escort the Widow to Market',
-    desc:'A widow must travel to the market town but fears the road. Escort her safely.',
-    type:'travel', dest:'market_town', gold:20, rep:12, xp:18,
-    action:'Begin escort' },
-  { title:'Recover Stolen Livestock',
-    desc:'A farmer\'s pigs were run off by brigands last night. Track them down and take back what was stolen.',
-    type:'fight', enemy:'brigand', target:1, gold:22, rep:10, xp:22,
-    action:'Track the brigands' },
-  { title:'Settle a Boundary Dispute',
-    desc:'Two farmers argue over a ditch. Hear both sides and deliver a ruling that sticks.',
-    type:'skill', stat:'pre', difficulty:35, gold:15, rep:15, xp:20,
-    action:'Hear the case' },
-  { title:'Deliver a Letter to the Steward',
-    desc:'A sealed letter must reach the manor steward before nightfall.',
-    type:'travel', dest:'manor', gold:12, rep:5, xp:10,
-    action:'Deliver it' },
-  { title:'Clear the Brigands from the Road',
-    desc:'Merchants are being robbed on the King\'s Road. Clear them out.',
-    type:'fight', enemy:'bandit', target:2, gold:40, rep:18, xp:45,
-    action:'Ride out' },
-  { title:'Find a Runaway Apprentice',
-    desc:'A blacksmith\'s apprentice ran off. He was last seen heading toward the inn.',
-    type:'travel', dest:'inn', gold:16, rep:8, xp:14,
-    action:'Search for him' },
-  { title:'Investigate Theft at the Mill',
-    desc:'Someone has been stealing grain from the mill at night. Catch them in the act.',
-    type:'fight', enemy:'pickpocket', target:1, gold:20, rep:12, xp:18,
-    action:'Wait at the mill' },
-  { title:'Evict a Squatter',
-    desc:'A family refuses to leave a vacant tenancy they have no right to. Remove them — forcibly if need be.',
-    type:'fight', enemy:'thug', target:1, gold:30, rep:5, xp:20,
-    action:'Go to the property' },
-  { title:'Protect a Witness',
-    desc:'A man who witnessed a crime against the lord is being threatened. Ensure he reaches court safely.',
-    type:'travel', dest:'great_hall', gold:35, rep:20, xp:35,
-    action:'Guard him' },
-  { title:'Apprehend a Deserter',
-    desc:'A soldier has abandoned his post and is causing trouble in the village. Bring him in.',
-    type:'fight', enemy:'deserter', target:1, gold:35, rep:15, xp:40,
-    action:'Track him down' },
-  { title:'Negotiate a Trade Deal',
-    desc:'Two merchants are at an impasse over prices. Broker an agreement they can both live with.',
-    type:'skill', stat:'wit', difficulty:40, gold:30, rep:18, xp:28,
-    action:'Mediate the deal' },
-  { title:'Root Out the Informant',
-    desc:'Word is that someone in the barracks has been selling troop movements to a rival lord. Find out who.',
-    type:'skill', stat:'wit', difficulty:50, gold:60, rep:25, xp:50,
-    action:'Investigate' },
-  { title:'See Off a Hired Killer',
-    desc:'A rival has sent an assassin. Deal with him before he deals with you.',
-    type:'fight', enemy:'assassin', target:1, gold:80, rep:30, xp:100,
-    action:'Confront the assassin' },
-];
-
-// ── RANDOM EVENTS ───────────────────────────────────────────────
-const EVENTS = {
-  rent_overdue:{
-    title:'📜 Overdue Rent',
-    desc:'A tenant approaches, hat in hand. He owes two months of rent and claims the harvest was poor.',
-    choices:[
-      {text:'Accept half now, forgive the rest', hint:'+rep, -gold',
-       fn(g){g.rep=Math.min(100,g.rep+10);const loss=rnd(5,12);g.gold=Math.max(0,g.gold-loss);log2(`You forgave part of the debt. Rep +10, lost ${loss} gold.`,'good');}},
-      {text:'Demand full payment now', hint:'STR/Presence check',
-       fn(g){if(rollStat(g,'pre',45)||rollStat(g,'str',35)){const earn=rnd(8,18);g.gold+=earn;log2(`You pressed him. He paid ${earn} gold.`,'info');}else{g.rep=Math.max(0,g.rep-5);log2('He couldn\'t pay. You\'ve earned a reputation for harshness. -5 rep.','bad');}}},
-      {text:'Give him another month',hint:'+rep',
-       fn(g){g.rep=Math.min(100,g.rep+5);log2('You granted an extension. The village approves. +5 rep.','good');}},
-    ]},
-  barn_dispute:{
-    title:'🐄 Barn Dispute',
-    desc:'Two neighbours argue over whose land a new barn encroaches on. Both are convinced they are right.',
-    choices:[
-      {text:'Rule for the elder farmer', hint:'+rep',
-       fn(g){g.rep=Math.min(100,g.rep+8);log2('The elder farmer thanks you warmly. +8 rep.','good');}},
-      {text:'Order them to share the barn', hint:'Wits check',
-       fn(g){if(rollStat(g,'wit',50)){g.rep=Math.min(100,g.rep+14);log2('A clever solution. Both men shake hands. +14 rep.','good');}else{g.rep=Math.max(0,g.rep-5);log2('Neither was satisfied. -5 rep.','bad');}}},
-      {text:'Ignore it — not your problem', hint:'Nothing happens',
-       fn(g){log2('You walked away from the argument.','info');}},
-    ]},
-  stolen_pig:{
-    title:'🐷 Stolen Pig',
-    desc:'A farmer swears his prize pig was stolen overnight. He points at his neighbour.',
-    choices:[
-      {text:'Search the neighbour\'s property', hint:'Wits check',
-       fn(g){if(rollStat(g,'wit',45)){g.rep=Math.min(100,g.rep+10);g.gold+=8;log2('You found the pig hidden in his cellar. +10 rep, +8 gold fine.','good');}else{g.rep=Math.max(0,g.rep-8);log2('Wrong man. The real thief laughed at you. -8 rep.','bad');}}},
-      {text:'Tell them to sort it themselves', hint:'-rep',
-       fn(g){g.rep=Math.max(0,g.rep-4);log2('The farmer grumbled about your indifference. -4 rep.','bad');}},
-    ]},
-  help_harvest:{
-    title:'🌾 Helping Hands',
-    desc:'The harvest is behind and the farmer fears losing it before the rains come.',
-    choices:[
-      {text:'Roll up your sleeves and help', hint:'+rep, +stam cost',
-       fn(g){g.rep=Math.min(100,g.rep+8);g.stam=Math.max(0,g.stam-25);log2('You spent an afternoon harvesting. +8 rep, tired now.','good');}},
-      {text:'Hire workers to help him', hint:'Costs gold, big rep',
-       fn(g){const cost=rnd(10,20);if(g.gold>=cost){g.gold-=cost;g.rep=Math.min(100,g.rep+14);log2(`You hired help for ${cost} gold. +14 rep.`,'good');}else{log2('Not enough coin.','bad');}}},
-      {text:'Decline — you have other matters', hint:'',
-       fn(g){log2('You had other concerns.','info');}},
-    ]},
-  soldier_fight:{
-    title:'🥊 Barracks Brawl',
-    desc:'Two soldiers have come to blows over a gambling debt. Their sergeant wants it handled quietly.',
-    choices:[
-      {text:'Break it up yourself', hint:'STR check',
-       fn(g){if(rollStat(g,'str',50)){g.xp+=15;g.rep=Math.min(100,g.rep+8);log2('You hauled them apart. +15 XP, +8 rep.','good');}else{mod(g,'hp',-10);log2('You caught a fist for your trouble. -10 HP.','bad');}}},
-      {text:'Let them finish and fine the loser', hint:'+gold',
-       fn(g){const earn=rnd(3,10);g.gold+=earn;log2(`They finished. You collected ${earn} gold from the loser.`,'info');}},
-    ]},
-  pay_dispute:{
-    title:'💰 Pay Dispute',
-    desc:'The men haven\'t been paid in three weeks. Grumbling has turned into threats.',
-    choices:[
-      {text:'Pay them from your own pocket', hint:'Costs gold, +rep',
-       fn(g){const cost=rnd(20,50);if(g.gold>=cost){g.gold-=cost;g.rep=Math.min(100,g.rep+15);log2(`Paid ${cost} gold from your own purse. +15 rep.`,'good');}else{log2('Not enough gold.','bad');}}},
-      {text:'Promise payment next week', hint:'Buys time',
-       fn(g){log2('The men accepted, reluctantly.','info');}},
-      {text:'Threaten the ringleaders', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',40)){log2('Your authority held them in line.','info');}else{g.rep=Math.max(0,g.rep-10);log2('Three men deserted by morning. -10 rep.','bad');}}},
-    ]},
-  deserter_tip:{
-    title:'🪖 Tip on a Deserter',
-    desc:'A soldier pulls you aside: "There\'s a deserter hiding in the grain store. Twenty gold on his head."',
-    choices:[
-      {text:'Go arrest him yourself', hint:'Fight or chase',
-       fn(g){g._pendingFight='deserter';log2('You headed for the grain store.','gold');}},
-      {text:'Report it to the sergeant', hint:'+rep, smaller gold',
-       fn(g){g.rep=Math.min(100,g.rep+8);g.gold+=8;log2('The sergeant handled it. +8 rep, +8 gold.','good');}},
-      {text:'Ignore it', hint:'',
-       fn(g){log2('Not your concern.','info');}},
-    ]},
-  ambush_road:{
-    title:'⚔️ Road Ambush',
-    desc:'Three men step from the ditch with drawn knives. "Your purse or your life."',
-    choices:[
-      {text:'Fight them off', hint:'Live combat',
-       fn(g){g._pendingFight='brigand';log2('You drew your weapon.','gold');}},
-      {text:'Throw a purse and bolt', hint:'Lose gold, keep health',
-       fn(g){const loss=rnd(8,25);g.gold=Math.max(0,g.gold-loss);log2(`You threw ${loss} gold and rode hard. Humiliating but alive.`,'bad');}},
-      {text:'Bluff authority', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',40+20-g.rep/5)){log2('You claimed you ride for the lord. They scattered.','good');}else{g._pendingFight='brigand';log2('They didn\'t believe you. Steel it is.','bad');}}},
-    ]},
-  lost_merchant:{
-    title:'🧭 Lost Merchant',
-    desc:'A merchant from the south is lost and has taken a wrong road. He\'s frantic about his cargo.',
-    choices:[
-      {text:'Guide him to the market town', hint:'+gold, +rep',
-       fn(g){g.gold+=rnd(10,25);g.rep=Math.min(100,g.rep+6);log2(`The merchant rewarded you. +${rnd(10,25)} gold, +6 rep.`,'good');}},
-      {text:'Send him on his way with directions', hint:'+rep',
-       fn(g){g.rep=Math.min(100,g.rep+3);log2('He thanked you for the directions. +3 rep.','good');}},
-    ]},
-  stranded_cart:{
-    title:'🛒 Stranded Cart',
-    desc:'A cart has thrown a wheel in the middle of the road. Traffic is backing up.',
-    choices:[
-      {text:'Help fix it', hint:'STR/END check',
-       fn(g){if(rollStat(g,'str',45)||rollStat(g,'end',45)){g.rep=Math.min(100,g.rep+8);g.gold+=rnd(3,10);log2('You righted the wheel. +8 rep, small tip.','good');}else{mod(g,'hp',-5);log2('You strained your back. -5 HP.','bad');}}},
-      {text:'Ride around it', hint:'',
-       fn(g){log2('You went around. Not your problem.','info');}},
-    ]},
-  cheated_deal:{
-    title:'⚖️ Cheated at Market',
-    desc:'A merchant has sold rotted cloth and refuses to refund the buyer standing before you.',
-    choices:[
-      {text:'Force a refund from the merchant', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',50)){g.rep=Math.min(100,g.rep+12);log2('The merchant backed down. The buyer wept with gratitude. +12 rep.','good');}else{g.rep=Math.max(0,g.rep-5);log2('The merchant stood his ground. The crowd judged you weak. -5 rep.','bad');}}},
-      {text:'Side with the merchant', hint:'+gold, -rep',
-       fn(g){g.gold+=15;g.rep=Math.max(0,g.rep-10);log2('The merchant slipped you 15 gold. The buyer spat at your feet. -10 rep.','bad');}},
-      {text:'Tell them to settle it in court', hint:'',
-       fn(g){log2('You referred them to the magistrate.','info');}},
-    ]},
-  market_dispute:{
-    title:'🪙 Stall Dispute',
-    desc:'Two traders are screaming at each other over a prime stall location in the market square.',
-    choices:[
-      {text:'Assign the stall by coin flip', hint:'+small rep',
-       fn(g){g.rep=Math.min(100,g.rep+4);log2('Crude but fair. Both accepted. +4 rep.','good');}},
-      {text:'Award it to whoever pays you more', hint:'+gold, -rep',
-       fn(g){const earn=rnd(15,30);g.gold+=earn;g.rep=Math.max(0,g.rep-8);log2(`You took ${earn} gold for the decision. Whispers spread. -8 rep.`,'bad');}},
-      {text:'Rule for the elder trader', hint:'+rep',
-       fn(g){g.rep=Math.min(100,g.rep+7);log2('Tradition respected. +7 rep.','good');}},
-    ]},
-  debt_collect:{
-    title:'💸 Debt Collection',
-    desc:'A merchant hires you to collect an overdue debt from a tanner who claims he cannot pay.',
-    choices:[
-      {text:'Threaten the tanner', hint:'STR or Presence',
-       fn(g){if(rollStat(g,'str',40)||rollStat(g,'pre',40)){const earn=rnd(15,35);g.gold+=earn;log2(`The tanner paid up. +${earn} gold.`,'good');}else{log2('He laughed in your face.','bad');}}},
-      {text:'Accept goods in place of coin', hint:'+item',
-       fn(g){addItem(g,'Leather Vest');log2('He gave you a leather vest in lieu of coin.','good');}},
-      {text:'Report back that he can\'t pay', hint:'Nothing',
-       fn(g){log2('The merchant was unhappy but accepted the news.','info');}},
-    ]},
-  brawl_inn:{
-    title:'🍺 Inn Brawl',
-    desc:'A drunk ex-soldier is smashing furniture and threatening the innkeeper.',
-    choices:[
-      {text:'Knock him out', hint:'STR check',
-       fn(g){if(rollStat(g,'str',50)){g.xp+=18;g.rep=Math.min(100,g.rep+8);log2('One blow and it was over. +18 XP, +8 rep.','good');}else{mod(g,'hp',-18);log2('He was bigger than he looked. -18 HP.','bad');}}},
-      {text:'Talk him down', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',45)){g.rep=Math.min(100,g.rep+10);log2('You talked him to a chair. +10 rep.','good');}else{g._pendingFight='thug';log2('He swung first.','bad');}}},
-      {text:'Let the innkeeper handle it', hint:'',
-       fn(g){log2('You stayed out of it.','info');}},
-    ]},
-  card_game:{
-    title:'🃏 A Card Game',
-    desc:'Men at a corner table invite you to a game of cards. Might be honest — might not be.',
-    choices:[
-      {text:'Play for 15 gold', hint:'Wits vs luck',
-       fn(g){if(g.gold<15){log2('Not enough coin.','bad');return;}g.gold-=15;if(rollStat(g,'wit',50)){g.gold+=30;log2('You read their faces and won 30 gold!','good');}else{log2('You lost your 15 gold.','bad');}}},
-      {text:'Watch and learn their tells', hint:'+wits XP',
-       fn(g){g.xp+=8;log2('You observed carefully. +8 XP.','info');}},
-      {text:'Decline', hint:'',
-       fn(g){log2('You passed on the game.','info');}},
-    ]},
-  traveller_warning:{
-    title:'⚠️ Traveller\'s Warning',
-    desc:'A tired traveller warns you: "Three armed men are waiting at the crossroads ahead."',
-    choices:[
-      {text:'Head there anyway — take them on', hint:'Combat',
-       fn(g){g._pendingFight='bandit';log2('You rode toward the crossroads.','gold');}},
-      {text:'Warn the town watch', hint:'+rep',
-       fn(g){g.rep=Math.min(100,g.rep+7);log2('The watch handled it. +7 rep.','good');}},
-      {text:'Take a different road', hint:'Avoid it',
-       fn(g){log2('You took the long way round.','info');}},
-    ]},
-  tenant_complaint:{
-    title:'📋 Tenant Complaint',
-    desc:'A delegation of tenants arrives. They say the steward has been overcharging them on mill use.',
-    choices:[
-      {text:'Investigate the steward', hint:'Wits check',
-       fn(g){if(rollStat(g,'wit',50)){g.rep=Math.min(100,g.rep+15);g.gold+=25;log2('The steward was skimming. You fined him 25 gold. +15 rep.','good');}else{log2('You couldn\'t prove anything.','info');}}},
-      {text:'Dismiss the complaint', hint:'-rep',
-       fn(g){g.rep=Math.max(0,g.rep-10);log2('The tenants muttered as they left. -10 rep.','bad');}},
-      {text:'Promise to look into it', hint:'No change',
-       fn(g){log2('You promised to investigate. They seemed cautiously hopeful.','info');}},
-    ]},
-  steward_fraud:{
-    title:'⚖️ The Steward\'s Accounts',
-    desc:'The annual accounts don\'t add up. Forty shillings unaccounted for.',
-    choices:[
-      {text:'Confront the steward directly', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',55)){g.rep=Math.min(100,g.rep+10);g.gold+=40;log2('He confessed and repaid the 40 gold. +10 rep.','good');}else{g.rep=Math.max(0,g.rep-5);log2('He denied everything convincingly. -5 rep.','bad');}}},
-      {text:'Have him followed secretly', hint:'Wits check, better outcome',
-       fn(g){if(rollStat(g,'wit',55)){g.rep=Math.min(100,g.rep+15);g.gold+=40;log2('Evidence gathered. The steward is dismissed and fined. +15 rep.','good');}else{log2('Whoever you hired botched it. Nothing found.','info');}}},
-    ]},
-  rival_letter:{
-    title:'📬 A Letter from a Rival',
-    desc:'A sealed letter arrives. Your rival offers a trade deal — or it could be a trap.',
-    choices:[
-      {text:'Accept the terms', hint:'Wits check',
-       fn(g){if(rollStat(g,'wit',50)){g.gold+=rnd(30,70);log2(`You negotiated well. Gained ${rnd(30,70)} gold.`,'good');}else{g.gold=Math.max(0,g.gold-20);log2('The deal was worse than it appeared. Lost 20 gold.','bad');}}},
-      {text:'Decline and keep your distance', hint:'Safe',
-       fn(g){log2('You sent a polite refusal.','info');}},
-      {text:'Set a counter-offer', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',45)){g.gold+=rnd(50,100);log2('They agreed to better terms. +gold.','good');}else{log2('They took offence. No deal.','info');}}},
-    ]},
-  court_petition:{
-    title:'📜 A Court Petition',
-    desc:'A widow petitions the court. Her late husband\'s estate has been seized by a creditor with powerful friends.',
-    choices:[
-      {text:'Rule in her favour', hint:'+rep, risk of enemy',
-       fn(g){g.rep=Math.min(100,g.rep+18);g.xp+=30;log2('You ruled for the widow. The court applauded. The creditor did not. +18 rep.','good');}},
-      {text:'Rule for the creditor', hint:'+gold, -rep',
-       fn(g){g.gold+=50;g.rep=Math.max(0,g.rep-15);log2('The creditor paid you well. The crowd remembers. -15 rep.','bad');}},
-      {text:'Refer it to higher authority', hint:'No change',
-       fn(g){log2('You passed the case upward. A safe choice. A dull one.','info');}},
-    ]},
-  trade_negotiation:{
-    title:'🤝 Trade Negotiation',
-    desc:'Merchants from two rival towns want you to broker a grain-for-cloth agreement.',
-    choices:[
-      {text:'Facilitate the deal', hint:'Wits check',
-       fn(g){if(rollStat(g,'wit',50)){g.gold+=rnd(40,80);g.rep=Math.min(100,g.rep+15);log2('A profitable deal for all parties — and for you. +rep +gold.','good');}else{log2('The talks collapsed.','info');}}},
-      {text:'Skim a percentage for yourself', hint:'+gold, risk',
-       fn(g){g.gold+=30;if(roll(30)){g.rep=Math.max(0,g.rep-20);log2('Someone noticed. Your reputation suffered. -20 rep.','bad');}else{log2('No one noticed the skim. +30 gold.','good');}}},
-    ]},
-  assassination_plot:{
-    title:'🗡 Assassination Plot',
-    desc:'A servant slips you a note: "They mean to kill you tonight. Your food has been tampered with."',
-    choices:[
-      {text:'Set a trap for the killer', hint:'Wits + Agi check',
-       fn(g){if(rollStat(g,'wit',45)||rollStat(g,'agi',45)){g.rep=Math.min(100,g.rep+20);g.xp+=60;g._pendingFight='assassin';log2('You waited in the dark. The assassin walked into your trap.','gold');}else{g._pendingFight='assassin';log2('He came in the night.','bad');}}},
-      {text:'Flee to the barracks', hint:'Safe, costs rep',
-       fn(g){g.rep=Math.max(0,g.rep-10);log2('You survived by running. Some called it wisdom. Others called it fear. -10 rep.','bad');}},
-      {text:'Eat nothing and confront your steward', hint:'Presence check',
-       fn(g){if(rollStat(g,'pre',60)){g.rep=Math.min(100,g.rep+25);log2('The steward broke under your gaze and confessed. +25 rep.','good');}else{g._pendingFight='assassin';log2('Wrong man. The real killer came that night.','bad');}}},
-    ]},
+/* ---------- DATA: JOBS ---------- */
+const JOBS = {
+  peasant:[
+    {name:"Dig a ditch",pay:[2,4],stam:30,xp:{str:1}},
+    {name:"Carry grain sacks",pay:[2,3],stam:20,xp:{end:1}},
+    {name:"Pick crops",pay:[3,5],stam:30,xp:{end:1}},
+    {name:"Cart night-soil from the privy",pay:[1,2],stam:15,rep:1,xp:{}},
+    {name:"Mend fences",pay:[2,3],stam:18,xp:{wit:1}},
+    {name:"Chop firewood",pay:[3,5],stam:25,xp:{str:1}},
+  ],
+  soldier:[
+    {name:"Gate duty",pay:[6,10],stam:15,xp:{end:1}},
+    {name:"Road patrol",pay:[8,14],stam:25,combat:.4,xp:{str:1}},
+    {name:"Escort a wagon",pay:[10,18],stam:30,combat:.3,xp:{end:1}},
+    {name:"Drill yard training",pay:[0,0],stam:35,xp:{str:2}},
+    {name:"Deliver dispatches",pay:[8,12],stam:20,xp:{agi:1}},
+    {name:"Guard a prisoner",pay:[6,10],stam:18,combat:.25,xp:{wit:1}},
+  ],
+  knight:[
+    {name:"Hold village court",pay:[15,25],stam:20,rep:2,xp:{wit:1}},
+    {name:"Settle a land dispute",pay:[20,35],stam:25,rep:2,xp:{wit:1}},
+    {name:"Train with squire",pay:[0,0],stam:30,xp:{str:2}},
+    {name:"Represent lord at arbitration",pay:[20,40],stam:25,rep:1,xp:{wit:1}},
+    {name:"Collect tithe from village",pay:[25,40],stam:30,combat:.2,xp:{}},
+    {name:"Oversee bridge toll",pay:[15,20],stam:15,xp:{wit:1}},
+  ],
+  lord:[
+    {name:"Hold manor court",pay:[40,70],stam:25,rep:3,xp:{wit:1}},
+    {name:"Tax collection round",pay:[50,100],stam:35,combat:.2,rep:-1,xp:{}},
+    {name:"Host a visiting dignitary",pay:[-30,-30],stam:20,rep:5,xp:{wit:1}},
+    {name:"Send patrol orders",pay:[8,8],stam:5,xp:{}},
+    {name:"Audit the steward's accounts",pay:[0,80],stam:20,wits:true,xp:{wit:2}},
+  ],
+  king:[
+    {name:"Hear petitions",pay:[60,120],stam:30,ruling:true,xp:{wit:1}},
+    {name:"Collect realm tribute",pay:[100,250],stam:40,xp:{}},
+    {name:"Sign a trade charter",pay:[150,150],stam:20,rep:3,xp:{wit:1}},
+    {name:"Appoint a new sheriff",pay:[-40,-40],stam:15,rep:6,xp:{wit:1}},
+    {name:"Deal with a noble rebellion",pay:[0,300],stam:50,combat:.5,rep:4,xp:{str:1}},
+  ],
 };
 
-// ══════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════
-let G = {};
-const COMBAT_INTERVALS = [];
+/* ---------- DATA: WOUND TEMPLATES ---------- */
+const GRIEVOUS = {
+  arm_slash:{name:"Gashed Arm",bodyPart:"arm",daysLeft:12,statPenalty:{str:-3},bleedRate:2,desc:"His edge lays your forearm open to the muscle."},
+  leg_slash:{name:"Lame Leg",bodyPart:"leg",daysLeft:14,statPenalty:{agi:-4},bleedRate:2,permThreatDay:7,desc:"A deep cut to the thigh — you can barely stand."},
+  head_blunt:{name:"Concussion",bodyPart:"head",daysLeft:7,statPenalty:{wit:-2},bleedRate:0,blackout:true,desc:"The blow rings your skull like a bell. The world tilts."},
+  torso:{name:"Punctured Side",bodyPart:"torso",daysLeft:10,statPenalty:{},hpPenalty:20,bleedRate:3,infectRisk:true,desc:"Steel slips between your ribs. Hot blood floods your shirt."},
+};
+const PERMANENT_INJ = {
+  lost_arm:{name:"Lost Arm",bodyPart:"arm",statPenalty:{str:-8},desc:"They took your arm at the elbow. You will never bear a shield or wield two hands again."},
+  lost_eye:{name:"Lost Eye",bodyPart:"eye",statPenalty:{agi:-5},desc:"Half the world is darkness now. Your depth and aim are forever lessened."},
+  lame_perm:{name:"Permanently Lame",bodyPart:"leg",statPenalty:{agi:-4},desc:"The leg never healed true. You walk with a stick the rest of your days."},
+};
 
-function roll(pct){ return Math.random()*100 < pct; }
-function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
-function rollStat(g, stat, base){ return roll(base + g.stats[stat]*2); }
+/* ---------- DATA: RANDOM EVENTS ---------- */
+const EVENTS = [
+  {id:"debt_widow", scene:"A debt collector is dragging a widow's furniture into the street while her children watch and wail.",
+   involve:{label:"Face down the collector", run:()=>{
+     if(Math.random()<0.5){ startCombat("enforcer",{reason:"the debt collector",reward:{gold:[6,14],rep:3}}); }
+     else { roll("wit",11,()=>{ gainGold(rand(4,10)); gainRep(4); log("You shame the collector with sharp words; he slinks off. The widow blesses your name.","l-good"); },()=>{ takeRawDamage(rand(8,16),"torso","The collector shoves you hard into a wall."); log("He won't be reasoned with — and you come off worse for trying.","l-bad"); }); }
+   }},
+   walk:{label:"Walk past", run:()=>log("You lower your eyes and keep walking. The children's cries follow you.","l-info")}},
 
-function calcDerived(g){
-  const eq = eqStats(g);
-  g.atk   = Math.max(1, Math.floor(g.stats.str * 1.8 + eq.atk + g.level * 1.5));
-  g.def   = Math.max(0, Math.floor(g.stats.end * 0.9 + eq.def));
-  g.speed = Math.max(800, 2800 - g.stats.agi * 60 - g.level * 30 + eq.spd * 50);
-  g.hpMax   = 20 + g.stats.end * 9 + g.level * 8;
-  g.stamMax = 40 + g.stats.end * 5 + g.level * 5;
-}
+  {id:"tanner_fire", scene:"A fire has broken out in the tanner's workshop. People are screaming that someone is still inside.",
+   involve:{label:"Run into the flames", run:()=>{ roll("end",12,()=>{ gainRep(8); log("Coughing and seared, you haul the tanner's boy out by his collar. The crowd roars your name.","l-good"); takeRawDamage(rand(4,9),"arm","Flames lick your arm."); },()=>{ takeRawDamage(rand(15,28),"torso","A burning beam crashes down across you."); log("The smoke takes you and you stagger out empty-handed, badly burned.","l-bad"); }); }},
+   walk:{label:"Walk past", run:()=>log("You stand back with the others and watch it burn.","l-info")}},
 
-function eqStats(g){
-  let atk=0,def=0,spd=0;
-  ['weapon','armor','shield'].forEach(slot=>{
-    const n=g.equipped[slot]; const it=ITEMS[n];
-    if(it){ atk+=it.atk||0; def+=it.def||0; spd+=it.spd||0; }
-  });
-  return {atk,def,spd};
-}
+  {id:"alehouse_brawl", scene:"Two men are brawling outside the alehouse. The younger one is badly losing, blood on his teeth.",
+   involve:{label:"Stop it", run:()=>startCombat("thug",{reason:"the brawler",reward:{gold:[3,8],rep:2}})},
+   walk:{label:"Walk past", run:()=>log("Not your fight. You step around the blood in the dirt.","l-info")}},
 
-function mod(g, key, amt){
-  if(key==='hp')  g.hp   = clamp(g.hp   + amt, 0, g.hpMax);
-  if(key==='stam')g.stam = clamp(g.stam + amt, 0, g.stamMax);
-}
+  {id:"cart_cloth", scene:"A merchant's cart has overturned, spilling bolts of cloth across the road. A crowd is gathering — some to help, some to thieve.",
+   involve:{label:"Help recover the goods", run:()=>{ gainGold(rand(4,9)); gainRep(2); log("You gather the scattered bolts and guard them till order returns. The merchant presses coin into your hand.","l-good"); }},
+   walk:{label:"Walk past", run:()=>log("You leave them to it.","l-info")}},
 
-function addItem(g, name){
-  if(g.inventory.length<18) g.inventory.push(name);
-  else log2('Inventory full!','bad');
-}
+  {id:"mill_robbery", scene:"You overhear a soldier in the tavern boasting that he means to rob the mill tonight.",
+   involve:{label:"Warn the miller", run:()=>{ gainRep(4); gainGold(rand(2,6)); log("The grateful miller gives you bread and silver, and word spreads that you're a man who can be trusted.","l-good"); }},
+   involve2:{label:"Ambush the soldier yourself", run:()=>startCombat("deserter",{reason:"the boastful soldier",reward:{gold:[14,28],rep:1}})},
+   walk:{label:"Walk past", run:()=>log("Their schemes are no concern of yours.","l-info")}},
 
-function addXP(g, amt){
-  g.xp += amt;
-  while(g.xp >= g.xpNext){ g.xp -= g.xpNext; doLevelUp(); }
-}
+  {id:"witchcraft", scene:"A man is publicly accusing your neighbour of witchcraft before a baying crowd in the square.",
+   involve:{label:"Defend them", run:()=>{ roll("wit",13,()=>{ gainRep(6); log("You speak with such cold reason the crowd's bloodlust drains away. The accused weeps thanks.","l-good"); },()=>{ gainRep(-8); log("The crowd turns — now THEY name YOU a witch's friend. You barely escape with whole skin.","l-bad"); takeRawDamage(rand(6,12),"head","A thrown stone catches your brow."); }); }},
+   involve2:{label:"Denounce them for coin", run:()=>{ gainGold(rand(10,20)); gainRep(-10); log("You add your voice to the mob and the accusers pay you well. The look in your neighbour's eyes will haunt you.","l-gold"); }},
+   walk:{label:"Walk past", run:()=>{ gainRep(-2); log("You say nothing. The crowd notes your silence, and not kindly.","l-info"); }}},
 
-function fresh(cls){
-  const C = CLASSES[cls];
-  const g = {
-    class:cls, classLabel:C.label, classIcon:C.icon,
-    level:1, xp:0, xpNext:100,
-    gold:C.gold, age:C.age, rep:C.rep,
-    stats:{str:C.str, agi:C.agi, end:C.end, wit:C.wit, pre:C.pre},
-    hp:0, hpMax:0, stam:0, stamMax:0,
-    atk:0, def:0, speed:0,
-    inventory:[...C.startItems],
-    equipped:{weapon:null, armor:null, shield:null, acc:null},
-    location:C.startLoc,
-    quests:[],
-    followers:[],
-    alive:true, deathCause:'',
-    kills:0, days:0,
-    combat:null,
-    _pendingFight:null,
-  };
-  calcDerived(g);
-  g.hp=g.hpMax; g.stam=g.stamMax;
-  // Auto-equip starting gear
-  g.inventory.forEach(n=>{
-    const it=ITEMS[n]; if(!it) return;
-    const s=it.type;
-    if((s==='weapon'||s==='armor'||s==='shield'||s==='acc')&&!g.equipped[s]) g.equipped[s]=n;
-  });
-  calcDerived(g);
-  g.hp=g.hpMax;
-  // Starting quest
-  assignQuest(g);
-  return g;
-}
+  {id:"road_bandits", scene:"Three rough men step out of the treeline ahead, hands on their knives. 'Toll for the road,' one grins.",
+   involve:{label:"Refuse and fight", run:()=>startCombat("brigand",{reason:"the road toll",reward:{gold:[10,20],rep:2}})},
+   walk:{label:"Pay the toll", run:()=>{ const c=Math.min(G.gold,rand(5,15)); G.gold-=c; log("You hand over "+c+" silver. They let you pass, laughing.","l-info"); render(); }}},
 
-// ══════════════════════════════════════════════════════════════
-// LOGGING
-// ══════════════════════════════════════════════════════════════
-function log(msg, type='info'){
-  const el=document.getElementById('log'); if(!el) return;
-  const d=document.createElement('div'); d.className='le l-'+type; d.textContent=msg;
-  el.prepend(d);
-  while(el.children.length>80) el.removeChild(el.lastChild);
-}
-function log2(msg, type='info'){
-  const el=document.getElementById('log2'); if(!el) return;
-  const d=document.createElement('div'); d.className='le l-'+type; d.textContent=msg;
-  el.prepend(d);
-  while(el.children.length>80) el.removeChild(el.lastChild);
-}
+  {id:"wounded_traveler", scene:"A traveller lies groaning in the ditch, an arrow in his shoulder, his horse and purse long gone.",
+   involve:{label:"Tend his wound", run:()=>roll("wit",10,()=>{ gainRep(3); gainGold(rand(2,6)); log("You draw the arrow and bind the wound. He gives you what little he has left and his thanks.","l-good"); },()=>{ gainRep(-1); log("Your clumsy hands only make it worse; he curses you and drags himself away.","l-bad"); })},
+   walk:{label:"Walk past", run:()=>log("You leave him to his fate.","l-info")}},
 
-// ══════════════════════════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════════════════════════
-function render(){
-  const g=G; calcDerived(g);
+  {id:"corrupt_official", scene:"A toll official blocks your path, palm out. 'A small fee, friend, or there'll be... trouble with your papers.'",
+   involve:{label:"Refuse to be shaken down", run:()=>roll("wit",12,()=>{ gainRep(3); log("You name his superior and threaten to report him. He pales and waves you through.","l-good"); },()=>startCombat("enforcer",{reason:"the corrupt official's men",reward:{gold:[8,16],rep:2}}))},
+   walk:{label:"Pay the bribe", run:()=>{ const c=Math.min(G.gold,rand(3,8)); G.gold-=c; log("You grease his palm with "+c+" silver and move on, jaw tight.","l-info"); render(); }}},
 
-  document.getElementById('c-name').textContent   = g.classIcon+' '+g.classLabel;
-  document.getElementById('c-class').textContent  = g.classLabel;
-  document.getElementById('c-level').textContent  = g.level;
-  document.getElementById('c-gold').textContent   = g.gold+'🪙';
-  document.getElementById('c-age').textContent    = g.age;
-  document.getElementById('c-rep').textContent    = g.rep+'/100';
-  document.getElementById('c-hp').textContent     = g.hp+'/'+g.hpMax;
-  document.getElementById('b-hp').style.width     = (g.hp/g.hpMax*100)+'%';
-  document.getElementById('c-stam').textContent   = g.stam+'/'+g.stamMax;
-  document.getElementById('b-stam').style.width   = (g.stam/g.stamMax*100)+'%';
-  document.getElementById('c-xp').textContent     = g.xp+'/'+g.xpNext;
-  document.getElementById('b-xp').style.width     = (g.xp/g.xpNext*100)+'%';
+  {id:"lost_child", scene:"A small child sits crying alone at a crossroads, lost and far from any village.",
+   involve:{label:"Help the child", run:()=>{ gainRep(4); log("You walk the child home to a frantic mother who falls weeping at your feet. Word of your kindness spreads.","l-good"); }},
+   walk:{label:"Walk past", run:()=>log("You tell yourself someone else will help.","l-info")}},
 
-  document.getElementById('a-str').textContent = g.stats.str;
-  document.getElementById('a-agi').textContent = g.stats.agi;
-  document.getElementById('a-end').textContent = g.stats.end;
-  document.getElementById('a-wit').textContent = g.stats.wit;
-  document.getElementById('a-pre').textContent = g.stats.pre;
-  document.getElementById('c-atk').textContent = g.atk;
-  document.getElementById('c-def').textContent = g.def;
-  document.getElementById('c-spd').textContent = (g.speed/1000).toFixed(1)+'s / swing';
+  {id:"burning_field", scene:"A grain field is ablaze and the wind drives the flames toward a row of cottages. Folk fight it with buckets.",
+   involve:{label:"Join the bucket line", run:()=>roll("end",11,()=>{ gainRep(5); log("You labour till your arms are dead, but the cottages are saved. The villagers will remember.","l-good"); },()=>{ takeRawDamage(rand(6,12),"arm","The flames catch your sleeve."); log("The fire beats you back, and a cottage falls to ash.","l-bad"); })},
+   walk:{label:"Walk past", run:()=>log("It is not your field, nor your cottage.","l-info")}},
 
-  // Rep badge
-  let tier=REP_TIERS[0];
-  for(const t of REP_TIERS) if(g.rep>=t.min) tier=t;
-  const rb=document.getElementById('rep-badge');
-  rb.textContent=`Reputation: ${tier.label} (${g.rep}/100)`;
-  rb.className='rep-badge '+tier.cls;
+  {id:"diseased_livestock", scene:"A farmer stands over a fallen ox, frantic — a sickness is spreading through his beasts and his livelihood with them.",
+   involve:{label:"Offer your help", run:()=>roll("wit",11,()=>{ gainRep(3); gainGold(rand(3,8)); log("You spot the rot in the feed and have it burned. The herd is saved; the farmer is in your debt.","l-good"); },()=>log("Nothing you try helps. The beasts die one by one.","l-info"))},
+   walk:{label:"Walk past", run:()=>log("You leave the farmer to his ruin.","l-info")}},
 
-  renderLocation();
-  renderFollowers();
-  renderQuests();
-  renderInventory();
-}
+  {id:"runaway_horse", scene:"A cart-horse has bolted, dragging a screaming child in the cart behind it, straight toward the river.",
+   involve:{label:"Throw yourself at the reins", run:()=>roll("agi",13,()=>{ gainRep(6); log("You catch the bridle and haul the beast to a stop a hand's breadth from the bank. The child lives.","l-good"); },()=>{ takeRawDamage(rand(10,20),"leg","The horse tramples you as it passes."); log("You miss the reins and the horse runs you down. The cart vanishes into the water.","l-bad"); })},
+   walk:{label:"Walk past", run:()=>log("It happens too fast to do anything but watch.","l-info")}},
 
-function renderLocation(){
-  const g=G; const loc=LOCATIONS[g.location];
-  document.getElementById('loc-name').textContent=loc.name;
-  document.getElementById('loc-desc').textContent=loc.desc;
+  {id:"thief_market", scene:"A thief has been caught with his hand in a stall and the crowd is calling for his hand to be struck off.",
+   involve:{label:"Argue for mercy", run:()=>roll("wit",12,()=>{ gainRep(3); log("You persuade the magistrate to settle for a flogging. The thief, a half-starved boy, weeps his thanks.","l-good"); },()=>{ gainRep(-2); log("The crowd jeers you down. The boy loses his hand and you, some standing.","l-bad"); })},
+   walk:{label:"Walk past", run:()=>log("You let justice, such as it is, run its course.","l-info")}},
 
-  // Exits
-  const ex=document.getElementById('loc-exits'); ex.innerHTML='';
-  loc.exits.forEach(e=>{
-    const b=document.createElement('button');
-    b.textContent='→ '+LOCATIONS[e].name.replace(/^[^\s]+ /,'');
-    b.onclick=()=>travelTo(e);
-    ex.appendChild(b);
-  });
+  {id:"drunk_knight", scene:"A drunken knight is making loud threats in the tavern, hand on his sword, and the room has gone silent and afraid.",
+   involve:{label:"Confront him", run:()=>startCombat("mercenary",{reason:"the drunken knight",reward:{gold:[12,24],rep:4}})},
+   walk:{label:"Walk past", run:()=>log("You finish your drink and leave before steel is drawn.","l-info")}},
 
-  // Actions
-  const grid=document.getElementById('loc-actions'); grid.innerHTML='';
-  const acts=[
-    { name:'Search for Trouble',   cost:'20 stam — look for action',
-      disabled: g.stam<20,
-      fn(){ mod(g,'stam',-20); const pool=loc.enemies; startCombat(pool[rnd(0,pool.length-1)]); } },
-    { name:'Take on a Quest',      cost:'talk to locals',
-      disabled: g.quests.length>=3,
-      fn(){ assignQuest(g); log2('A new task presents itself.','gold'); render(); } },
-    { name:'Random Event',         cost:'5 stam',
-      disabled: g.stam<5,
-      fn(){ mod(g,'stam',-5); const pool=loc.events; triggerEvent(pool[rnd(0,pool.length-1)]); render(); } },
-    { name:'Work for Coin',        cost:'25 stam — earn wages',
-      disabled: g.stam<25,
-      fn(){ mod(g,'stam',-25); const earn=rnd(4,12)+(g.stats.str>8?4:0)+(g.level*2); g.gold+=earn; addXP(g,8); log2(`A day's work earned you ${earn} gold. +8 XP.`,'good'); render(); } },
-    { name:'Scout the Area',       cost:'10 stam — wits check',
-      disabled: g.stam<10,
-      fn(){ mod(g,'stam',-10);
-        if(rollStat(g,'wit',45)){const earn=rnd(5,20);g.gold+=earn;log2(`Sharp eyes. Found ${earn} gold worth of valuables.`,'good');}
-        else{log2('Searched but found nothing useful.','info');} render(); } },
-    loc.shop ? { name:'Visit the Shop',   cost:'buy gear',
-      fn(){ openShop(); } }
-             : { name:'Tend to Equipment', cost:'free — check gear',
-      fn(){ openModal('Equipment','Your current equipment and inventory.',[]); renderInventory(); } },
-  ];
+  {id:"escaped_prisoner", scene:"A man bearing chains-marks sprints past you, the shouts of pursuing guards close behind. He locks eyes with you, pleading.",
+   involve:{label:"Help him hide", run:()=>roll("wit",12,()=>{ gainRep(2); gainGold(rand(4,12)); log("You bundle him into a doorway as the guards thunder past. Later he repays you, and you learn he was wrongly held.","l-good"); },()=>startCombat("rivalsman",{reason:"the pursuing guards",reward:{gold:[5,10],rep:1}}))},
+   involve2:{label:"Trip him for the guards", run:()=>{ gainGold(rand(6,14)); gainRep(1); log("You stick out a leg and the man goes down hard. The guards reward you with a few coins.","l-gold"); }},
+   walk:{label:"Walk past", run:()=>log("You step aside and let the chase pass.","l-info")}},
 
-  acts.forEach(a=>{
-    const btn=document.createElement('button');
-    btn.className='la-btn';
-    btn.disabled=a.disabled||false;
-    btn.innerHTML=`<span class="an">${a.name}</span><span class="ac">${a.cost}</span>`;
-    btn.onclick=()=>{ if(!G.combat){ a.fn(); checkDeath(); } };
-    grid.appendChild(btn);
-  });
-}
+  {id:"pickpocket_event", scene:"You feel a feather-light touch at your purse — a pickpocket, already turning to flee.",
+   involve:{label:"Grab the thief", run:()=>startCombat("pickpocket",{reason:"the pickpocket",reward:{gold:[4,10],rep:1}})},
+   walk:{label:"Let it go", run:()=>{ const c=Math.min(G.gold,rand(2,6)); G.gold-=c; log("By the time you react, he's gone — and so is "+c+" silver.","l-bad"); render(); }}},
 
-function renderFollowers(){
-  const g=G;
-  const list=document.getElementById('follower-list');
-  list.innerHTML='';
-  if(g.followers.length===0){
-    list.innerHTML='<div style="color:var(--text-dim);font-size:.75rem;font-style:italic;margin-bottom:.4rem;">No followers. Build reputation and wealth to recruit men.</div>';
-  }
-  g.followers.forEach((f,i)=>{
-    const d=document.createElement('div'); d.className='follower-item';
-    const hpPct=Math.max(0,f.hp/f.hpMax*100);
-    d.innerHTML=`<div class="fi-name">${f.icon} ${f.name}</div>
-    <div class="fi-stats">ATK ${f.atk} · ${(f.speed/1000).toFixed(1)}s attacks · ${f.upkeep}🪙/day</div>
-    <div class="fi-hp"><div class="bar b-hp" style="margin:2px 0"><div class="bar-fill" style="width:${hpPct}%"></div></div></div>
-    <div style="margin-top:.3rem;"><span style="color:var(--text-dim);font-size:.7rem;cursor:pointer;" onclick="dismissFollower(${i})">Dismiss</span></div>`;
-    list.appendChild(d);
-  });
+  {id:"sick_beggar", scene:"A beggar coughs blood at your feet and begs a coin for bread, his eyes feverish.",
+   involve:{label:"Give him alms", run:()=>{ if(G.gold>0){ G.gold-=1; gainRep(1); log("You give him a coin. He blesses you in a cracked whisper.","l-good"); render(); } else log("You have nothing to give, and tell him so.","l-info"); }},
+   walk:{label:"Walk past", run:()=>log("You step over him without a glance.","l-info")}},
 
-  // Hire section
-  const hire=document.getElementById('hire-section');
-  hire.innerHTML='';
-  const tier=REP_TIERS.reduce((t,r)=>g.rep>=r.min?r:t,REP_TIERS[0]);
-  const available=FOLLOWER_TYPES.filter(f=>g.rep>=f.repMin && !g.followers.find(ff=>ff.id===f.id));
-  if(available.length>0){
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin:.5rem 0 .3rem;';
-    hdr.textContent='Available to Hire';
-    hire.appendChild(hdr);
-    available.forEach(ft=>{
-      const b=document.createElement('button');
-      b.className='hire-btn';
-      b.disabled=g.gold<ft.cost || g.followers.length>=5;
-      b.innerHTML=`${ft.icon} ${ft.name} — ${ft.cost}🪙<br><small style="color:var(--text-dim)">${ft.desc} ${ft.upkeep}🪙/day upkeep</small>`;
-      b.onclick=()=>hireFollower(ft);
-      hire.appendChild(b);
-    });
-  }
-}
+  {id:"forge_argument", scene:"A horse-trader is arguing with the blacksmith outside the forge — their voices are rising and fists are clenching.",
+   involve:{label:"Get involved", run:()=>roll("wit",11,()=>{ gainRep(2); gainGold(rand(2,5)); log("You broker a fair price between them. Both thank you, grudgingly.","l-good"); },()=>startCombat("thug",{reason:"the enraged trader",reward:{gold:[3,7],rep:1}}))},
+   walk:{label:"Walk past", run:()=>log("You leave them to their quarrel.","l-info")}},
 
-function renderQuests(){
-  const g=G;
-  const ql=document.getElementById('quest-list');
-  ql.innerHTML='';
-  if(g.quests.length===0){
-    ql.innerHTML='<div class="no-quest">No active quests. Speak to locals.</div>'; return;
-  }
-  g.quests.forEach((q,i)=>{
-    const d=document.createElement('div'); d.className='quest-item';
-    let progress='';
-    if(q.type==='fight') progress=`Progress: ${q.progress||0}/${q.target}`;
-    d.innerHTML=`<div class="qi-title">${q.title}</div>
-    <div class="qi-desc">${q.desc}</div>
-    ${progress?`<div style="color:var(--text-dim);font-size:.7rem;">${progress}</div>`:''}
-    <div class="qi-reward">Reward: ${q.gold}🪙 · +${q.rep} rep · +${q.xp} XP</div>
-    <div class="qi-action"><button onclick="attemptQuest(${i})">${q.action}</button></div>`;
-    ql.appendChild(d);
-  });
-}
+  {id:"shadow_ambush", scene:"A figure detaches from the shadows of an alley and follows you, hand inside his cloak. He means you harm.",
+   involve:{label:"Turn and confront him", run:()=>startCombat(Math.random()<0.5?"killer":"assassin",{reason:"the man in the shadows",reward:{gold:[18,40],rep:2}})},
+   walk:{label:"Try to lose him", run:()=>roll("agi",12,()=>log("You duck through a crowd and shake him off. For now.","l-info"),()=>startCombat("killer",{reason:"the man who hunted you",reward:{gold:[18,40],rep:2}}))}},
 
-function renderInventory(){
-  const g=G;
-  const il=document.getElementById('inv-list');
-  il.innerHTML='';
-  document.getElementById('inv-count').textContent=`(${g.inventory.length}/18)`;
-  if(g.inventory.length===0){il.innerHTML='<div style="color:var(--text-dim);font-size:.75rem;">Empty</div>';return;}
-  g.inventory.forEach((name,i)=>{
-    const it=ITEMS[name]; if(!it) return;
-    const eqSlot=Object.keys(g.equipped).find(k=>g.equipped[k]===name&&g.inventory.indexOf(name)===i);
-    const isEq=!!eqSlot;
-    const d=document.createElement('div'); d.className='inv-item';
-    let stat='';
-    if(it.atk) stat+=` ATK+${it.atk}`;
-    if(it.def) stat+=` DEF+${it.def}`;
-    if(it.hp)  stat+=` +${it.hp}HP`;
-    if(it.stam)stat+=` +${it.stam}STM`;
-    let acts='';
-    if(it.type==='potion') acts=`<span onclick="useItem(${i})">Use</span>`;
-    else if(it.type==='weapon'||it.type==='armor'||it.type==='shield'||it.type==='acc')
-      acts=`<span onclick="equipItem(${i})">${isEq?'Unequip':'Equip'}</span>`;
-    if(it.sell>0) acts+=`<span onclick="sellItem(${i})" style="color:var(--gold)">Sell ${it.sell}🪙</span>`;
-    d.innerHTML=`<div><span class="ii-n">${name}${isEq?'<span class="tag-eq">EQ</span>':''}</span><br><span class="ii-t">${it.type.toUpperCase()}${stat}</span></div><div class="ii-acts">${acts}</div>`;
-    il.appendChild(d);
-  });
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE COMBAT
-// ══════════════════════════════════════════════════════════════
-let _combatState = null;
-
-function startCombat(eKey){
-  const g=G;
-  const ed=ENEMIES[eKey];
-  if(!ed) return;
-
-  clearCombatIntervals();
-
-  _combatState = {
-    key: eKey,
-    name: ed.name, icon: ed.icon,
-    hp: ed.hp, hpMax: ed.hp,
-    atk: ed.atk, def: ed.def,
-    speed: ed.speed,
-    xp: ed.xp, goldRange: ed.gold, drop: ed.drop, flee: ed.flee,
-    playerBlocking: false,
-    playerDodging: false,
-    staggeredUntil: 0,
-    // cooldown tracking
-    cds: { strike:0, block:0, dodge:0, shove:0, potion:0, flee:0 },
-    enemyTimer: Date.now() + ed.speed,
-    followerTimers: g.followers.map(f=>({ ...f, timer: Date.now() + f.speed, hp: f.hp })),
-    startTime: Date.now(),
-  };
-
-  document.getElementById('combat-zone').classList.add('active');
-  document.getElementById('world-zone').style.display='none';
-  document.getElementById('world-log-panel').style.display='none';
-  document.getElementById('log').innerHTML='';
-
-  document.getElementById('e-name').textContent = ed.name;
-  document.getElementById('e-icon').textContent = ed.icon;
-  document.getElementById('e-desc').textContent = `ATK ${ed.atk} · DEF ${ed.def}`;
-
-  log(`⚔ Combat: ${ed.name}!`, 'gold');
-  if(g.followers.length>0) log(`Your ${g.followers.map(f=>f.name).join(', ')} fight alongside you.`,'good');
-
-  // Main combat loop
-  const loopId = setInterval(combatLoop, 100);
-  COMBAT_INTERVALS.push(loopId);
-
-  renderCombatFollowers();
-  updateCombatBars();
-  updateCombatButtons();
-}
-
-function combatLoop(){
-  const g=G; const cs=_combatState;
-  if(!cs) return;
-  const now=Date.now();
-
-  // Update cooldown bars
-  updateCombatButtons();
-
-  // Enemy attack
-  if(now >= cs.enemyTimer && cs.staggeredUntil < now){
-    cs.enemyTimer = now + cs.speed;
-    const b=document.getElementById('b-etimer');
-    if(b) b.style.width='0%'; // reset visual
-
-    if(cs.playerDodging && roll(40 + g.stats.agi*3)){
-      cs.playerDodging=false;
-      log(`You dodged ${cs.name}'s attack!`,'good');
-    } else {
-      cs.playerDodging=false;
-      let dmg = Math.max(1, cs.atk - g.def + rnd(-3,4));
-      if(cs.playerBlocking){ dmg=Math.max(1,Math.floor(dmg*0.35)); cs.playerBlocking=false; log(`You blocked! ${cs.name} hits for ${dmg}.`,'block'); }
-      else { log(`${cs.name} hits you for ${dmg}!`,'hit'); }
-      mod(g,'hp',-dmg);
-      updateCombatBars();
-      checkDeath();
-      if(!g.alive){ clearCombatIntervals(); return; }
-    }
-  } else {
-    // Update enemy timer bar
-    const elapsed = now - (cs.enemyTimer - cs.speed);
-    const pct = Math.max(0, Math.min(100, (elapsed/cs.speed)*100));
-    const b=document.getElementById('b-etimer');
-    if(b) b.style.width=pct+'%';
-  }
-
-  // Follower attacks
-  cs.followerTimers.forEach((f,i)=>{
-    if(f.hp<=0) return;
-    if(now>=f.timer){
-      f.timer=now+f.speed;
-      const dmg=Math.max(1, f.atk - cs.def + rnd(-2,3));
-      cs.hp-=dmg;
-      log(`${f.icon} ${f.name} strikes ${cs.name} for ${dmg}!`,'good');
-      if(cs.hp<=0){ endCombat(true); return; }
-      updateCombatBars();
-    }
-  });
-}
-
-function updateCombatBars(){
-  const g=G; const cs=_combatState;
-  if(!cs) return;
-  const hpEl=document.getElementById('b-hp'); if(hpEl) hpEl.style.width=(g.hp/g.hpMax*100)+'%';
-  document.getElementById('c-hp').textContent=g.hp+'/'+g.hpMax;
-  const ehp=Math.max(0,cs.hp/cs.hpMax*100);
-  document.getElementById('b-enemy-hp').style.width=ehp+'%';
-  document.getElementById('e-hp-txt').textContent=Math.max(0,cs.hp)+'/'+cs.hpMax;
-}
-
-function updateCombatButtons(){
-  const cs=_combatState; if(!cs) return;
-  const now=Date.now();
-  ['strike','block','dodge','shove','potion','flee'].forEach(k=>{
-    const btn=document.getElementById('btn-'+k);
-    const bar=document.getElementById('cd-'+k);
-    const cd=cs.cds[k]||0;
-    const total=cdDuration(k);
-    if(now<cd){
-      if(btn) btn.disabled=true;
-      if(bar){ const pct=((cd-now)/total)*100; bar.style.width=pct+'%'; }
-    } else {
-      if(btn) btn.disabled=false;
-      if(bar) bar.style.width='0%';
-    }
-  });
-  const bb=document.getElementById('btn-block');
-  if(bb){ if(_combatState.playerBlocking){ bb.classList.add('active-block'); } else { bb.classList.remove('active-block'); } }
-  const db=document.getElementById('btn-dodge');
-  if(db){ if(_combatState.playerDodging){ db.classList.add('active-dodge'); } else { db.classList.remove('active-dodge'); } }
-}
-
-function cdDuration(k){
-  const g=G;
-  const base={strike:1500,block:1000,dodge:1200,shove:2500,potion:2000,flee:3000};
-  const spd=Math.floor(g.speed);
-  if(k==='strike') return Math.max(800, spd);
-  return base[k]||1500;
-}
-
-function renderCombatFollowers(){
-  const cs=_combatState; if(!cs) return;
-  const d=document.getElementById('follower-combat-display');
-  d.innerHTML='';
-  cs.followerTimers.forEach(f=>{
-    const r=document.createElement('div'); r.className='fc-row';
-    r.innerHTML=`<span>${f.icon} ${f.name}</span><span class="fc-atk">ATK ${f.atk} every ${(f.speed/1000).toFixed(1)}s</span>`;
-    d.appendChild(r);
-  });
-}
-
-function clearCombatIntervals(){
-  while(COMBAT_INTERVALS.length) clearInterval(COMBAT_INTERVALS.pop());
-}
-
-function endCombat(won, fled=false){
-  clearCombatIntervals();
-  const g=G; const cs=_combatState;
-  if(!cs) return;
-  _combatState=null;
-
-  if(won){
-    const goldEarned=rnd(cs.goldRange[0],cs.goldRange[1]);
-    g.gold+=goldEarned; g.kills++;
-    addXP(g,cs.xp);
-    log(`Victory! +${cs.xp} XP, +${goldEarned}🪙`,'gold');
-    if(cs.drop && roll(25)){ addItem(g,cs.drop); log(`Dropped: ${cs.drop}`,'good'); }
-    // Quest progress
-    g.quests.forEach(q=>{
-      if(q.type==='fight' && q.enemy===cs.key){
-        q.progress=(q.progress||0)+1;
-        log2(`Quest progress: ${q.progress}/${q.target}`,'gold');
-        if(q.progress>=q.target) completeQuest(q);
-      }
-    });
-    g.quests=g.quests.filter(q=>!(q.type==='fight'&&q.progress>=q.target&&q.completed));
-    g.days++;
-    payFollowerUpkeep();
-  } else if(fled){
-    log('You fled from the fight.','info');
-  }
-
-  document.getElementById('combat-zone').classList.remove('active');
-  document.getElementById('world-zone').style.display='block';
-  document.getElementById('world-log-panel').style.display='block';
-
-  render();
-}
-
-// ── Combat Actions ──────────────────────────────────────────
-function combatStrike(){
-  const g=G; const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.strike) return;
-  cs.cds.strike=now+cdDuration('strike');
-
-  let dmg=Math.max(1, g.atk - cs.def + rnd(-3,5));
-  const isCrit=roll(5+g.stats.agi*2);
-  if(isCrit){ dmg=Math.floor(dmg*1.8); log(`Critical hit! You strike ${cs.name} for ${dmg}!`,'good'); }
-  else { log(`You strike ${cs.name} for ${dmg}.`,'good'); }
-  cs.hp-=dmg;
-  if(cs.hp<=0){ endCombat(true); return; }
-  updateCombatBars();
-}
-
-function combatBlock(){
-  const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.block) return;
-  cs.cds.block=now+cdDuration('block');
-  cs.playerBlocking=true;
-  log('You raise your guard — blocking the next hit.','block');
-  updateCombatButtons();
-}
-
-function combatDodge(){
-  const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.dodge) return;
-  cs.cds.dodge=now+cdDuration('dodge');
-  cs.playerDodging=true;
-  log('You watch for an opening — ready to dodge.','block');
-  updateCombatButtons();
-}
-
-function combatShove(){
-  const g=G; const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.shove) return;
-  cs.cds.shove=now+cdDuration('shove');
-  if(roll(30+g.stats.str*3)){
-    const stagger=rnd(1500,3000);
-    cs.staggeredUntil=now+stagger;
-    cs.enemyTimer=Math.max(cs.enemyTimer,now+stagger);
-    log(`You shove ${cs.name} off balance — staggered for ${(stagger/1000).toFixed(1)}s!`,'good');
-  } else {
-    log('Your shove missed!','info');
-  }
-}
-
-function combatPotion(){
-  const g=G; const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.potion) return;
-  const idx=g.inventory.findIndex(n=>ITEMS[n]&&ITEMS[n].hp);
-  if(idx<0){ log('No healing items!','bad'); return; }
-  cs.cds.potion=now+cdDuration('potion');
-  const name=g.inventory[idx]; const hp=ITEMS[name].hp;
-  mod(g,'hp',hp); g.inventory.splice(idx,1);
-  log(`Drank ${name}. +${hp} HP.`,'good');
-  updateCombatBars(); render();
-}
-
-function combatFlee(){
-  const g=G; const cs=_combatState; if(!cs) return;
-  const now=Date.now(); if(now<cs.cds.flee) return;
-  cs.cds.flee=now+cdDuration('flee');
-  if(roll(cs.flee+g.stats.agi*2)){
-    endCombat(false,true);
-  } else {
-    log('Couldn\'t break free!','bad');
-    const dmg=Math.max(1,cs.atk-G.def);
-    mod(g,'hp',-dmg);
-    log(`${cs.name} cut you as you tried to run. -${dmg} HP.`,'hit');
-    updateCombatBars(); checkDeath();
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// FOLLOWERS
-// ══════════════════════════════════════════════════════════════
-function hireFollower(ft){
-  const g=G;
-  if(g.gold<ft.cost||g.followers.length>=5) return;
-  g.gold-=ft.cost;
-  g.followers.push({...ft, hp:ft.hp, hpMax:ft.hp});
-  log2(`${ft.icon} ${ft.name} pledges to serve you.`,'good');
-  render();
-}
-
-function dismissFollower(i){
-  const g=G;
-  const f=g.followers[i];
-  g.followers.splice(i,1);
-  log2(`${f.name} takes their leave.`,'info');
-  render();
-}
-
-function payFollowerUpkeep(){
-  const g=G;
-  g.followers.forEach((f,i)=>{
-    if(g.gold>=f.upkeep){ g.gold-=f.upkeep; }
-    else { log2(`${f.name} left — you couldn't pay their upkeep.`,'bad'); g.followers[i]=null; }
-  });
-  g.followers=g.followers.filter(Boolean);
-}
-
-// ══════════════════════════════════════════════════════════════
-// QUESTS
-// ══════════════════════════════════════════════════════════════
-function assignQuest(g){
-  if(g.quests.length>=3) return;
-  const remaining=QUEST_TEMPLATES.filter(q=>!g.quests.find(aq=>aq.title===q.title));
-  if(!remaining.length) return;
-  const tmpl=remaining[rnd(0,remaining.length-1)];
-  g.quests.push({...tmpl, progress:0, completed:false});
-}
-
-function attemptQuest(i){
-  const g=G; const q=g.quests[i];
-  if(!q) return;
-
-  if(q.type==='fight'){
-    if((q.progress||0)>=q.target){ completeQuest(q); g.quests.splice(i,1); render(); return; }
-    startCombat(q.enemy);
-  } else if(q.type==='travel'){
-    if(g.location===q.dest){ completeQuest(q); g.quests.splice(i,1); render(); }
-    else { log2(`You need to travel to ${LOCATIONS[q.dest]?.name||q.dest}.`,'info'); }
-  } else if(q.type==='skill'){
-    const statVal=q.stat==='str'?g.stats.str:q.stat==='wit'?g.stats.wit:q.stat==='pre'?g.stats.pre:q.stat==='agi'?g.stats.agi:g.stats.end;
-    if(roll(q.difficulty+statVal*2)){ completeQuest(q); g.quests.splice(i,1); render(); }
-    else { log2(`The attempt failed. Try again.`,'bad'); render(); }
-  }
-}
-
-function completeQuest(q){
-  const g=G;
-  q.completed=true;
-  g.gold+=q.gold; g.rep=Math.min(100,g.rep+q.rep); addXP(g,q.xp);
-  log2(`Quest complete: "${q.title}"! +${q.gold}🪙 +${q.rep} rep +${q.xp} XP`,'gold');
-}
-
-// ══════════════════════════════════════════════════════════════
-// EVENTS
-// ══════════════════════════════════════════════════════════════
-function triggerEvent(key){
-  const ev=EVENTS[key]; if(!ev) return;
-  openModal(ev.title, ev.desc, ev.choices.map(c=>({
-    text:c.text, hint:c.hint,
-    fn(){
-      c.fn(G);
-      if(G._pendingFight){ const f=G._pendingFight; G._pendingFight=null; startCombat(f); }
-      render(); checkDeath();
-    }
-  })));
-}
-
-// ══════════════════════════════════════════════════════════════
-// TRAVEL
-// ══════════════════════════════════════════════════════════════
-function travelTo(loc){
-  const g=G;
-  g.location=loc;
-  g.days++;
-  mod(g,'stam',-10);
-  payFollowerUpkeep();
-  log2(`Travelled to ${LOCATIONS[loc].name}.`,'info');
-  // Road encounter chance
-  if(roll(20)){
-    const pool=LOCATIONS[loc].enemies;
-    const eKey=pool[rnd(0,pool.length-1)];
-    log2(`A ${ENEMIES[eKey].name} intercepts you on the road!`,'bad');
-    setTimeout(()=>startCombat(eKey),400);
-  }
-  // Quest check — travel type
-  g.quests.forEach((q,i)=>{
-    if(q.type==='travel'&&q.dest===loc&&!q.completed){ completeQuest(q); g.quests.splice(i,1); }
-  });
-  // Chance of new quest
-  if(roll(35)&&g.quests.length<3) assignQuest(g);
-  render();
-}
-
-// ══════════════════════════════════════════════════════════════
-// SHOP
-// ══════════════════════════════════════════════════════════════
-const SHOP_INV=[
-  {name:'Healing Salve',cost:16},{name:'Strong Tonic',cost:35},{name:'Ration Pack',cost:6},
-  {name:'Hunting Knife',cost:14},{name:'Iron Sword',cost:30},{name:'Spear',cost:28},
-  {name:'Crossbow',cost:55},{name:'Mace',cost:22},{name:'Woodcutter Axe',cost:15},
-  {name:'Padded Coat',cost:8},{name:'Leather Vest',cost:20},{name:'Chainmail',cost:70},
-  {name:'Wooden Shield',cost:12},{name:'Iron Shield',cost:40},
+  {id:"orphan_work", scene:"A gang of ragged orphans offers to do odd jobs for you for a few coins — they look half-starved.",
+   involve:{label:"Hire and feed them", run:()=>{ if(G.gold>=2){ G.gold-=2; gainRep(2); log("You pay them well and buy them bread. They'll be your eyes and ears in the streets now.","l-good"); render(); } else log("You haven't the coin to spare.","l-info"); }},
+   walk:{label:"Wave them off", run:()=>log("You wave the children away.","l-info")}},
 ];
-function openShop(){
-  openModal('🛒 The Shop',`Your gold: ${G.gold}🪙  —  choose an item to buy.`,
-    SHOP_INV.map(s=>({
-      text:`${s.name} — ${s.cost}🪙`,
-      hint: (()=>{ const it=ITEMS[s.name]; if(!it) return ''; let d=''; if(it.atk)d+=`ATK+${it.atk} `; if(it.def)d+=`DEF+${it.def} `; if(it.hp)d+=`+${it.hp}HP `; if(it.stam)d+=`+${it.stam}STM`; return d; })(),
-      fn(){
-        if(G.gold<s.cost){log2('Not enough gold.','bad');return;}
-        G.gold-=s.cost; addItem(G,s.name); log2(`Bought ${s.name}.`,'good'); render();
-      }
-    }))
-  );
+
+/* ============================================================ UTILITY ============================================================ */
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function statName(k){return {str:"Strength",agi:"Agility",wit:"Wits",end:"Endurance"}[k];}
+
+function notify(text,cls){
+  const n=document.createElement("div");
+  n.className="notif "+(cls||"info");
+  n.textContent=text;
+  document.body.appendChild(n);
+  setTimeout(()=>{ n.style.transition="opacity .5s"; n.style.opacity="0"; setTimeout(()=>n.remove(),500); }, cls==="death"?4000:2200);
 }
 
-// ══════════════════════════════════════════════════════════════
-// ITEM USE
-// ══════════════════════════════════════════════════════════════
-function useItem(i){
-  const g=G; const name=g.inventory[i]; const it=ITEMS[name]; if(!it||it.type!=='potion') return;
-  if(it.hp){ mod(g,'hp',it.hp); log2(`Used ${name}: +${it.hp} HP.`,'good'); }
-  if(it.stam){ mod(g,'stam',it.stam); log2(`Used ${name}: +${it.stam} stamina.`,'good'); }
-  g.inventory.splice(i,1); render();
+function log(text,cls){
+  if(!G) return;
+  G.log.unshift({text,cls:cls||"l-info"});
+  if(G.log.length>60) G.log.pop();
+  const el=document.getElementById("log");
+  if(el){
+    const p=document.createElement("p");
+    p.className=cls||"l-info";
+    p.textContent=text;
+    el.insertBefore(p, el.firstChild);
+    while(el.children.length>60) el.removeChild(el.lastChild);
+  }
 }
 
-function equipItem(i){
-  const g=G; const name=g.inventory[i]; const it=ITEMS[name]; if(!it) return;
-  const slot=it.type;
-  if(g.equipped[slot]===name){ g.equipped[slot]=null; log2(`Unequipped ${name}.`,'info'); }
-  else { g.equipped[slot]=name; log2(`Equipped ${name}.`,'good'); }
-  calcDerived(g); render();
+/* ============================================================ DERIVED STATS ============================================================ */
+function calcDerived(){
+  const base={...G.baseStats};
+  let hpPenalty=0;
+  G.permanentInjuries.forEach(inj=>{ for(const k in inj.statPenalty) base[k]=(base[k]||0)+inj.statPenalty[k]; });
+  G.wounds.forEach(w=>{
+    if(w.statPenalty) for(const k in w.statPenalty) base[k]=(base[k]||0)+w.statPenalty[k];
+    if(w.hpPenalty) hpPenalty+=w.hpPenalty;
+  });
+  for(const k in base) base[k]=Math.max(0,base[k]);
+  const wpn=WEAPONS[G.gear.weapon]||WEAPONS.fists;
+  const arm=ARMORS[G.gear.armor]||ARMORS.rags;
+  const shd=SHIELDS[G.gear.shield]||SHIELDS.none;
+  G.str=base.str; G.agi=Math.max(1,base.agi+arm.agi); G.wit=base.wit; G.end=base.end;
+  G.maxHp=Math.max(10, 40 + base.end*7 + base.str - hpPenalty);
+  G.maxStam=Math.max(20, 60 + base.end*6);
+  G.soak=arm.soak + Math.floor(base.end/4);
+  G.block=shd.block;
+  G.dmgMin=wpn.dmg[0]+Math.floor(base.str/2)+wpn.str;
+  G.dmgMax=wpn.dmg[1]+Math.floor(base.str/2)+wpn.str;
+  G.atkSpeed=wpn.speed;
+  if(G.hp>G.maxHp) G.hp=G.maxHp;
 }
 
-function sellItem(i){
-  const g=G; const name=g.inventory[i]; const it=ITEMS[name];
-  if(!it||it.sell<=0){ log2('Cannot sell that.','bad'); return; }
-  if(g.equipped[it.type]===name) g.equipped[it.type]=null;
-  g.inventory.splice(i,1); g.gold+=it.sell;
-  log2(`Sold ${name} for ${it.sell}🪙.`,'good'); calcDerived(g); render();
-}
-
-// ══════════════════════════════════════════════════════════════
-// REST
-// ══════════════════════════════════════════════════════════════
-function doRest(){
-  const g=G;
-  const heal=rnd(15,35);
-  mod(g,'hp',heal); mod(g,'stam',g.stamMax);
-  g.days++; g.age+= g.days%365===0?1:0;
-  payFollowerUpkeep();
-  log2(`You rested. +${heal} HP, full stamina restored.`,'good');
-  if(roll(20)&&g.quests.length<3){ assignQuest(g); log2('While resting, you hear of a task that needs doing.','gold'); }
+/* ============================================================ GAME INIT ============================================================ */
+function newGame(classKey){
+  const c=CLASSES[classKey];
+  G={
+    classKey, className:c.name, icon:c.icon,
+    baseStats:{...c.stats},
+    str:0,agi:0,wit:0,end:0,
+    hp:c.hp, maxHp:c.hp, stam:0, maxStam:0,
+    soak:0,block:0,dmgMin:0,dmgMax:0,atkSpeed:1,
+    gold:c.gold, rep:c.rep, day:1, loc:c.loc,
+    gear:{...c.gear}, inv:[...c.inv],
+    wounds:[], permanentInjuries:[], followers:[],
+    jobXp:{}, log:[], dead:false,
+    lastInfectTick:Date.now(), kills:0, fightsWon:0,
+  };
+  calcDerived(); G.hp=G.maxHp; G.stam=G.maxStam;
+  log("Your tale begins as a "+c.name+". "+c.desc,"l-info");
   render();
 }
 
-// ══════════════════════════════════════════════════════════════
-// MODAL
-// ══════════════════════════════════════════════════════════════
-function openModal(title,desc,choices){
-  document.getElementById('modal-title').textContent=title;
-  document.getElementById('modal-desc').textContent=desc;
-  const box=document.getElementById('modal-choices'); box.innerHTML='';
-  choices.forEach(c=>{
-    const btn=document.createElement('button'); btn.className='mc-btn';
-    btn.innerHTML=`${c.text}<span class="mc-hint">${c.hint||''}</span>`;
-    btn.onclick=()=>{ document.getElementById('modal-ov').classList.remove('active'); c.fn(); };
-    box.appendChild(btn);
-  });
-  document.getElementById('modal-ov').classList.add('active');
+function repTier(){ const r=G.rep; if(r>=80)return"Renowned"; if(r>=60)return"Honoured"; if(r>=40)return"Respected"; if(r>=20)return"Known"; return"Unknown"; }
+function gainGold(n){ if(n===0)return; G.gold=Math.max(0,G.gold+n); if(n>0) log("You gain "+n+" silver.","l-gold"); render(); }
+function gainRep(n){ if(n===0)return; G.rep=clamp(G.rep+n,0,100); log((n>0?"Your reputation rises (+":"Your reputation falls (")+n+").", n>0?"l-good":"l-bad"); render(); }
+
+function roll(stat,dc,onSuccess,onFail){
+  const r=rand(1,12)+(G[stat]||0);
+  if(r>=dc){ onSuccess&&onSuccess(); } else { onFail&&onFail(); }
+  render();
 }
 
-// ══════════════════════════════════════════════════════════════
-// LEVEL UP
-// ══════════════════════════════════════════════════════════════
-function doLevelUp(){
-  const g=G;
-  document.getElementById('lu-msg').textContent=`You reached level ${g.level}! Choose a stat to raise. All vitals restored.`;
-  const grid=document.getElementById('sp-grid'); grid.innerHTML='';
-  const opts=[
-    {k:'str',label:'Strength +2',note:'More attack damage'},
-    {k:'agi',label:'Agility +2',note:'Faster attacks, better dodge'},
-    {k:'end',label:'Endurance +2',note:'More HP & stamina'},
-    {k:'wit',label:'Wits +2',note:'Better at skill checks & wits events'},
-    {k:'pre',label:'Presence +2',note:'Better at persuasion & negotiation'},
-  ];
-  opts.forEach(o=>{
-    const b=document.createElement('button'); b.className='sp-btn';
-    b.innerHTML=`<b>${o.label}</b><br><small style="color:var(--text-dim)">${o.note}</small>`;
-    b.onclick=()=>{
-      g.stats[o.k]+=2; calcDerived(g);
-      g.hp=g.hpMax; g.stam=g.stamMax;
-      document.getElementById('lvlup-ov').classList.remove('active');
-      log2(`Level ${g.level}! ${o.label} chosen. Fully restored.`,'gold');
+/* ============================================================ WOUNDS ============================================================ */
+function addWound(severity,bodyPart,desc){
+  let w=null;
+  if(severity==="minor"){
+    w={name:"Minor Wound",bodyPart,severity,daysLeft:2,bleedRate:1,infected:false,permanent:false,statPenalty:{},dayInflicted:G.day};
+  } else if(severity==="serious"){
+    const pen={};
+    if(bodyPart==="arm") pen.str=-1; else if(bodyPart==="leg") pen.agi=-1; else if(bodyPart==="head") pen.wit=-1;
+    w={name:"Serious Wound",bodyPart,severity,daysLeft:5,bleedRate:2,infected:false,permanent:false,statPenalty:pen,deep:true,dayInflicted:G.day};
+  } else if(severity==="grievous"){
+    let tmpl;
+    if(bodyPart==="arm") tmpl=GRIEVOUS.arm_slash;
+    else if(bodyPart==="leg") tmpl=GRIEVOUS.leg_slash;
+    else if(bodyPart==="head") tmpl=GRIEVOUS.head_blunt;
+    else tmpl=GRIEVOUS.torso;
+    w={name:tmpl.name,bodyPart,severity,daysLeft:tmpl.daysLeft,bleedRate:tmpl.bleedRate,infected:false,permanent:false,
+       statPenalty:{...tmpl.statPenalty},hpPenalty:tmpl.hpPenalty||0,deep:true,blackout:tmpl.blackout||false,
+       permThreatDay:tmpl.permThreatDay, dayInflicted:G.day};
+    notify(tmpl.name.toUpperCase()+"!","wound");
+    log(">>> GRIEVOUS WOUND: "+tmpl.name+" — "+tmpl.desc,"l-wound");
+  }
+  if(w){
+    G.wounds.push(w);
+    if(severity!=="grievous") log("You take a "+severity+" wound to the "+bodyPart+". "+(desc||""),"l-wound");
+    calcDerived();
+  }
+}
+
+function addPermanentInjury(key){
+  const t=PERMANENT_INJ[key];
+  G.permanentInjuries.push({name:t.name,bodyPart:t.bodyPart,statPenalty:{...t.statPenalty}});
+  notify(t.name.toUpperCase()+" — FOREVER","wound");
+  log(">>> PERMANENT INJURY: "+t.name+" — "+t.desc,"l-wound");
+  calcDerived();
+}
+
+function takeRawDamage(amount,bodyPart,flavor){
+  bodyPart=bodyPart||pick(["arm","leg","torso","head"]);
+  if(flavor) log(flavor,"l-hit");
+  G.hp-=amount;
+  const frac=amount/G.maxHp;
+  if(frac>0.40 && Math.random()<0.35){
+    if(bodyPart==="arm") addPermanentInjury("lost_arm");
+    else if(bodyPart==="head") addPermanentInjury("lost_eye");
+    else addWound("grievous",bodyPart);
+  } else if(frac>0.25){ addWound("grievous",bodyPart); }
+  else if(frac>=0.15){ addWound("serious",bodyPart); }
+  else if(frac>=0.08){ addWound("minor",bodyPart); }
+  else { log("A superficial hurt — bruises and scrapes, nothing more.","l-info"); }
+  if(G.hp<=0){ die(flavor||"Your wounds claim you."); return; }
+  calcDerived(); render();
+}
+
+function infectionTick(){
+  if(!G||G.dead) return;
+  const now=Date.now();
+  if(now-G.lastInfectTick >= 600000){
+    G.lastInfectTick=now;
+    let dmg=0;
+    G.wounds.forEach(w=>{ if(w.infected) dmg+=3; });
+    if(dmg>0){
+      G.hp-=dmg;
+      log("Infection burns in your wounds. (-"+dmg+" HP)","l-bad");
+      if(G.hp<=0){ die("Fever and rot take you in the night."); return; }
       render();
-    };
-    grid.appendChild(b);
-  });
-  document.getElementById('lvlup-ov').classList.add('active');
+    }
+  }
+}
+setInterval(infectionTick, 30000);
+
+/* ============================================================ REST / DAY / HEALING ============================================================ */
+function rest(){
+  if(G.dead) return;
+  advanceDay(1, true);
+  log("You rest. A day passes.","l-info");
+  if(Math.random()<0.35){ triggerEvent(); } else render();
 }
 
-// ══════════════════════════════════════════════════════════════
-// DEATH
-// ══════════════════════════════════════════════════════════════
-function checkDeath(){
-  if(!G.alive) return;
-  if(G.hp<=0){
-    G.alive=false;
-    clearCombatIntervals();
-    _combatState=null;
-    G.deathCause = G.combat ? `Slain by a ${G.combat?.name||'foe'}.`
-      : 'Your wounds proved fatal.';
-    showDeath();
+function advanceDay(n, healing){
+  for(let d=0;d<n;d++){
+    G.day++;
+    let wages=0;
+    G.followers.forEach(f=>wages+=FOLLOWER_TYPES[f.type].wage);
+    if(wages>0){
+      if(G.gold>=wages){ G.gold-=wages; }
+      else { log("You cannot pay your followers' wages. They desert you.","l-bad"); G.followers=[]; }
+    }
+    if(G.classKey==="lord"||G.classKey==="king"){ G.gold+=rand(3,8); }
+    if(healing){
+      const stillActive=[];
+      G.wounds.forEach(w=>{
+        if(w.deep && !w.infected && (G.day-(w.dayInflicted||G.day))>=3 && Math.random()<0.5){ w.infected=true; log("A wound has festered and gone bad.","l-bad"); }
+        if(w.permThreatDay && (G.day-(w.dayInflicted||G.day))>=w.permThreatDay && !w.treated){
+          if(Math.random()<0.4) addPermanentInjury("lame_perm");
+          w.permThreatDay=null;
+        }
+        w.daysLeft -= w.infected?0.5:1;
+        if(w.daysLeft<=0 && !w.infected){ log("A wound to your "+w.bodyPart+" has healed.","l-good"); }
+        else stillActive.push(w);
+      });
+      G.wounds=stillActive;
+      const infected=G.wounds.some(w=>w.infected);
+      if(!infected){ G.hp=Math.min(G.maxHp, G.hp+Math.floor(G.maxHp*0.25)); }
+    }
+    G.stam=G.maxStam;
+  }
+  calcDerived(); render();
+}
+
+/* ============================================================ PHYSICIAN ============================================================ */
+function visitPhysician(action){
+  if(action==="treat"){
+    const cost=Math.max(8, G.wounds.length*6);
+    if(G.gold<cost){ log("You haven't the "+cost+" silver the physician asks.","l-bad"); return; }
+    G.gold-=cost;
+    G.wounds.forEach(w=>{
+      w.infected=false; w.treated=true;
+      if(w.severity==="serious") w.daysLeft=Math.min(w.daysLeft,2);
+      else w.daysLeft=Math.max(1,Math.floor(w.daysLeft/2));
+    });
+    log("The physician cleans, stitches and binds your wounds. The rot is drawn out. ("+cost+" silver)","l-good");
+    notify("The physician treats your wounds.","info");
+    render();
+  } else if(action==="heal"){
+    const cost=15;
+    if(G.gold<cost){ log("You cannot afford the physician's draught.","l-bad"); return; }
+    G.gold-=cost;
+    G.hp=Math.min(G.maxHp, G.hp+Math.floor(G.maxHp*0.4));
+    log("A bitter draught and a poultice restore some of your strength. ("+cost+" silver)","l-good");
+    render();
   }
 }
 
-function showDeath(){
-  clearCombatIntervals();
-  document.getElementById('s-play').classList.remove('active');
-  document.getElementById('modal-ov').classList.remove('active');
-  document.getElementById('lvlup-ov').classList.remove('active');
-  const s=document.getElementById('s-death'); s.classList.add('active');
-  document.getElementById('death-sub').textContent=G.deathCause;
-  document.getElementById('death-card').innerHTML=`
-    <p>Class: <span>${G.classIcon} ${G.classLabel}</span></p>
-    <p>Level Reached: <span>${G.level}</span></p>
-    <p>Days Survived: <span>${G.days}</span></p>
-    <p>Enemies Defeated: <span>${G.kills}</span></p>
-    <p>Followers at Death: <span>${G.followers.length}</span></p>
-    <p>Gold at Death: <span>${G.gold}🪙</span></p>
-    <p>Reputation: <span>${G.rep}/100</span></p>
-    <p>Difficulty: <span>${'★'.repeat(CLASSES[G.class].diff)}${'☆'.repeat(5-CLASSES[G.class].diff)}</span></p>
-  `;
+/* ============================================================ SHOP ============================================================ */
+function buyWeapon(k){ const w=WEAPONS[k]; if(G.gold<w.price){log("Not enough silver.","l-bad");return;} G.gold-=w.price; G.gear.weapon=k; calcDerived(); log("You buy the "+w.name+".","l-gold"); render(); }
+function buyArmor(k){ const a=ARMORS[k]; if(G.gold<a.price){log("Not enough silver.","l-bad");return;} G.gold-=a.price; G.gear.armor=k; calcDerived(); log("You don the "+a.name+".","l-gold"); render(); }
+function buyShield(k){ const s=SHIELDS[k]; if(G.gold<s.price){log("Not enough silver.","l-bad");return;} G.gold-=s.price; G.gear.shield=k; calcDerived(); log("You take up the "+s.name+".","l-gold"); render(); }
+function buyItem(item){ const prices={bandage:4,salve:9}; const p=prices[item]; if(G.gold<p){log("Not enough silver.","l-bad");return;} G.gold-=p; G.inv.push(item); log("You buy a "+item+".","l-gold"); render(); }
+
+/* ============================================================ FOLLOWERS ============================================================ */
+const NAMES=["Aldric","Cob","Wat","Hob","Tomas","Garr","Edwin","Roe","Bran","Osric","Halden","Dunn","Pell","Symon","Aelric","Corbin"];
+function randomName(){return pick(NAMES);}
+function hireFollower(type){
+  const t=FOLLOWER_TYPES[type];
+  if(G.rep<t.repReq){ log("Your reputation isn't high enough to attract a "+t.name+".","l-bad"); return; }
+  if(G.gold<t.hire){ log("You cannot afford the "+t.hire+" silver to hire a "+t.name+".","l-bad"); return; }
+  G.gold-=t.hire;
+  const nm=randomName();
+  G.followers.push({type, hp:t.hp, maxHp:t.hp, name:nm, wounded:false, alive:true});
+  log("You hire a "+t.name+", "+nm+". He swears to follow your banner.","l-good");
+  render();
+}
+function dismissFollower(i){
+  log(G.followers[i].name+" the "+FOLLOWER_TYPES[G.followers[i].type].name+" is released from your service.","l-info");
+  G.followers.splice(i,1); render();
 }
 
-// ══════════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════════
-function startGame(cls){
-  clearCombatIntervals(); _combatState=null;
-  G=fresh(cls);
-  document.getElementById('s-select').classList.remove('active');
-  document.getElementById('s-play').classList.add('active');
-  document.getElementById('s-death').classList.remove('active');
-  document.getElementById('log').innerHTML='';
-  document.getElementById('log2').innerHTML='';
-  document.getElementById('combat-zone').classList.remove('active');
-  document.getElementById('world-zone').style.display='block';
-  document.getElementById('world-log-panel').style.display='block';
-
-  log2(`${G.classIcon} ${G.classLabel} — your chronicle begins.`,'gold');
-  log2(`You are in ${LOCATIONS[G.location].name}. Build your reputation, recruit followers, and survive.`,'info');
+/* ============================================================ JOBS ============================================================ */
+function doJob(job){
+  if(G.stam<job.stam){ log("You are too exhausted for that work. Rest first.","l-bad"); return; }
+  G.stam-=job.stam;
+  if(job.combat && Math.random()<job.combat){
+    log("The work turns dangerous!","l-bad");
+    startCombat(pick(["thug","brigand","bandit","deserter"]),{reason:"trouble during your work",reward:{gold:job.pay,rep:job.rep||0}});
+    return;
+  }
+  let pay;
+  if(job.wits){
+    if(G.wit>=8 || Math.random()<0.5){ pay=job.pay[1]; log("Your sharp eye catches the steward's fraud — and reclaims the missing silver!","l-good"); }
+    else { pay=0; log("The ledgers swim before your eyes; you find nothing amiss.","l-info"); }
+  } else if(job.ruling){
+    pay=rand(job.pay[0],job.pay[1]);
+    if(Math.random()<0.5){ gainRep(2); log("Your rulings are deemed just.","l-good"); }
+    else { gainRep(-2); log("Your judgments breed resentment among the petitioners.","l-bad"); }
+  } else { pay=rand(job.pay[0],job.pay[1]); }
+  if(pay>0) gainGold(pay);
+  else if(pay<0){ G.gold=Math.max(0,G.gold+pay); log("The work costs you "+(-pay)+" silver.","l-info"); }
+  if(job.rep) gainRep(job.rep);
+  if(job.xp){
+    for(const k in job.xp){
+      G.jobXp[k]=(G.jobXp[k]||0)+job.xp[k];
+      if(G.jobXp[k]>=4){ G.jobXp[k]=0; G.baseStats[k]++; calcDerived(); log("Through hard labour your "+statName(k)+" has grown!","l-good"); }
+    }
+  }
+  log("You complete the work: "+job.name+".","l-info");
   render();
 }
 
-function resetGame(){
-  clearCombatIntervals(); _combatState=null;
-  document.getElementById('s-death').classList.remove('active');
-  document.getElementById('s-select').classList.add('active');
+/* ============================================================ TRAVEL & EVENTS ============================================================ */
+function travel(dest){
+  if(G.dead) return;
+  log("You set out for "+LOCATIONS[dest].name+".","l-info");
+  G.loc=dest;
+  const chance = dest==="road" ? 1.0 : 0.45;
+  if(Math.random()<chance){ triggerEvent(); }
+  else { log("You arrive without incident.","l-info"); render(); }
 }
+function triggerEvent(){ pendingEvent=pick(EVENTS); render(); }
+function resolveEvent(which){
+  const ev=pendingEvent; pendingEvent=null;
+  if(which==="involve") ev.involve.run();
+  else if(which==="involve2" && ev.involve2) ev.involve2.run();
+  else ev.walk.run();
+  if(!combat) render();
+}
+
+/* ============================================================ COMBAT — "Ugly Real Fighting" ============================================================ */
+const DT=50;
+
+function startCombat(enemyKey, opts){
+  opts=opts||{};
+  const e=ENEMIES[enemyKey];
+  combat={
+    foeKey:enemyKey, foe:{...e, hp:e.hp, maxHp:e.hp},
+    reason:opts.reason||"a fight", reward:opts.reward||{gold:[0,0],rep:0},
+    state:"idle", stateTimer:rand(400,900), windupDur:rand(e.windup[0],e.windup[1]), parried:false,
+    clinch:false, clinchTimer:0, foeClinch:false, foeClinchAccum:0,
+    cooldowns:{strike:0,heavy:0,parry:0,shove:0,clinch:0,salve:0}, heavyWindup:0,
+    followerCd:{}, clinchCd:8000, bleedAccum:0,
+  };
+  G.followers.forEach((f,i)=>{ if(f.alive) combat.followerCd[i]=FOLLOWER_TYPES[f.type].speed; });
+  clearCombatIntervals();
+  combatIntervals.push(setInterval(combatTick, DT));
+  log("⚔ A fight begins — "+combat.reason+": "+e.desc+".","l-bad");
+  render();
+}
+
+function clearCombatIntervals(){ combatIntervals.forEach(i=>clearInterval(i)); combatIntervals=[]; }
+
+function endCombat(victory){
+  clearCombatIntervals();
+  const c=combat; combat=null;
+  if(victory){
+    G.fightsWon++; G.kills++;
+    const r=c.reward;
+    const g=rand(r.gold[0],r.gold[1]) + rand(c.foe.gold[0],c.foe.gold[1]);
+    if(g>0) gainGold(g);
+    if(r.rep) gainRep(r.rep);
+    log("✔ You stand victorious over "+c.foe.desc+".","l-good");
+    notify("Victory.","info");
+  }
+  render();
+}
+
+function combatTick(){
+  if(!combat||!G||G.dead) return;
+  const c=combat, f=c.foe;
+
+  for(const k in c.cooldowns){ if(c.cooldowns[k]>0) c.cooldowns[k]=Math.max(0,c.cooldowns[k]-DT); }
+  if(c.heavyWindup>0){ c.heavyWindup-=DT; if(c.heavyWindup<=0) executeHeavy(); }
+  G.stam=Math.min(G.maxStam, G.stam + 3*DT/1000);
+
+  c.bleedAccum+=DT;
+  if(c.bleedAccum>=10000){
+    c.bleedAccum=0;
+    let bleed=0; G.wounds.forEach(w=>bleed+=(w.bleedRate||0));
+    if(bleed>0){ G.hp-=bleed; log("Your wounds bleed in the strain of battle. (-"+bleed+" HP)","l-bad"); if(G.hp<=0){ die("You bleed out mid-fight."); return; } }
+  }
+
+  if(!c.clinch && !c.foeClinch){
+    c.stateTimer-=DT;
+    if(c.state==="idle"){
+      if(c.stateTimer<=0){ c.state="winding_up"; c.windupDur=rand(f.windup[0],f.windup[1]); c.stateTimer=c.windupDur; c.parried=false; }
+    } else if(c.state==="winding_up"){
+      if(c.stateTimer<=0){
+        if(c.parried){ c.state="recovering"; c.stateTimer=900; }
+        else { c.state="striking"; c.stateTimer=200; foeStrike(); }
+      }
+    } else if(c.state==="striking"){
+      if(c.stateTimer<=0){ c.state="recovering"; c.stateTimer=rand(700,1100); }
+    } else if(c.state==="recovering"){
+      if(c.stateTimer<=0){ c.state="idle"; c.stateTimer=rand(400,900); }
+    } else if(c.state==="staggered"){
+      if(c.stateTimer<=0){ c.state="idle"; c.stateTimer=400; }
+    }
+    if(c.clinchCd>0) c.clinchCd-=DT;
+    if(c.state==="idle" && c.clinchCd<=0 && Math.random()<0.0015 && f.agi>=6){
+      c.foeClinch=true; c.clinchTimer=2500; c.clinchCd=10000;
+      log(f.name+" lunges in and grabs you — you're in a clinch!","l-bad");
+    }
+  } else if(c.foeClinch){
+    c.clinchTimer-=DT;
+    c.foeClinchAccum+=DT;
+    if(c.foeClinchAccum>=1200){
+      c.foeClinchAccum=0;
+      applyPlayerDamage(rand(2,5),"torso",f.name+" drives a knee into your gut.");
+      if(G.dead||!combat) return;
+    }
+    if(c.clinchTimer<=0){ c.foeClinch=false; c.state="recovering"; c.stateTimer=600; log("You wrench free of the clinch.","l-info"); }
+  }
+
+  // followers
+  G.followers.forEach((fl,i)=>{
+    if(!fl.alive) return;
+    const t=FOLLOWER_TYPES[fl.type];
+    if(c.followerCd[i]===undefined) c.followerCd[i]=t.speed;
+    c.followerCd[i]-=DT;
+    if(c.followerCd[i]<=0){
+      c.followerCd[i]=t.speed*(fl.wounded?1.5:1);
+      let d=rand(t.dmg[0],t.dmg[1]);
+      if(fl.wounded) d=Math.floor(d*0.6);
+      d=Math.max(1,d-Math.floor(f.soak/2));
+      f.hp-=d;
+      if(Math.random()<0.4) log(fl.name+" lands a blow on "+f.name+". (-"+d+")","l-hit");
+      if(f.hp<=0){ endCombat(true); return; }
+      if(Math.random()<0.12){
+        const fd=rand(f.dmg[0],f.dmg[1]);
+        fl.hp-=fd;
+        if(fl.hp<=0){ fl.alive=false; log("✖ "+fl.name+" the "+t.name+" is cut down and lies still. He is gone forever.","l-bad"); notify(fl.name+" has fallen.","wound"); }
+        else if(fl.hp<fl.maxHp*0.4 && !fl.wounded){ fl.wounded=true; log(fl.name+" is wounded and falters.","l-bad"); }
+      }
+    }
+  });
+
+  if(f.hp<=0){ endCombat(true); return; }
+  updateCombatUI();
+}
+
+function foeStrike(){
+  const c=combat, f=c.foe;
+  let dmg=rand(f.dmg[0],f.dmg[1]);
+  const bodyPart=pick(["arm","leg","torso","head"]);
+  if(c.heavyWindup>0){ dmg=Math.floor(dmg*1.4); log(f.name+" catches you mid-swing!","l-bad"); }
+  applyPlayerDamage(dmg, bodyPart, foeHitFlavor(f,bodyPart));
+}
+
+function foeHitFlavor(f,part){
+  const flavors={
+    head:["His blow snaps your head back, blood in your eyes.","He cracks you across the skull.","A fist like a hammer finds your jaw."],
+    arm:["His blade opens your arm to the bone.","He slashes across your forearm.","Steel bites deep into your shoulder."],
+    leg:["He hacks at your thigh and you buckle.","A cut to the leg, hot and deep.","He kicks your knee sideways."],
+    torso:["His blade opens your side.","He drives his weapon into your ribs.","Steel finds the gap and slips into your gut."],
+  };
+  return pick(flavors[part]||flavors.torso);
+}
+
+function applyPlayerDamage(rawDmg, bodyPart, flavor){
+  let dmg=rawDmg;
+  if(G.block>0 && Math.random()<0.3){ const before=dmg; dmg=Math.max(0,dmg-G.block); if(dmg<before) log("Your shield turns much of the blow.","l-info"); }
+  dmg=Math.max(1, dmg - Math.floor(G.soak/2));
+  if(flavor) log(flavor,"l-hit");
+  G.hp-=dmg;
+  log("You take "+dmg+" damage.","l-hit");
+  const frac=dmg/G.maxHp;
+  if(frac>0.40 && Math.random()<0.35){
+    if(bodyPart==="arm") addPermanentInjury("lost_arm");
+    else if(bodyPart==="head") addPermanentInjury("lost_eye");
+    else addWound("grievous",bodyPart);
+  } else if(frac>0.25){ addWound("grievous",bodyPart); }
+  else if(frac>=0.15){ addWound("serious",bodyPart); }
+  else if(frac>=0.08){ addWound("minor",bodyPart); }
+  if(G.hp<=0){ die(flavor||"You fall, and do not rise."); return; }
+  calcDerived(); updateCombatUI();
+}
+
+/* ---- PLAYER COMBAT ACTIONS ---- */
+function stamMult(){ return G.stam < G.maxStam*0.30 ? 1.3 : 1; }
+function lowStam(){ return G.stam < G.maxStam*0.15; }
+
+function pStrike(){
+  const c=combat; if(!c||c.cooldowns.strike>0||c.heavyWindup>0||c.clinch) return;
+  if(c.foeClinch){ log("You can't strike cleanly — you're grappled!","l-bad"); return; }
+  if(G.stam<8){ log("Too winded to strike.","l-bad"); return; }
+  G.stam-=8; c.cooldowns.strike=800*stamMult();
+  if(G.stam<G.maxStam*0.30 && Math.random()<0.20){ log("Your tired swing goes wide.","l-info"); updateCombatUI(); return; }
+  let dmg=rand(G.dmgMin,G.dmgMax);
+  if(c.state==="recovering"){ dmg=Math.floor(dmg*1.6); log("He's open! ","l-good"); }
+  dealFoeDamage(dmg, pick(["You drive your fist into his jaw.","You cut him across the chest.","Your blade rakes his arm.","You crack him hard across the ribs."]));
+}
+
+function pHeavy(){
+  const c=combat; if(!c||c.cooldowns.heavy>0||c.heavyWindup>0||c.clinch) return;
+  if(c.foeClinch){ log("You can't wind up a heavy blow while grappled!","l-bad"); return; }
+  if(G.stam<18){ log("Not enough strength left for a heavy blow.","l-bad"); return; }
+  G.stam-=18;
+  if(lowStam() && Math.random()<0.4){ log("You stumble as you wind up — fumble!","l-bad"); c.cooldowns.heavy=1600; updateCombatUI(); return; }
+  c.heavyWindup=800; c.cooldowns.heavy=1600*stamMult();
+  log("You wind up for a heavy blow — committing everything to it.","l-info");
+  updateCombatUI();
+}
+function executeHeavy(){
+  const c=combat; if(!c) return;
+  let dmg=Math.floor(rand(G.dmgMin,G.dmgMax)*2.0);
+  if(c.state==="recovering") dmg=Math.floor(dmg*1.4);
+  dealFoeDamage(dmg, pick(["You wind up and crash your elbow into his temple.","Your heavy blow lands with a sickening crunch.","You commit your whole weight and shatter his guard."]));
+}
+
+function pParry(){
+  const c=combat; if(!c||c.cooldowns.parry>0||c.clinch) return;
+  if(G.stam<5){ log("Too winded to parry.","l-bad"); return; }
+  G.stam-=5; c.cooldowns.parry=600;
+  if(c.state==="winding_up"){
+    const frac=(c.windupDur - c.stateTimer)/c.windupDur;
+    if(lowStam() && Math.random()<0.4){ log("Your guard wavers — the parry fails!","l-bad"); updateCombatUI(); return; }
+    if(frac<=0.70){
+      c.parried=true;
+      log("You catch his blade and turn it aside — perfect!","l-good");
+      dealFoeDamage(Math.floor(rand(G.dmgMin,G.dmgMax)*0.8), "You riposte instantly, opening a gash.");
+    } else {
+      c.parried=true;
+      log("Late parry — you blunt the blow but it still bites.","l-info");
+      const f=c.foe;
+      let dmg=Math.max(1, Math.floor(rand(f.dmg[0],f.dmg[1])*0.4)-Math.floor(G.soak/2));
+      G.hp-=dmg; log("You take "+dmg+" damage through your guard.","l-hit");
+      if(G.hp<=0){ die("A blow slips your failing guard."); return; }
+    }
+  } else { log("You parry empty air — wasted.","l-info"); }
+  calcDerived(); updateCombatUI();
+}
+
+function pShove(){
+  const c=combat; if(!c||c.cooldowns.shove>0||c.clinch) return;
+  if(G.stam<12){ log("Too winded to shove.","l-bad"); return; }
+  G.stam-=12; c.cooldowns.shove=1200*stamMult();
+  if(c.foeClinch){ c.foeClinch=false; c.state="staggered"; c.stateTimer=1500; log("You shove him off and break the clinch!","l-good"); }
+  else { c.state="staggered"; c.stateTimer=rand(1000,2000); log("You shove him back hard — he staggers, off balance.","l-good"); }
+  updateCombatUI();
+}
+
+function pClinch(){
+  const c=combat; if(!c||c.cooldowns.clinch>0||c.clinch||c.foeClinch) return;
+  if(G.stam<10){ log("Too winded to grapple.","l-bad"); return; }
+  G.stam-=10; c.cooldowns.clinch=2000;
+  c.clinch=true; c.clinchTimer=4000;
+  log("You grab him by the collar and drag him into a clinch.","l-good");
+  document.getElementById("combat-actions").innerHTML=combatActions();
+  updateCombatUI();
+}
+function clinchMove(move){
+  const c=combat; if(!c||!c.clinch) return;
+  if(G.stam<10){ log("Too winded.","l-bad"); return; }
+  G.stam-=10;
+  if(move==="headbutt"){ dealFoeDamage(rand(4,8),"You smash your forehead into his nose — he reels, stunned."); }
+  else if(move==="knee"){ dealFoeDamage(rand(3,6),"You drive your knee up into him, hammering the breath from his lungs."); }
+  else if(move==="throat"){ dealFoeDamage(rand(6,11),"You clamp a hand on his throat and squeeze — he chokes and thrashes."); }
+  else if(move==="throw"){
+    dealFoeDamage(rand(5,9),"You sweep his leg and slam him to the ground.");
+    if(combat){ c.clinch=false; c.state="staggered"; c.stateTimer=1800; log("The clinch breaks — he's down and staggered.","l-good"); }
+  }
+  if(!combat) return;
+  c.clinchTimer-=600;
+  if(c.clinchTimer<=0 && c.clinch){ c.clinch=false; c.state="idle"; c.stateTimer=400; log("The clinch breaks apart.","l-info"); }
+  if(!c.clinch) document.getElementById("combat-actions").innerHTML=combatActions();
+  updateCombatUI();
+}
+
+function pSalve(){
+  const c=combat; if(!c||c.cooldowns.salve>0) return;
+  let idx=G.inv.indexOf("salve");
+  if(idx<0) idx=G.inv.indexOf("bandage");
+  if(idx<0){ log("You have no salve or bandage.","l-bad"); return; }
+  const item=G.inv[idx]; G.inv.splice(idx,1); c.cooldowns.salve=3000;
+  const bleeder=G.wounds.find(w=>w.bleedRate>0);
+  if(bleeder){ bleeder.bleedRate=Math.max(0,bleeder.bleedRate-1); log("You press a "+item+" to your worst wound, stemming the bleed.","l-good"); }
+  G.hp=Math.min(G.maxHp, G.hp + (item==="salve"?10:5));
+  log("You patch yourself mid-fight.","l-good");
+  calcDerived(); updateCombatUI();
+}
+
+function pFlee(){
+  const c=combat; if(!c) return;
+  let dc=11;
+  if(G.stam < G.maxStam*0.20) dc=7;
+  roll("agi", dc, ()=>{
+    log("You break away and vanish into the streets. You live to fight another day.","l-info");
+    clearCombatIntervals(); combat=null; render();
+  }, ()=>{
+    log("You turn to run — and he catches you a parting blow!","l-bad");
+    const f=c.foe;
+    applyPlayerDamage(rand(f.dmg[0],f.dmg[1]),"torso","He strikes you as you flee.");
+  });
+}
+
+function dealFoeDamage(dmg, flavor){
+  const c=combat; const f=c.foe;
+  dmg=Math.max(1, dmg - f.soak);
+  if(Math.random() < f.agi*0.018){ log(f.name+" twists away from your attack.","l-info"); updateCombatUI(); return; }
+  f.hp-=dmg;
+  if(flavor) log(flavor+" (-"+dmg+")","l-good");
+  if(f.hp<=0){ endCombat(true); return; }
+  updateCombatUI();
+}
+
+/* ============================================================ DEATH ============================================================ */
+function die(cause){
+  if(G.dead) return;
+  G.dead=true;
+  clearCombatIntervals(); combat=null; pendingEvent=null;
+  log("☠ "+cause,"l-bad");
+  log("☠ Your story ends here, on day "+G.day+". Death is permanent.","l-bad");
+  notify("YOU HAVE DIED","death");
+  render();
+}
+
+/* ============================================================ RENDERING ============================================================ */
+function render(){
+  const app=document.getElementById("app");
+  if(!G){ app.innerHTML=titleScreen(); return; }
+  if(G.dead){ app.innerHTML=deathScreen(); attachLog(); return; }
+  if(combat){ app.innerHTML=combatScreen(); attachLog(); updateCombatUI(); return; }
+  app.innerHTML=mainScreen(); attachLog();
+}
+
+function attachLog(){
+  const el=document.getElementById("log");
+  if(!el) return;
+  el.innerHTML="";
+  G.log.forEach(e=>{ const p=document.createElement("p"); p.className=e.cls; p.textContent=e.text; el.appendChild(p); });
+}
+
+function titleScreen(){
+  let cards="";
+  for(const k in CLASSES){
+    const c=CLASSES[k];
+    cards+=`<div class="class-card" onclick="newGame('${k}')">
+      <h3>${c.icon} ${c.name} <span class="diff ${c.diffClass}">(${c.diff})</span></h3>
+      <p class="muted">${c.desc}</p>
+      <p class="muted">STR ${c.stats.str} · AGI ${c.stats.agi} · WIT ${c.stats.wit} · END ${c.stats.end} · HP ${c.hp} · ${c.gold}s · rep ${c.rep}</p>
+    </div>`;
+  }
+  return `<h1>ASHES &amp; CROWNS</h1>
+  <p class="subtitle">A medieval life. Every wound remembered. Death is forever.</p>
+  <div class="panel">
+    <h2>Choose Your Lot in Life</h2>
+    <p class="muted" style="margin-bottom:12px">The lower-born you start, the harder the road. There is no respawn — when you die, your tale is over.</p>
+    <div class="grid2">${cards}</div>
+  </div>
+  <p class="center muted">A single life. Fight ugly. Stay alive.</p>`;
+}
+
+function deathScreen(){
+  return `<h1 style="color:#b8281c">☠ DEATH ☠</h1>
+  <div class="panel center">
+    <h2>The tale of a ${G.className} ends.</h2>
+    <p class="muted" style="margin:12px 0">You survived ${G.day} days.</p>
+    <p>Fights won: <b>${G.fightsWon}</b> · Final reputation: <b>${G.rep} (${repTier()})</b> · Silver: <b>${G.gold}</b></p>
+    <p class="muted" style="margin:10px 0">${G.permanentInjuries.length} permanent injuries carried · ${G.wounds.length} open wounds at the end.</p>
+    <div id="log" style="text-align:left;margin:14px 0"></div>
+    <button class="big-btn gold" onclick="G=null;combat=null;pendingEvent=null;render()">Begin a New Life</button>
+  </div>`;
+}
+
+function mainScreen(){
+  if(pendingEvent) return eventScreen();
+  return `<h1>ASHES &amp; CROWNS</h1>
+  <div class="grid2">${characterPanel()}${woundsPanel()}</div>
+  ${locationPanel()}
+  <div class="panel"><h2>Chronicle</h2><div id="log"></div></div>`;
+}
+
+function characterPanel(){
+  const hpPct=clamp(G.hp/G.maxHp*100,0,100);
+  const stPct=clamp(G.stam/G.maxStam*100,0,100);
+  return `<div class="panel">
+    <h2>${G.icon} The ${G.className}</h2>
+    <div class="bar"><div class="hp-fill" style="width:${hpPct}%"></div><span class="bar-label">HP ${Math.ceil(G.hp)}/${G.maxHp}</span></div>
+    <div class="bar"><div class="stam-fill" style="width:${stPct}%"></div><span class="bar-label">Stamina ${Math.ceil(G.stam)}/${G.maxStam}</span></div>
+    <div class="stat-line"><span>Strength</span><span>${G.str}</span></div>
+    <div class="stat-line"><span>Agility</span><span>${G.agi}</span></div>
+    <div class="stat-line"><span>Wits</span><span>${G.wit}</span></div>
+    <div class="stat-line"><span>Endurance</span><span>${G.end}</span></div>
+    <hr>
+    <div class="stat-line"><span>Silver</span><span class="l-gold">${G.gold}</span></div>
+    <div class="stat-line"><span>Reputation</span><span>${G.rep} · ${repTier()}</span></div>
+    <div class="stat-line"><span>Day</span><span>${G.day}</span></div>
+    <hr>
+    <div class="equip-slot">Weapon: <b>${WEAPONS[G.gear.weapon].name}</b> (${G.dmgMin}-${G.dmgMax} dmg)</div>
+    <div class="equip-slot">Armour: <b>${ARMORS[G.gear.armor].name}</b> (soak ${G.soak})</div>
+    <div class="equip-slot">Shield: <b>${SHIELDS[G.gear.shield].name}</b> (block ${G.block})</div>
+    <div class="equip-slot">Pack: ${G.inv.length?G.inv.join(", "):"empty"}</div>
+    ${followersPanel()}
+  </div>`;
+}
+
+function followersPanel(){
+  if(!G.followers.length) return "";
+  let s='<hr><h3>Retinue</h3><div class="followers-list">';
+  G.followers.forEach((f,i)=>{
+    const t=FOLLOWER_TYPES[f.type];
+    s+=`<div class="f-item">${f.name}, ${t.name} ${f.wounded?'<span class="tag tag-bleed">wounded</span>':''} <button style="padding:2px 6px;font-size:11px" onclick="dismissFollower(${i})">dismiss</button></div>`;
+  });
+  return s+"</div>";
+}
+
+function woundsPanel(){
+  let s=`<div class="panel"><h2>Wounds &amp; Injuries</h2>`;
+  if(!G.wounds.length && !G.permanentInjuries.length) s+=`<p class="muted">You are whole and unmarked. For now.</p>`;
+  G.permanentInjuries.forEach(inj=>{
+    const pens=Object.entries(inj.statPenalty).map(([k,v])=>statName(k)+" "+v).join(", ");
+    s+=`<div class="wound-item perm"><b>${inj.name}</b> <span class="tag tag-perm">PERMANENT</span><br><span class="muted">${inj.bodyPart} · ${pens}</span></div>`;
+  });
+  G.wounds.forEach(w=>{
+    let pens=Object.entries(w.statPenalty||{}).map(([k,v])=>statName(k)+" "+v).join(", ");
+    if(w.hpPenalty) pens+=(pens?", ":"")+"max HP -"+w.hpPenalty;
+    let tags="";
+    if(w.bleedRate>0) tags+=`<span class="tag tag-bleed">bleeding ${w.bleedRate}/10s</span>`;
+    if(w.infected) tags+=`<span class="tag tag-infect">INFECTED</span>`; else tags+=`<span class="tag tag-heal">healing</span>`;
+    s+=`<div class="wound-item"><b>${w.name}</b> ${tags}<br><span class="muted">${w.bodyPart} · ${Math.ceil(w.daysLeft)} day(s) to heal${pens?" · "+pens:""}</span></div>`;
+  });
+  return s+`</div>`;
+}
+
+function locationPanel(){
+  const loc=LOCATIONS[G.loc];
+  let s=`<div class="panel"><h2>${loc.name}</h2><p class="muted" style="margin-bottom:10px">${loc.desc}</p>`;
+  s+=`<h3>Work</h3><div class="btnrow">`;
+  JOBS[G.classKey].forEach((job,i)=>{
+    const lab=job.name + (job.pay[1]>0?` (${job.pay[0]===job.pay[1]?job.pay[1]:job.pay[0]+"-"+job.pay[1]}s)`:job.pay[0]<0?` (cost ${-job.pay[0]}s)`:" (no pay)");
+    s+=`<button onclick="doJob(JOBS['${G.classKey}'][${i}])" ${G.stam<job.stam?'disabled':''}>${lab}<br><span class="muted" style="font-size:11px">${job.stam} stam${job.combat?" · risk":""}</span></button>`;
+  });
+  s+=`</div>`;
+  if(G.loc==="market"){
+    s+=`<hr><h3>Physician</h3><div class="btnrow">
+      <button onclick="visitPhysician('treat')">Treat wounds (~${Math.max(8,G.wounds.length*6)}s)</button>
+      <button onclick="visitPhysician('heal')">Healing draught (15s)</button>
+    </div>`;
+    s+=shopPanel(); s+=followerHirePanel();
+  }
+  if(G.loc==="square") s+=followerHirePanel();
+  if(G.loc==="barracks") s+=shopPanel();
+  s+=`<hr><h3>Rest</h3><div class="btnrow"><button onclick="rest()">Rest (advance 1 day, heal)</button></div>`;
+  s+=`<hr><h3>Travel</h3><div class="btnrow">`;
+  TRAVEL[G.loc].forEach(dest=>{ s+=`<button onclick="travel('${dest}')">Go to ${LOCATIONS[dest].name}${dest==="road"?" ⚠":""}</button>`; });
+  return s+`</div></div>`;
+}
+
+function shopPanel(){
+  let s=`<hr><h3>Market Wares</h3><h4 class="muted">Weapons</h4>`;
+  for(const k in WEAPONS){ const w=WEAPONS[k]; if(w.price<=0)continue;
+    s+=`<div class="shop-item"><span>${w.name} <span class="muted">(${w.dmg[0]}-${w.dmg[1]} dmg) — ${w.desc}</span></span><button ${G.gold<w.price||G.gear.weapon===k?'disabled':''} onclick="buyWeapon('${k}')">${G.gear.weapon===k?'equipped':w.price+'s'}</button></div>`; }
+  s+=`<h4 class="muted">Armour</h4>`;
+  for(const k in ARMORS){ const a=ARMORS[k]; if(a.price<=0)continue;
+    s+=`<div class="shop-item"><span>${a.name} <span class="muted">(soak ${a.soak}) — ${a.desc}</span></span><button ${G.gold<a.price||G.gear.armor===k?'disabled':''} onclick="buyArmor('${k}')">${G.gear.armor===k?'equipped':a.price+'s'}</button></div>`; }
+  s+=`<h4 class="muted">Shields</h4>`;
+  for(const k in SHIELDS){ const sh=SHIELDS[k]; if(sh.price<=0)continue;
+    s+=`<div class="shop-item"><span>${sh.name} <span class="muted">(block ${sh.block}) — ${sh.desc}</span></span><button ${G.gold<sh.price||G.gear.shield===k?'disabled':''} onclick="buyShield('${k}')">${G.gear.shield===k?'equipped':sh.price+'s'}</button></div>`; }
+  s+=`<h4 class="muted">Supplies</h4>`;
+  s+=`<div class="shop-item"><span>Bandage <span class="muted">(stops bleed, +5 HP)</span></span><button ${G.gold<4?'disabled':''} onclick="buyItem('bandage')">4s</button></div>`;
+  s+=`<div class="shop-item"><span>Salve <span class="muted">(stops bleed, +10 HP)</span></span><button ${G.gold<9?'disabled':''} onclick="buyItem('salve')">9s</button></div>`;
+  return s;
+}
+
+function followerHirePanel(){
+  let s=`<hr><h3>Hire Followers <span class="muted">(rep ${G.rep})</span></h3>`;
+  for(const k in FOLLOWER_TYPES){
+    const t=FOLLOWER_TYPES[k];
+    const locked=G.rep<t.repReq;
+    s+=`<div class="shop-item"><span>${t.name} <span class="muted">(${t.desc})${locked?` — needs rep ${t.repReq}`:""}</span></span>
+      <button ${locked||G.gold<t.hire?'disabled':''} onclick="hireFollower('${k}')">${t.hire}s +${t.wage}/day</button></div>`;
+  }
+  return s;
+}
+
+function eventScreen(){
+  const ev=pendingEvent;
+  let btns=`<button class="big-btn danger" onclick="resolveEvent('involve')">${ev.involve.label}</button>`;
+  if(ev.involve2) btns+=`<button class="big-btn danger" onclick="resolveEvent('involve2')">${ev.involve2.label}</button>`;
+  btns+=`<button class="big-btn" onclick="resolveEvent('walk')">${ev.walk.label}</button>`;
+  return `<h1>ASHES &amp; CROWNS</h1>
+  <div class="event-box">
+    <h2>A Moment's Choice</h2>
+    <p class="scene">${ev.scene}</p>
+    <div class="btnrow">${btns}</div>
+    <p class="muted" style="margin-top:8px">Getting involved risks wounds — or worse. Walking past is safe, but not always without cost.</p>
+  </div>
+  <div class="panel"><h2>Chronicle</h2><div id="log"></div></div>`;
+}
+
+function combatScreen(){
+  const c=combat, f=c.foe;
+  return `<h1 style="font-size:22px">⚔ FIGHT</h1>
+  <div id="combat-screen">
+    <div class="panel">
+      <div class="foe-row">
+        <div class="foe-portrait">${f.icon}</div>
+        <div class="foe-col">
+          <h2 style="border:none;padding:0">${f.name}</h2>
+          <p class="muted">${f.desc}</p>
+          <div class="bar"><div class="foe-hp-fill" id="foe-hp" style="width:100%"></div><span class="bar-label" id="foe-hp-lbl">HP ${f.hp}/${f.maxHp}</span></div>
+          <div class="foe-state" id="foe-state">—</div>
+          <div class="telegraph"><div id="telegraph-bar"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="bar"><div class="hp-fill" id="p-hp" style="width:100%"></div><span class="bar-label" id="p-hp-lbl">HP ${Math.ceil(G.hp)}/${G.maxHp}</span></div>
+      <div class="bar"><div class="stam-fill" id="p-stam" style="width:100%"></div><span class="bar-label" id="p-stam-lbl">Stamina ${Math.ceil(G.stam)}/${G.maxStam}</span></div>
+      <div id="combat-actions">${combatActions()}</div>
+    </div>
+    <div class="panel"><h2>Chronicle</h2><div id="log"></div></div>
+  </div>`;
+}
+
+function combatActions(){
+  const c=combat;
+  if(c.clinch){
+    return `<h3>CLINCH — you have him grappled</h3><div class="btnrow">
+      <button onclick="clinchMove('headbutt')">Headbutt <span class="muted">(stun)</span></button>
+      <button onclick="clinchMove('knee')">Knee <span class="muted">(stam drain)</span></button>
+      <button onclick="clinchMove('throat')">Throat grab <span class="muted">(choke)</span></button>
+      <button onclick="clinchMove('throw')">Throw <span class="muted">(break + stagger)</span></button>
+    </div>`;
+  }
+  return `<div class="btnrow">
+    <button id="b-strike" onclick="pStrike()"><div class="cd-overlay" id="cd-strike"></div>Strike <span class="muted">(fast, -8)</span></button>
+    <button id="b-heavy" onclick="pHeavy()"><div class="cd-overlay" id="cd-heavy"></div>Heavy <span class="muted">(windup, -18)</span></button>
+    <button id="b-parry" class="danger" onclick="pParry()"><div class="cd-overlay" id="cd-parry"></div>Parry <span class="muted">(time it, -5)</span></button>
+    <button id="b-shove" onclick="pShove()"><div class="cd-overlay" id="cd-shove"></div>Shove <span class="muted">(stagger, -12)</span></button>
+    <button id="b-clinch" onclick="pClinch()"><div class="cd-overlay" id="cd-clinch"></div>Clinch <span class="muted">(grab, -10)</span></button>
+    <button id="b-salve" onclick="pSalve()"><div class="cd-overlay" id="cd-salve"></div>Use Salve <span class="muted">(-bleed)</span></button>
+    <button class="danger" onclick="pFlee()">Break Away <span class="muted">(flee)</span></button>
+  </div>`;
+}
+
+function updateCombatUI(){
+  if(!combat) return;
+  const c=combat, f=c.foe;
+  const foeHp=document.getElementById("foe-hp");
+  if(!foeHp){ render(); return; }
+  foeHp.style.width=clamp(f.hp/f.maxHp*100,0,100)+"%";
+  document.getElementById("foe-hp-lbl").textContent="HP "+Math.max(0,Math.ceil(f.hp))+"/"+f.maxHp;
+  document.getElementById("p-hp").style.width=clamp(G.hp/G.maxHp*100,0,100)+"%";
+  document.getElementById("p-hp-lbl").textContent="HP "+Math.ceil(G.hp)+"/"+G.maxHp;
+  document.getElementById("p-stam").style.width=clamp(G.stam/G.maxStam*100,0,100)+"%";
+  document.getElementById("p-stam-lbl").textContent="Stamina "+Math.ceil(G.stam)+"/"+G.maxStam;
+
+  const stEl=document.getElementById("foe-state");
+  const tg=document.getElementById("telegraph-bar");
+  if(stEl&&tg){
+    if(c.foeClinch){ stEl.textContent="GRAPPLING YOU!"; stEl.className="foe-state fs-strike"; tg.style.width="100%"; tg.style.background="linear-gradient(90deg,#b8281c,#ff5a3a)"; }
+    else if(c.state==="winding_up"){
+      stEl.textContent="WINDING UP..."; stEl.className="foe-state fs-wind";
+      const frac=1-(c.stateTimer/c.windupDur);
+      tg.style.width=clamp(frac*100,0,100)+"%";
+      tg.style.background = frac<=0.70 ? "linear-gradient(90deg,#3a8a3a,#6aff6a)" : "linear-gradient(90deg,#b8281c,#ff5a3a)";
+    } else if(c.state==="striking"){ stEl.textContent="STRIKING!"; stEl.className="foe-state fs-strike"; tg.style.width="100%"; tg.style.background="linear-gradient(90deg,#b8281c,#ff5a3a)"; }
+    else if(c.state==="recovering"){ stEl.textContent="RECOVERING — OPEN!"; stEl.className="foe-state fs-recover"; tg.style.width="0%"; }
+    else if(c.state==="staggered"){ stEl.textContent="STAGGERED"; stEl.className="foe-state fs-stagger"; tg.style.width="0%"; }
+    else { stEl.textContent="ready"; stEl.className="foe-state fs-idle"; tg.style.width="0%"; }
+  }
+
+  const cds={strike:800,heavy:1600,parry:600,shove:1200,clinch:2000,salve:3000};
+  for(const k in cds){
+    const ov=document.getElementById("cd-"+k);
+    if(ov) ov.style.width = clamp(c.cooldowns[k]/cds[k]*100,0,100)+"%";
+  }
+
+  const hasClinchUI = !!document.querySelector('#combat-actions h3');
+  if(c.clinch !== hasClinchUI){
+    const ca=document.getElementById("combat-actions");
+    if(ca) ca.innerHTML=combatActions();
+  }
+}
+
+/* ============================================================ BOOT ============================================================ */
+render();
 </script>
 </body>
 </html>
