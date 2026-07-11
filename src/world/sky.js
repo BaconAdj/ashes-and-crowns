@@ -27,7 +27,7 @@ export class SkySystem {
     scene.add(this.moon);
 
     // Hemisphere sky/ground tint
-    this.hemi = new THREE.HemisphereLight(0x8899cc, 0x4a3e28, 0.4);
+    this.hemi = new THREE.HemisphereLight(0x8899cc, 0x4a3e28, 0.7);
     scene.add(this.hemi);
 
     // Fog
@@ -76,7 +76,7 @@ export class SkySystem {
       skyCol = 0x080c14;
       fogCol = 0x080c14;
       sunInt = 0.0;
-      ambInt = 0.04;
+      ambInt = 0.10;
     }
 
     this.scene.background = new THREE.Color(skyCol);

@@ -14,7 +14,7 @@
 
   "time": {
     "realSecondsPerGameHour": 60,
-    "startHour": 6,
+    "startHour": 10,
     "startDay": 1,
     "startMonth": 11,
     "startYear": 1135,

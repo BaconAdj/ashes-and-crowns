@@ -58,6 +58,8 @@ player.setPosition(spawnPos.clone().setY(spawnPos.y + 1));
   const target = player.position.clone().add(new THREE.Vector3(0, P.height * 0.8, 0));
   camera.position.copy(target.clone().add(offset));
   camera.lookAt(target);
+  console.log('[AC] spawn:', player.position.toArray().map(v => v.toFixed(1)));
+  console.log('[AC] camera:', camera.position.toArray().map(v => v.toFixed(1)));
 }
 
 // Horse spawns a few metres from player
