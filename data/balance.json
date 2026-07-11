@@ -1,0 +1,74 @@
+{
+  "_comment": "All tunable numbers live here. Edit and hot-reload.",
+
+  "world": {
+    "mapWidth": 4096,
+    "mapDepth": 4096,
+    "terrainSegments": 256,
+    "terrainMaxHeight": 140,
+    "terrainNoiseScale": 0.0018,
+    "waterLevel": 4.0,
+    "fogNear": 180,
+    "fogFar": 900
+  },
+
+  "time": {
+    "realSecondsPerGameHour": 60,
+    "startHour": 6,
+    "startDay": 1,
+    "startMonth": 11,
+    "startYear": 1135,
+    "bellHours": [6, 9, 12, 15, 18, 21],
+    "bellNames":  ["Prime", "Terce", "Sext", "None", "Vespers", "Compline"],
+    "dawnHour": 6,
+    "duskHour": 18,
+    "nightHour": 21
+  },
+
+  "weather": {
+    "changeIntervalHours": 4,
+    "rainChanceNovember": 0.55,
+    "snowChanceNovember": 0.08,
+    "fogChanceNovember": 0.25,
+    "rainDropCount": 8000,
+    "rainSpeed": 28,
+    "fogDensityRain": 0.0018,
+    "fogDensityClear": 0.0005
+  },
+
+  "player": {
+    "height": 1.85,
+    "walkSpeed": 7.0,
+    "sprintSpeed": 14.0,
+    "staminaDrainSprint": 12,
+    "staminaRegenRate": 8,
+    "staminaMax": 100,
+    "healthMax": 100,
+    "hungerMax": 100,
+    "hungerDrainPerHour": 3,
+    "cameraDistance": 6.0,
+    "cameraHeight": 2.8,
+    "cameraPitchMin": -0.6,
+    "cameraPitchMax": 1.1
+  },
+
+  "horse": {
+    "walkSpeed": 10.0,
+    "gallopSpeed": 28.0,
+    "mountDistance": 3.5,
+    "height": 1.6
+  },
+
+  "village": {
+    "houseCount": [8, 14],
+    "houseWidthRange": [4, 9],
+    "houseDepthRange": [4, 8],
+    "houseHeightRange": [3, 5],
+    "churchHeight": 14,
+    "churchTowerHeight": 18,
+    "villageRadius": 60
+  },
+
+  "soldiersPerUnit": 2,
+  "battleMaxUnitsPerSide": 500
+}

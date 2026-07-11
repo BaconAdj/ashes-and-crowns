@@ -1,0 +1,41 @@
+{
+  "mapSize": { "width": 4096, "depth": 4096 },
+  "scale": "1 unit = ~50 metres",
+  "locations": [
+    { "id": "london",     "name": "London",           "nx": 0.72, "nz": 0.64, "type": "city",   "population": 18000, "garrison": 600, "allegiance": "stephen" },
+    { "id": "winchester", "name": "Winchester",       "nx": 0.60, "nz": 0.78, "type": "city",   "population": 6000,  "garrison": 300, "allegiance": "stephen", "notes": "Royal treasury" },
+    { "id": "oxford",     "name": "Oxford",           "nx": 0.56, "nz": 0.62, "type": "town",   "population": 4000,  "garrison": 200, "allegiance": "contested" },
+    { "id": "bristol",    "name": "Bristol",          "nx": 0.28, "nz": 0.72, "type": "city",   "population": 5000,  "garrison": 400, "allegiance": "matilda" },
+    { "id": "gloucester", "name": "Gloucester",       "nx": 0.30, "nz": 0.64, "type": "town",   "population": 3000,  "garrison": 300, "allegiance": "matilda" },
+    { "id": "lincoln",    "name": "Lincoln",          "nx": 0.62, "nz": 0.38, "type": "city",   "population": 5000,  "garrison": 350, "allegiance": "stephen" },
+    { "id": "wallingford","name": "Wallingford",      "nx": 0.58, "nz": 0.65, "type": "castle", "population": 800,   "garrison": 150, "allegiance": "matilda" },
+    { "id": "york",       "name": "York",             "nx": 0.58, "nz": 0.28, "type": "city",   "population": 8000,  "garrison": 500, "allegiance": "stephen" },
+    { "id": "carlisle",   "name": "Carlisle",         "nx": 0.38, "nz": 0.12, "type": "town",   "population": 2000,  "garrison": 200, "allegiance": "scotland" },
+    { "id": "norwich",    "name": "Norwich",          "nx": 0.84, "nz": 0.55, "type": "town",   "population": 4000,  "garrison": 180, "allegiance": "stephen" }
+  ],
+  "rivers": [
+    { "id": "thames", "name": "Thames", "points": [[0.30,0.68],[0.44,0.67],[0.56,0.66],[0.64,0.64],[0.72,0.64]] },
+    { "id": "severn", "name": "Severn", "points": [[0.30,0.55],[0.30,0.64],[0.28,0.72]] },
+    { "id": "ouse",   "name": "Great Ouse", "points": [[0.58,0.28],[0.62,0.45],[0.70,0.58]] }
+  ],
+  "roads": [
+    { "from": "london",     "to": "winchester" },
+    { "from": "london",     "to": "oxford" },
+    { "from": "oxford",     "to": "gloucester" },
+    { "from": "oxford",     "to": "wallingford" },
+    { "from": "gloucester", "to": "bristol" },
+    { "from": "london",     "to": "lincoln" },
+    { "from": "lincoln",    "to": "york" },
+    { "from": "york",       "to": "carlisle" }
+  ],
+  "spawnVillages": [
+    { "id": "ashwick",   "name": "Ashwick",   "nx": 0.66, "nz": 0.71, "population": 120, "allegiance": "stephen" },
+    { "id": "greywood",  "name": "Greywood",  "nx": 0.40, "nz": 0.58, "population": 90,  "allegiance": "matilda" },
+    { "id": "blackfen",  "name": "Blackfen",  "nx": 0.52, "nz": 0.45, "population": 75,  "allegiance": "contested" },
+    { "id": "thornmere", "name": "Thornmere", "nx": 0.36, "nz": 0.38, "population": 100, "allegiance": "contested" },
+    { "id": "saltwick",  "name": "Saltwick",  "nx": 0.78, "nz": 0.42, "population": 85,  "allegiance": "stephen" },
+    { "id": "fengate",   "name": "Fengate",   "nx": 0.70, "nz": 0.50, "population": 60,  "allegiance": "stephen" },
+    { "id": "coldridge", "name": "Coldridge", "nx": 0.22, "nz": 0.52, "population": 110, "allegiance": "matilda" },
+    { "id": "dunmore",   "name": "Dunmore",   "nx": 0.48, "nz": 0.72, "population": 130, "allegiance": "stephen" }
+  ]
+}
