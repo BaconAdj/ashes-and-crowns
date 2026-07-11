@@ -7,6 +7,7 @@ import { WeatherSystem } from './systems/weather.js';
 import { PlayerController } from './player/controller.js';
 import { HorseEntity } from './player/horse.js';
 import worldData from '../data/world.json';
+import balance from '../data/balance.json';
 
 // ── Renderer ───────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -43,6 +44,21 @@ const player = new PlayerController(scene, camera);
 const spawnVillage = worldData.spawnVillages[0];
 const spawnPos = findSpawnPoint(spawnVillage.nx, spawnVillage.nz);
 player.setPosition(spawnPos.clone().setY(spawnPos.y + 1));
+
+// Pre-position camera so first frame isn't black (avoid lerp-from-origin)
+{
+  const P = balance.player;
+  const yaw   = player.yaw;
+  const pitch = player.pitch;
+  const offset = new THREE.Vector3(
+    -Math.sin(yaw) * Math.cos(pitch) * P.cameraDistance,
+    Math.sin(pitch) * P.cameraDistance + P.cameraHeight,
+    -Math.cos(yaw) * Math.cos(pitch) * P.cameraDistance
+  );
+  const target = player.position.clone().add(new THREE.Vector3(0, P.height * 0.8, 0));
+  camera.position.copy(target.clone().add(offset));
+  camera.lookAt(target);
+}
 
 // Horse spawns a few metres from player
 const horseSpawn = spawnPos.clone();
