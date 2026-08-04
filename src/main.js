@@ -16,7 +16,11 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
+renderer.setClearColor(0x1a0a0a); // deep red — visible if scene is empty
+
+// Put canvas inside the wrapper div
+const wrap = document.getElementById('canvas-wrap');
+(wrap || document.body).appendChild(renderer.domElement);
 
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -92,10 +96,12 @@ function requestLock() {
 if (startBtn)  startBtn.addEventListener('click', requestLock);
 if (overlay)   overlay.addEventListener('click',  requestLock);
 
+const hud = document.getElementById('hud');
 document.addEventListener('pointerlockchange', () => {
   const locked = !!document.pointerLockElement;
   player.setPointerLocked(locked);
   if (overlay) overlay.style.display = locked ? 'none' : 'flex';
+  if (hud)     hud.style.display     = locked ? 'block' : 'none';
 });
 
 document.addEventListener('pointerlockerror', () => {

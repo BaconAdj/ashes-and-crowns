@@ -7,8 +7,10 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-    #canvas-wrap { width: 100%; height: 100%; }
-    canvas { display: block; width: 100% !important; height: 100% !important; }
+    #canvas-wrap {
+      position: fixed; inset: 0; z-index: 0;
+    }
+    canvas { display: block; width: 100% !important; height: 100% !important; position: absolute; inset: 0; }
 
     /* ── HUD ── */
     #hud {
