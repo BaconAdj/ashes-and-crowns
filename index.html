@@ -137,6 +137,27 @@
       text-align: center; line-height: 2; letter-spacing: .08em;
     }
     #controls-list span { color: #6a5a3a; }
+
+    /* Death screen */
+    #death-screen {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Palatino Linotype', serif;
+      animation: deathFade 2s ease-in;
+    }
+    @keyframes deathFade { from { opacity: 0; } to { opacity: 1; } }
+    #death-inner { text-align: center; color: #8a1a1a; }
+    #death-inner h1 { font-size: 3rem; letter-spacing: .2em; margin-bottom: .5em; }
+    #death-cause { font-size: 1rem; color: #4a2a2a; letter-spacing: .1em; margin-bottom: 2em; font-style: italic; }
+    #death-epitaph { font-size: .85rem; color: #2a1a1a; margin-bottom: 3em; line-height: 1.8; max-width: 380px; }
+    #death-restart {
+      background: transparent; border: 1px solid #8a1a1a44;
+      color: #8a1a1a; padding: .6em 2em; font-family: inherit;
+      font-size: .9rem; letter-spacing: .15em; cursor: pointer;
+      text-transform: uppercase; transition: border-color .2s;
+    }
+    #death-restart:hover { border-color: #8a1a1a; }
   </style>
 </head>
 <body>
@@ -182,6 +203,16 @@
   <div id="controls-list">
     <span>WASD</span> — Move &nbsp;&nbsp; <span>Mouse</span> — Look &nbsp;&nbsp; <span>E</span> — Mount / Dismount horse<br>
     <span>Shift</span> — Sprint &nbsp;&nbsp; <span>ESC</span> — Release cursor &nbsp;&nbsp; <span>M</span> — Map (coming soon)
+  </div>
+</div>
+
+<!-- Death screen -->
+<div id="death-screen" style="display:none">
+  <div id="death-inner">
+    <h1>You have perished</h1>
+    <p id="death-cause"></p>
+    <div id="death-epitaph"></div>
+    <button id="death-restart">Begin Anew</button>
   </div>
 </div>
 

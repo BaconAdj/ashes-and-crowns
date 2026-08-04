@@ -8,6 +8,7 @@ import { PlayerController } from './player/controller.js';
 import { HorseEntity } from './player/horse.js';
 import worldData from '../data/world.json';
 import balance from '../data/balance.json';
+import { saveGame, loadGame, deleteSave, serializeState, applyState } from './systems/save.js';
 
 // ── Renderer ───────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -151,6 +152,38 @@ function updateLocationLabel() {
   _nearestVillageName = best < 200 * 200 ? name : '';
 }
 
+// ── Load existing save ─────────────────────────────────────────────────────
+loadGame().then(saved => {
+  if (saved) {
+    applyState(saved, player, timeSystem);
+    console.log('[AC] Save loaded from', new Date(saved.savedAt).toLocaleString());
+  }
+}).catch(err => console.warn('[AC] Could not load save:', err));
+
+// ── Death screen ───────────────────────────────────────────────────────────
+const deathScreen = document.getElementById('death-screen');
+const deathCause  = document.getElementById('death-cause');
+const deathBtn    = document.getElementById('death-restart');
+let   _dead = false;
+
+async function triggerDeath(cause = 'Your wounds proved fatal.') {
+  if (_dead) return;
+  _dead = true;
+  document.exitPointerLock();
+  await deleteSave();
+  if (deathCause)  deathCause.textContent  = cause;
+  if (deathScreen) deathScreen.style.display = 'flex';
+  if (hud)         hud.style.display = 'none';
+}
+
+if (deathBtn) {
+  deathBtn.addEventListener('click', () => location.reload());
+}
+
+// ── Autosave ───────────────────────────────────────────────────────────────
+let _saveAccum = 0;
+const AUTOSAVE_INTERVAL = 30; // seconds
+
 // ── Game Loop ─────────────────────────────────────────────────────────────
 let _lastTime = performance.now();
 let _hourAccum = 0;
@@ -182,6 +215,27 @@ function loop() {
   // Update world systems
   skySystem.update(timeSystem.hour, weatherSystem.state);
   weatherSystem.update(dt, player.worldPosition);
+
+  // Death check
+  if (!_dead && player.health <= 0) {
+    const cause = player.hunger <= 0
+      ? 'You starved to death on the cold English roads.'
+      : player.wounds.length > 0
+        ? `You succumbed to your wounds: ${player.wounds[player.wounds.length - 1]}.`
+        : 'You have perished.';
+    triggerDeath(cause);
+    return;
+  }
+
+  // Autosave
+  if (!_dead) {
+    _saveAccum += dt;
+    if (_saveAccum >= AUTOSAVE_INTERVAL) {
+      _saveAccum = 0;
+      saveGame(serializeState(player, timeSystem))
+        .catch(err => console.warn('[AC] Autosave failed:', err));
+    }
+  }
 
   // HUD
   updateLocationLabel();
