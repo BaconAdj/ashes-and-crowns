@@ -1,0 +1,20 @@
+{
+    "name": "AshesAndCrowns.Battle",
+    "rootNamespace": "AshesAndCrowns.Battle",
+    "references": [
+        "AshesAndCrowns.Sim",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

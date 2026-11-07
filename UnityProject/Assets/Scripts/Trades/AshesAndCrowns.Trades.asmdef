@@ -1,0 +1,7 @@
+{
+    "name": "AshesAndCrowns.Trades",
+    "rootNamespace": "AshesAndCrowns.Trades",
+    "references": [ "AshesAndCrowns.Sim" ],
+    "includePlatforms": [], "excludePlatforms": [], "allowUnsafeCode": false, "overrideReferences": false,
+    "precompiledReferences": [], "autoReferenced": true, "defineConstraints": [], "versionDefines": [], "noEngineReferences": false
+}

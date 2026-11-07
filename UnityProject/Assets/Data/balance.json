@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "_comment": "Every tunable number lives here. Loaded by AshesAndCrowns.Game.DataFiles into AshesAndCrowns.Sim.Balance. No magic numbers in code.",
+
+  "simulation": {
+    "defaultSeed": 1135,
+    "realHoursToGameHours": 2.0,
+    "maxCatchUpGameDays": 10
+  },
+
+  "time": {
+    "startYear": 1135,
+    "startMonth": 12,
+    "startDay": 22,
+    "startHour": 9,
+    "realSecondsPerGameHour": 90,
+    "bellHours": [6, 9, 12, 15, 18, 21],
+    "bellNames": ["Prime", "Terce", "Sext", "None", "Vespers", "Compline"]
+  },
+
+  "player": {
+    "walkSpeed": 4.2,
+    "sprintSpeed": 7.0,
+    "gravity": 20.0,
+    "staminaMax": 100.0,
+    "staminaRegenPerSecond": 10.0,
+    "sprintStaminaPerSecond": 14.0,
+    "mountRadius": 3.0,
+    "height": 1.8
+  },
+
+  "horse": {
+    "walkSpeed": 6.5,
+    "gallopSpeed": 13.0,
+    "acceleration": 6.0,
+    "braking": 9.0,
+    "turnDegreesPerSecond": 110.0,
+    "gallopTurnDegreesPerSecond": 55.0,
+    "seatHeight": 1.75
+  },
+
+  "camera": {
+    "thirdPersonDistance": 5.5,
+    "thirdPersonHeight": 1.9,
+    "ridingDistance": 7.5,
+    "ridingHeight": 2.6,
+    "lookSensitivity": 0.12,
+    "pitchMinDegrees": -25.0,
+    "pitchMaxDegrees": 65.0,
+    "followSmoothing": 12.0,
+    "commandHeight": 55.0,
+    "commandPitchDegrees": 58.0,
+    "commandPanSpeed": 45.0,
+    "commandZoomMin": 25.0,
+    "commandZoomMax": 120.0,
+    "commandZoomSpeed": 6.0
+  },
+
+  "command": {
+    "vantageRadius": 14.0,
+    "unitSelectRadius": 10.0
+  },
+
+  "battle": {
+    "soldiersPerUnit": 1,
+    "soldiersPerSide": 50,
+    "unitSize": 25,
+    "formationSpacing": 1.3,
+    "shieldwallSpacing": 0.9,
+    "soldierHealth": 30.0,
+    "soldierArmour": 0.2,
+    "soldierBaseDamage": 11.0,
+    "soldierDamageVariance": 0.35,
+    "soldierWalkSpeed": 2.0,
+    "soldierChargeSpeed": 4.3,
+    "soldierTurnRate": 6.0,
+    "attackRange": 1.6,
+    "attackCooldownSeconds": 1.4,
+    "engageRangeHold": 6.0,
+    "engageRangeAdvance": 14.0,
+    "spatialCellSize": 3.0,
+    "enemyAdvanceDelaySeconds": 8.0,
+    "enemyChargeDistance": 30.0,
+    "unitArrivalRadius": 1.5
+  },
+
+  "melee": {
+    "reach": 2.1,
+    "arcDegrees": 110.0,
+    "swingWindupSeconds": 0.28,
+    "swingRecoverySeconds": 0.55,
+    "swingStaminaCost": 12.0,
+    "baseDamage": 24.0,
+    "damageVariance": 0.3,
+    "blockArcDegrees": 110.0,
+    "blockStaminaCost": 16.0,
+    "enemyReach": 1.7,
+    "enemyAttackCooldownSeconds": 1.7,
+    "enemyDamage": 0.16,
+    "enemyEngagePlayerRange": 9.0
+  },
+
+  "wounds": {
+    "bodyPartHitWeights": [0.08, 0.42, 0.14, 0.16, 0.10, 0.10],
+    "bodyPartLethality":  [2.6, 1.0, 0.35, 0.35, 0.45, 0.45],
+    "bleedPerSecondPerSeverity": 0.004,
+    "clotSecondsPerSeverity": 25.0,
+    "restHealPerHour": 0.02,
+    "maimThreshold": 0.85
+  },
+
+  "look": {
+    "fogDensity": 0.011,
+    "fogColor": [0.62, 0.65, 0.68],
+    "ambientColor": [0.30, 0.33, 0.38],
+    "sunColor": [0.80, 0.84, 0.92],
+    "sunIntensity": 1.05,
+    "sunPitchDegrees": 28.0,
+    "sunYawDegrees": -140.0,
+    "saturation": -42.0,
+    "contrast": 14.0,
+    "postExposure": -0.25,
+    "vignette": 0.36,
+    "filmGrain": 0.38
+  }
+}

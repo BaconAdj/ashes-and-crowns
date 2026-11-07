@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Runs the EditMode Sim tests outside Unity. The exact same .cs files are compiled here,
+    so a pass here means the pure-C# simulation layer is sound; Unity Test Framework runs them too.
+    Usage:  dotnet test Tools/dotnet-tests
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <RepoRoot>$(MSBuildThisFileDirectory)../../</RepoRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Sim/**/*.cs" />
+    <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Tests/EditMode/Sim/**/*.cs" />
+    <Compile Include="Harness/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+</Project>

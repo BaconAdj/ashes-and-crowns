@@ -1,0 +1,52 @@
+using AshesAndCrowns.Sim;
+using UnityEngine;
+
+namespace AshesAndCrowns.Game
+{
+    /// <summary>Mouse-orbit third-person camera. The target and distance change when mounted.</summary>
+    public sealed class ThirdPersonCamera : MonoBehaviour
+    {
+        public Transform target;
+        private Balance _balance;
+        private GameInput _input;
+        private float _yaw, _pitch = 15f;
+        private float _distance, _height;
+
+        public float Yaw => _yaw;
+
+        public void Init(Balance balance, GameInput input)
+        {
+            _balance = balance; _input = input;
+            SetRiding(false);
+        }
+
+        public void SetRiding(bool riding)
+        {
+            _distance = riding ? _balance.camera.ridingDistance : _balance.camera.thirdPersonDistance;
+            _height = riding ? _balance.camera.ridingHeight : _balance.camera.thirdPersonHeight;
+        }
+
+        private void LateUpdate()
+        {
+            if (_balance == null || target == null) return;
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                Vector2 look = _input.LookDelta * _balance.camera.lookSensitivity;
+                _yaw += look.x;
+                _pitch = Mathf.Clamp(_pitch - look.y, _balance.camera.pitchMinDegrees, _balance.camera.pitchMaxDegrees);
+            }
+            Quaternion rot = Quaternion.Euler(_pitch, _yaw, 0f);
+            Vector3 pivot = target.position + Vector3.up * _height;
+            Vector3 desired = pivot - rot * Vector3.forward * _distance;
+            // Keep the camera out of the ground.
+            if (Terrain.activeTerrain != null)
+            {
+                float ground = Terrain.activeTerrain.SampleHeight(desired) + Terrain.activeTerrain.transform.position.y + 0.6f;
+                if (desired.y < ground) desired.y = ground;
+            }
+            float t = 1f - Mathf.Exp(-_balance.camera.followSmoothing * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, desired, t);
+            transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
+        }
+    }
+}
