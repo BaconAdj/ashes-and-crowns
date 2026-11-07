@@ -27,7 +27,7 @@ namespace AshesAndCrowns.UI
         private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death;
         private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary;
         private float _nextTextUpdate;
-        private float _fpsAccum; private int _fpsFrames; private float _fps;
+        private float _fpsAccum; private int _fpsFrames; private float _fpsValue;
         private float _vantageDistance;
         private string _modeName = "On foot";
 
@@ -155,9 +155,9 @@ namespace AshesAndCrowns.UI
             _fpsAccum += Time.unscaledDeltaTime; _fpsFrames++;
             if (Time.unscaledTime < _nextTextUpdate) return;
             _nextTextUpdate = Time.unscaledTime + 0.125f;
-            if (_fpsAccum > 0f) _fps = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;
+            if (_fpsAccum > 0f) _fpsValue = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;
 
-            _fps.text = $"{_fps:F0} fps   {_director.PlayerAlive + _director.EnemyAlive} soldiers";
+            _fps.text = $"{_fpsValue:F0} fps   {_director.PlayerAlive + _director.EnemyAlive} soldiers";
             _armies.text = $"Your men: {_director.PlayerAlive}   Enemy: {_director.EnemyAlive}   (lost {_director.PlayerLosses} / {_director.EnemyLosses})";
             _commandSummary.text = _command != null && _command.enabled ? _command.Summary : (_vantageDistance > 0f ? $"Command vantage {_vantageDistance:F0} m away" : string.Empty);
             int near = _director.CountWithin(_vitals.transform.position, _balance.melee.enemyEngagePlayerRange, Side.Enemy);

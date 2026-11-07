@@ -11,6 +11,7 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 
 ## 2026-11-07 — Code-driven project setup instead of the Unity CLI
 - The authoring environment (cloud container) has no Unity editor, no Unity CLI and no Blender. Instead of `unity projects create`, the project is a hand-written minimal Unity project (ProjectVersion + manifest) plus an `[InitializeOnLoad]` bootstrap that creates the URP asset, enables the Input System, makes UI Toolkit panel settings and builds the Phase 0 scene on first open. All of it is idempotent and also reachable from the `Ashes and Crowns` menu and from batch mode.
+- A hand-written `ProjectSettings.asset` ships with `activeInputHandler: 2` (both input systems) and linear colour space, so the first Play has input without a restart. If Unity rejects the file (version skew), delete it: Unity regenerates defaults and the bootstrap sets the input handler and warns to restart.
 - Consequence: Phase 0 code is unverified in an editor until the user opens it. `.meta` files are generated on first open and must be committed then.
 
 ## 2026-11-07 — Data files live in Assets/Data and are read as plain files
@@ -26,6 +27,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 
 ## 2026-11-07 — Sim tests also run under .NET 8
 - `Tools/dotnet-tests` compiles `Assets/Scripts/Sim` and `Assets/Scripts/Tests/EditMode/Sim` with NUnit so the rules layer can be verified without an editor. The Unity Test Runner runs the identical files.
+
+## 2026-11-07 — Phase 0 static review applied
+- Independent review found two compile errors (duplicate `_fps` field in the HUD; PlayMode test asmdef missing Unity.Collections) and robustness items (non-throwing `TryReloadAllNullIn`, re-run mode switch on mount, selection array sized to unit count, ask before discarding a dirty scene, drop obsolete Lightmapping flags). All applied.
 
 ## Phase 0 summary (what exists, what is stubbed)
 - Built: project skeleton; Sim (rng, balance + validator, formations, combat math, wound model) with 32 passing tests; Battle (50 v 50 instanced soldiers, Burst jobs, orders, formations, enemy sergeant AI, banners, selection rings); Game (player, horse, third-person camera, mode manager, bootstrap, perf probe); Combat (swing/block/wound melee); UI Toolkit HUD with death screen; editor bootstrap and scene builder; batch build scripts; PlayMode battle smoke test.

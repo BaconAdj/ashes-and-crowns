@@ -58,16 +58,17 @@ namespace AshesAndCrowns.Game
             }
 
             // Mount / dismount
+            bool mountChanged = false;
             if (_input.Mount.WasPressedThisFrame())
             {
-                if (horse.Mounted) horse.Dismount(player.transform);
-                else if (Vector3.Distance(player.transform.position, horse.transform.position) <= _balance.player.mountRadius) horse.Mount(player.transform);
+                if (horse.Mounted) { horse.Dismount(player.transform); mountChanged = true; }
+                else if (Vector3.Distance(player.transform.position, horse.transform.position) <= _balance.player.mountRadius) { horse.Mount(player.transform); mountChanged = true; }
             }
 
             Vector3 body = horse.Mounted ? horse.transform.position : player.transform.position;
             bool inVantage = vantage != null && Vector3.Distance(body, vantage.position) <= _balance.command.vantageRadius;
             GameMode wanted = inVantage ? GameMode.Command : (horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
-            if (wanted != _mode) SetMode(wanted);
+            if (wanted != _mode || mountChanged) SetMode(wanted);
             _wasInVantage = inVantage;
 
             hud.SetVantageDistance(vantage != null ? Vector3.Distance(body, vantage.position) - _balance.command.vantageRadius : 0f);

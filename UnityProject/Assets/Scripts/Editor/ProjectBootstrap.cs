@@ -95,7 +95,7 @@ namespace AshesAndCrowns.EditorTools
                 try
                 {
                     var renderer = ScriptableObject.CreateInstance<UniversalRendererData>();
-                    ResourceReloader.ReloadAllNullIn(renderer, UniversalRenderPipelineAsset.packagePath);
+                    ResourceReloader.TryReloadAllNullIn(renderer, UniversalRenderPipelineAsset.packagePath);
                     AssetDatabase.CreateAsset(renderer, Paths.UrpRenderer);
                     asset = UniversalRenderPipelineAsset.Create(renderer);
                     asset.shadowDistance = 160f;

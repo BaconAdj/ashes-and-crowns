@@ -33,6 +33,7 @@ namespace AshesAndCrowns.EditorTools
             ProjectBootstrap.EnsureUrp();
             PanelSettings panel = ProjectBootstrap.EnsureUiToolkit();
 
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) { Debug.LogWarning("[Ashes and Crowns] scene build cancelled by user"); return; }
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // ---- palette (muted: mud, iron, blood, cold light)
@@ -60,7 +61,6 @@ namespace AshesAndCrowns.EditorTools
             RenderSettings.ambientLight = Col(balance.look.ambientColor);
             RenderSettings.fog = true; RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogDensity = balance.look.fogDensity; RenderSettings.fogColor = Col(balance.look.fogColor);
-            Lightmapping.bakedGI = false; Lightmapping.realtimeGI = false;
 
             // ---- terrain
             Terrain terrain = BuildTerrain(field, mud);

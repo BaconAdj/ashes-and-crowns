@@ -17,7 +17,7 @@ namespace AshesAndCrowns.Battle
         public Material selectionRingMaterial;
 
         private Balance _balance;
-        private readonly bool[] _selected = new bool[64];
+        private bool[] _selected = new bool[0];
         private LineRenderer[] _rings = new LineRenderer[0];
         private float _zoom;
         private Vector3 _focus;
@@ -32,6 +32,7 @@ namespace AshesAndCrowns.Battle
             _balance = balance;
             _zoom = balance.camera.commandHeight;
             _focus = vantage != null ? vantage.position : Vector3.zero;
+            _selected = new bool[director.UnitCount];
             BuildRings();
         }
 
