@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ashes & Crowns — The Anarchy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    #canvas-wrap {
+      position: fixed; inset: 0; z-index: 0;
+    }
+    canvas { display: block; width: 100% !important; height: 100% !important; position: absolute; inset: 0; }
+
+    /* ── HUD ── */
+    #hud {
+      position: fixed; inset: 0; pointer-events: none;
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+      color: #d4c89a;
+    }
+
+    /* Bell / time */
+    #bell-display {
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+      text-align: center; pointer-events: none;
+    }
+    #bell-hour {
+      font-size: 15px; letter-spacing: .18em; text-transform: uppercase;
+      color: #c9a84c; text-shadow: 0 1px 4px #000a;
+    }
+    #bell-date {
+      font-size: 12px; color: #8a7a5a; margin-top: 2px;
+      letter-spacing: .1em;
+    }
+
+    /* Vitals */
+    #vitals {
+      position: absolute; bottom: 28px; left: 28px;
+    }
+    .vital-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .vital-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6a5a3a; width: 54px; }
+    .vital-bar { width: 120px; height: 5px; background: #1a1610; border: 1px solid #2a2218; border-radius: 2px; overflow: hidden; }
+    .vital-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+    #fill-health { background: linear-gradient(90deg, #6a0808, #c03030); }
+    #fill-hunger { background: linear-gradient(90deg, #3a2800, #c9a84c); }
+    #fill-stamina { background: linear-gradient(90deg, #003a10, #3aaa50); }
+
+    /* Wounds */
+    #wounds-panel {
+      position: absolute; bottom: 28px; right: 28px;
+      max-width: 220px;
+    }
+    .wound-entry {
+      font-size: 11px; color: #c03030; margin-bottom: 3px;
+      text-shadow: 0 1px 3px #000a;
+    }
+    .wound-permanent { color: #8b1a1a; }
+
+    /* Crosshair */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px; opacity: .5;
+    }
+    #crosshair::before, #crosshair::after {
+      content: ''; position: absolute; background: #c9a84c;
+    }
+    #crosshair::before { width: 1px; height: 100%; left: 50%; transform: translateX(-50%); }
+    #crosshair::after  { height: 1px; width: 100%; top: 50%; transform: translateY(-50%); }
+
+    /* Location name */
+    #location-name {
+      position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+      font-size: 18px; color: #c9a84c; text-shadow: 0 2px 8px #000c;
+      letter-spacing: .15em; opacity: 0; transition: opacity 1s;
+      text-align: center;
+    }
+    #location-name.visible { opacity: 1; }
+
+    /* Action prompt */
+    #action-prompt {
+      position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+      font-size: 13px; color: #c9a84c; text-shadow: 0 1px 4px #000a;
+      letter-spacing: .1em; text-align: center; opacity: 0; transition: opacity .3s;
+    }
+    #action-prompt.visible { opacity: 1; }
+
+    /* Weather */
+    #weather-indicator {
+      position: absolute; top: 18px; right: 22px;
+      font-size: 12px; color: #5a5238; letter-spacing: .1em;
+    }
+
+    /* Controls hint */
+    #controls-hint {
+      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: #3a3228; letter-spacing: .1em; text-align: center;
+    }
+
+    /* Bell notification */
+    #bell-notif {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 22px; color: #c9a84c; text-shadow: 0 0 20px #c9a84c88;
+      letter-spacing: .2em; text-align: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .8s;
+    }
+    #bell-notif.ringing { opacity: 1; }
+
+    /* Pointer lock overlay */
+    #pointer-lock-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.85);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #c9a84c; font-family: 'Palatino Linotype', serif;
+      z-index: 100;
+    }
+    #pointer-lock-overlay h1 {
+      font-size: 3rem; letter-spacing: .2em; margin-bottom: .3em;
+      text-shadow: 0 0 40px #c9a84c44;
+    }
+    #pointer-lock-overlay p {
+      font-size: 1rem; color: #6a5a3a; letter-spacing: .12em; margin-bottom: 2.5em;
+      font-style: italic;
+    }
+    #start-btn {
+      background: transparent; border: 1px solid #c9a84c44;
+      color: #c9a84c; padding: .75em 2.5em; font-family: inherit;
+      font-size: 1rem; letter-spacing: .18em; cursor: pointer;
+      text-transform: uppercase; transition: border-color .2s, box-shadow .2s;
+    }
+    #start-btn:hover { border-color: #c9a84c; box-shadow: 0 0 20px #c9a84c22; }
+    #controls-list {
+      margin-top: 2.5em; font-size: .8rem; color: #4a4030;
+      text-align: center; line-height: 2; letter-spacing: .08em;
+    }
+    #controls-list span { color: #6a5a3a; }
+
+    /* Death screen */
+    #death-screen {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Palatino Linotype', serif;
+      animation: deathFade 2s ease-in;
+    }
+    @keyframes deathFade { from { opacity: 0; } to { opacity: 1; } }
+    #death-inner { text-align: center; color: #8a1a1a; }
+    #death-inner h1 { font-size: 3rem; letter-spacing: .2em; margin-bottom: .5em; }
+    #death-cause { font-size: 1rem; color: #4a2a2a; letter-spacing: .1em; margin-bottom: 2em; font-style: italic; }
+    #death-epitaph { font-size: .85rem; color: #2a1a1a; margin-bottom: 3em; line-height: 1.8; max-width: 380px; }
+    #death-restart {
+      background: transparent; border: 1px solid #8a1a1a44;
+      color: #8a1a1a; padding: .6em 2em; font-family: inherit;
+      font-size: .9rem; letter-spacing: .15em; cursor: pointer;
+      text-transform: uppercase; transition: border-color .2s;
+    }
+    #death-restart:hover { border-color: #8a1a1a; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap"></div>
+
+<!-- HUD (hidden until game starts) -->
+<div id="hud" style="display:none">
+  <div id="bell-display">
+    <div id="bell-hour">Prime</div>
+    <div id="bell-date">November, Year of Our Lord 1135</div>
+  </div>
+
+  <div id="vitals">
+    <div class="vital-row">
+      <div class="vital-label">Health</div>
+      <div class="vital-bar"><div class="vital-fill" id="fill-health" style="width:100%"></div></div>
+    </div>
+    <div class="vital-row">
+      <div class="vital-label">Hunger</div>
+      <div class="vital-bar"><div class="vital-fill" id="fill-hunger" style="width:75%"></div></div>
+    </div>
+    <div class="vital-row">
+      <div class="vital-label">Stamina</div>
+      <div class="vital-bar"><div class="vital-fill" id="fill-stamina" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div id="wounds-panel"></div>
+  <div id="crosshair"></div>
+  <div id="location-name"></div>
+  <div id="action-prompt"></div>
+  <div id="weather-indicator"></div>
+  <div id="controls-hint">WASD · Mouse — Move &nbsp;|&nbsp; E — Mount/Dismount &nbsp;|&nbsp; ESC — Release mouse</div>
+  <div id="bell-notif"></div>
+</div>
+
+<!-- Pointer-lock / start screen -->
+<div id="pointer-lock-overlay">
+  <h1>⚔ Ashes &amp; Crowns</h1>
+  <p>England, 1135 — The Anarchy</p>
+  <button id="start-btn">Enter the World</button>
+  <div id="controls-list">
+    <span>WASD</span> — Move &nbsp;&nbsp; <span>Mouse</span> — Look &nbsp;&nbsp; <span>E</span> — Mount / Dismount horse<br>
+    <span>Shift</span> — Sprint &nbsp;&nbsp; <span>ESC</span> — Release cursor &nbsp;&nbsp; <span>M</span> — Map (coming soon)
+  </div>
+</div>
+
+<!-- Death screen -->
+<div id="death-screen" style="display:none">
+  <div id="death-inner">
+    <h1>You have perished</h1>
+    <p id="death-cause"></p>
+    <div id="death-epitaph"></div>
+    <button id="death-restart">Begin Anew</button>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
