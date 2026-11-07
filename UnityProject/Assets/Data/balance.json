@@ -1,23 +1,34 @@
 {
   "version": 1,
   "_comment": "Every tunable number lives here. Loaded by AshesAndCrowns.Game.DataFiles into AshesAndCrowns.Sim.Balance. No magic numbers in code.",
-
   "simulation": {
     "defaultSeed": 1135,
     "realHoursToGameHours": 2.0,
     "maxCatchUpGameDays": 10
   },
-
   "time": {
     "startYear": 1135,
     "startMonth": 12,
     "startDay": 22,
     "startHour": 9,
     "realSecondsPerGameHour": 90,
-    "bellHours": [6, 9, 12, 15, 18, 21],
-    "bellNames": ["Prime", "Terce", "Sext", "None", "Vespers", "Compline"]
+    "bellHours": [
+      6,
+      9,
+      12,
+      15,
+      18,
+      21
+    ],
+    "bellNames": [
+      "Prime",
+      "Terce",
+      "Sext",
+      "None",
+      "Vespers",
+      "Compline"
+    ]
   },
-
   "player": {
     "walkSpeed": 4.2,
     "sprintSpeed": 7.0,
@@ -28,7 +39,6 @@
     "mountRadius": 3.0,
     "height": 1.8
   },
-
   "horse": {
     "walkSpeed": 6.5,
     "gallopSpeed": 13.0,
@@ -38,7 +48,6 @@
     "gallopTurnDegreesPerSecond": 55.0,
     "seatHeight": 1.75
   },
-
   "camera": {
     "thirdPersonDistance": 5.5,
     "thirdPersonHeight": 1.9,
@@ -55,12 +64,10 @@
     "commandZoomMax": 120.0,
     "commandZoomSpeed": 6.0
   },
-
   "command": {
     "vantageRadius": 14.0,
     "unitSelectRadius": 10.0
   },
-
   "battle": {
     "soldiersPerUnit": 1,
     "soldiersPerSide": 50,
@@ -83,7 +90,6 @@
     "enemyChargeDistance": 30.0,
     "unitArrivalRadius": 1.5
   },
-
   "melee": {
     "reach": 2.1,
     "arcDegrees": 110.0,
@@ -99,28 +105,165 @@
     "enemyDamage": 0.16,
     "enemyEngagePlayerRange": 9.0
   },
-
   "wounds": {
-    "bodyPartHitWeights": [0.08, 0.42, 0.14, 0.16, 0.10, 0.10],
-    "bodyPartLethality":  [2.6, 1.0, 0.35, 0.35, 0.45, 0.45],
+    "bodyPartHitWeights": [
+      0.08,
+      0.42,
+      0.14,
+      0.16,
+      0.1,
+      0.1
+    ],
+    "bodyPartLethality": [
+      2.6,
+      1.0,
+      0.35,
+      0.35,
+      0.45,
+      0.45
+    ],
     "bleedPerSecondPerSeverity": 0.004,
     "clotSecondsPerSeverity": 25.0,
     "restHealPerHour": 0.02,
     "maimThreshold": 0.85
   },
-
   "look": {
-    "fogDensity": 0.011,
-    "fogColor": [0.62, 0.65, 0.68],
-    "ambientColor": [0.30, 0.33, 0.38],
-    "sunColor": [0.80, 0.84, 0.92],
+    "fogDensity": 0.008,
+    "fogColor": [
+      0.62,
+      0.65,
+      0.68
+    ],
+    "ambientColor": [
+      0.3,
+      0.33,
+      0.38
+    ],
+    "sunColor": [
+      0.8,
+      0.84,
+      0.92
+    ],
     "sunIntensity": 1.05,
     "sunPitchDegrees": 28.0,
     "sunYawDegrees": -140.0,
     "saturation": -42.0,
     "contrast": 14.0,
-    "postExposure": -0.25,
+    "postExposure": -0.6,
     "vignette": 0.36,
-    "filmGrain": 0.38
+    "filmGrain": 0.38,
+    "noonSunIntensity": 1.1,
+    "dawnSunIntensity": 0.45,
+    "moonIntensity": 0.08,
+    "nightAmbientColor": [
+      0.05,
+      0.06,
+      0.09
+    ],
+    "dawnSunColor": [
+      0.85,
+      0.62,
+      0.45
+    ],
+    "nightFogColor": [
+      0.08,
+      0.09,
+      0.12
+    ],
+    "cloudSunDimming": 0.55,
+    "rainParticlesPerSecond": 2500,
+    "snowParticlesPerSecond": 900
+  },
+  "weather": {
+    "changeIntervalHours": 4,
+    "overcastByMonth": [
+      0.4,
+      0.38,
+      0.35,
+      0.3,
+      0.28,
+      0.25,
+      0.24,
+      0.25,
+      0.3,
+      0.36,
+      0.4,
+      0.42
+    ],
+    "rainByMonth": [
+      0.28,
+      0.25,
+      0.24,
+      0.22,
+      0.2,
+      0.18,
+      0.18,
+      0.2,
+      0.22,
+      0.28,
+      0.3,
+      0.28
+    ],
+    "fogByMonth": [
+      0.1,
+      0.09,
+      0.08,
+      0.06,
+      0.05,
+      0.04,
+      0.04,
+      0.05,
+      0.08,
+      0.12,
+      0.12,
+      0.11
+    ],
+    "snowByMonth": [
+      0.1,
+      0.09,
+      0.04,
+      0.01,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.02,
+      0.07
+    ],
+    "blendHours": 0.5,
+    "fogDensityClear": 0.004,
+    "fogDensityOvercast": 0.008,
+    "fogDensityRain": 0.014,
+    "fogDensityFog": 0.045,
+    "fogDensitySnow": 0.018,
+    "windClear": 0.2,
+    "windOvercast": 0.4,
+    "windRain": 0.7,
+    "windFog": 0.05,
+    "windSnow": 0.5
+  },
+  "village": {
+    "hutCount": 9,
+    "greenRadiusMetres": 22,
+    "flattenRadiusMetres": 70,
+    "hutFootprintMetres": [
+      5.5,
+      4.0
+    ],
+    "hutWallHeight": 2.2,
+    "hutRoofHeight": 2.4,
+    "churchNave": [
+      9,
+      6,
+      18
+    ],
+    "churchTowerHeight": 16,
+    "alehouseFootprint": [
+      10,
+      7
+    ],
+    "alehouseWallHeight": 3.0
   }
 }

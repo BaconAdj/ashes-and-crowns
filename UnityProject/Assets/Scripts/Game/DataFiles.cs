@@ -32,6 +32,7 @@ namespace AshesAndCrowns.Game
         }
 
         public static WorldData LoadWorld() => JsonUtility.FromJson<WorldData>(ReadText("world.json"));
+        public static CoastData LoadCoast() => JsonUtility.FromJson<CoastData>(ReadText("england_coast.json"));
     }
 
     [System.Serializable] public sealed class Point2 { public float x, z; }
@@ -41,5 +42,30 @@ namespace AshesAndCrowns.Game
         public float terrainSize = 400f, terrainHeight = 40f; public int noiseSeed = 1135;
         public Hill vantageHill; public Point2 playerArmyCentre, enemyArmyCentre, playerSpawn, horseSpawn;
     }
-    [System.Serializable] public sealed class WorldData { public float scaleMetresPerUnit; public Phase0Battlefield phase0Battlefield; }
+    [System.Serializable] public sealed class Overworld
+    {
+        public int terrainSizeMetres = 8192, heightmapResolution = 2049;
+        public float maxTerrainHeightMetres = 160f, seaLevelMetres = 12f, realHeightToWorldHeight = 0.12f, coastFalloffKm = 6f, landBaseHeightM = 30f;
+    }
+    [System.Serializable] public sealed class Location
+    {
+        public string id, name, type, allegiance, notes; public float nx, nz, lat, lon; public int population, garrison;
+    }
+    [System.Serializable] public sealed class Phase1Start { public string villageId; public float churchTowerHeightM; }
+    [System.Serializable] public sealed class WorldData
+    {
+        public float scaleMetresPerUnit; public Overworld overworld; public Location[] locations; public Phase0Battlefield phase0Battlefield; public Phase1Start phase1Start;
+        public Location Find(string id) { if (locations != null) foreach (var l in locations) if (l.id == id) return l; return null; }
+    }
+
+    [System.Serializable] public sealed class MapPoint { public float x, z; }
+    [System.Serializable] public sealed class PointRing { public MapPoint[] points; }
+    [System.Serializable] public sealed class NamedPolyline { public string name; public MapPoint[] points; }
+    [System.Serializable] public sealed class Upland { public string name; public float nx, nz, radiusKm, heightM; }
+    [System.Serializable] public sealed class Lowland { public string name; public float nx, nz, radiusKm; }
+    [System.Serializable] public sealed class CoastData
+    {
+        public float mapSideKm; public float latMin, latMax, lonMin, lonMax;
+        public MapPoint[] mainland; public PointRing[] islands; public Upland[] uplands; public Lowland[] lowlands; public NamedPolyline[] rivers;
+    }
 }

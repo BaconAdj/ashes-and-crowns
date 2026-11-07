@@ -35,3 +35,23 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Built: project skeleton; Sim (rng, balance + validator, formations, combat math, wound model) with 32 passing tests; Battle (50 v 50 instanced soldiers, Burst jobs, orders, formations, enemy sergeant AI, banners, selection rings); Game (player, horse, third-person camera, mode manager, bootstrap, perf probe); Combat (swing/block/wound melee); UI Toolkit HUD with death screen; editor bootstrap and scene builder; batch build scripts; PlayMode battle smoke test.
 - Stubbed: Save, Trades assemblies (placeholders); calendar/bells; soldier animation (capsules); audio (none); blood decals (bodies stay, no decals); death only resets the scene (Phase 2 deletes the save).
 - Not done here: opening in Unity, fps measurement, Blender pipeline.
+
+## 2026-11-07 — Phase 0 verified on the user's Mac
+- Unity 6000.6.8f1 opened the project first time with no compile errors; the bootstrap generated the scene. About 100 fps with 100 soldiers (worst frame 21 ms). Unity confirmed as the engine.
+- Observed: the Phase 0 ground rendered glossy white (the mud Texture2D saved as `.asset` did not survive import) and the image was over-exposed. Fixed in Phase 1 by writing textures as PNG and lowering post exposure. Rebuild the battlefield scene to pick it up.
+- The editor on the Mac is 6000.6, newer than the 6000.0 the manifest targets; Unity upgraded packages itself. ProjectVersion.txt is whatever the editor last wrote.
+
+## 2026-11-07 — Phase 1 geography and scale
+- England's outline comes from the public-domain `datasets/geo-countries` GeoJSON (Natural Earth derived), simplified to 420 points south of the Tweed and stored normalised in `Assets/Data/england_coast.json`. Uplands, lowlands and rivers are stylised radial bumps and polylines authored by hand from a map; no binary heightmap is committed. `EnglandTerrainBuilder` rasterises it at editor time (deterministic).
+- Overworld scale: one Unity terrain of 8192 m covers 673 km, so 1 unit is about 82 m across country, while villages, battles and buildings are 1:1. Riding London to Bristol takes a few minutes at a gallop. This is the Mount-and-Blade style compression the GDD's "scaled-down England" implies. Phase 5 decides whether settlements need separate 1:1 local areas.
+- Real heights are scaled by 0.12 (Snowdonia 950 m becomes about 114 m) over a 30 m land base; sea level is a flat plane at 12 m.
+
+## 2026-11-07 — Phase 1 clock, light and weather
+- Julian calendar in Sim (`Calendar`), starting Sunday 22 December 1135 (Stephen's coronation). Bells at 6, 9, 12, 15, 18, 21 named Prime, Terce, Sext, None, Vespers, Compline (the GDD's dawn/midday/evening plus three more; tune in balance.json). One real second is 1/90 of a game hour, so a day lasts 36 minutes.
+- `Daylight` computes real solar elevation and azimuth for 52 degrees north; `DayNightController` drives sun, ambient and fog colour from it; weather is a per-month spell table (`WeatherModel`) blended smoothly. Debug keys `]` (+1 h) and `[` (+1 day) in the England scene.
+- Buildings: procedural meshes in C# are the fallback; `Tools/blender/*.py` reproduce the same shapes as FBX. The village builder prefers FBX when present. The Blender run has to happen on the user's machine (no Blender in the cloud container).
+
+## Phase 1 summary (what exists, what is stubbed)
+- Built: England terrain from real coastline + stylised relief, sea plane, three terrain layers by height/slope; day/night with real solar geometry; weather spells with rain and snow particles and fog; church bells as the clock with HUD toast and audio stub; village of a church, alehouse, nine huts and a well on flattened ground; new England scene, menus, build settings; Sim tests (49 total) and a PlayMode clock test.
+- Stubbed: bell audio clips, trees and forests, roads, rivers as visible water (they only carve the ground), other settlements, interiors, NPCs.
+- Not done here: Blender run (scripts are ready), fps measurement of the big terrain.

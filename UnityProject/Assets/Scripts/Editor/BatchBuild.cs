@@ -19,7 +19,7 @@ namespace AshesAndCrowns.EditorTools
             ProjectBootstrap.EnsureEverything(openScene: false);
             var options = new BuildPlayerOptions
             {
-                scenes = new[] { Paths.Phase0Scene },
+                scenes = new[] { Paths.Phase1Scene, Paths.Phase0Scene },
                 locationPathName = output,
                 target = target,
                 options = BuildOptions.None

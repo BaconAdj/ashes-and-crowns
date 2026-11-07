@@ -1,9 +1,12 @@
 # Blender asset pipeline
 
-No Blender was available in the Phase 0 authoring environment, so this folder only fixes the conventions.
+Headless scripts that generate the village buildings as FBX. The Unity village builder prefers
+`UnityProject/Assets/Art/Buildings/<Name>.fbx` and falls back to the identical procedural mesh
+(`ProceduralBuildings.cs`) when the FBX is missing, so the game works with or without Blender.
 
-- Scripts run headless: `blender -b -P Tools/blender/<script>.py -- --out UnityProject/Assets/Art/<Category>/<Name>.fbx`
-- 1 unit = 1 metre. +Y up on export (`axis_up='Y', axis_forward='-Z'`), apply scale, apply unit scale.
-- Materials by name only; one shared muted palette texture `Assets/Art/Palette/palette.png` (to be made in Phase 1). No per-asset textures.
-- Export FBX with `use_selection=True`, `mesh_smooth_type='FACE'`, no cameras or lights, bake_anim only for rigs.
-- First real asset (Phase 1): a village hut, then the church.
+- Run all: `Tools/blender/build_all.sh` (set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender` on macOS).
+- Run one: `blender -b -P Tools/blender/gen_hut.py -- --out UnityProject/Assets/Art/Buildings/Hut.fbx`
+- Conventions: 1 unit = 1 m. Origin at the ground centre. Blender +Y (front) exports to Unity +Z. Two material slots named `Walls` and `Roof`; Unity remaps them to the palette materials (wattle/thatch or stone/slate). Flat shading. No cameras, lights or animation.
+- FBX files are tracked by Git LFS (see `.gitattributes`).
+- After generating: in Unity run `Ashes and Crowns > Rebuild > England Scene`. The console says `using Blender asset ...` for each FBX it found.
+- Next assets (Phase 4/5): market stall, fence, cart, hay rick, a shared muted palette texture `Assets/Art/Palette/palette.png`.

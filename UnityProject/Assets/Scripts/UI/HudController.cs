@@ -25,7 +25,8 @@ namespace AshesAndCrowns.UI
         private CommandController _command;
 
         private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death;
-        private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary;
+        private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast;
+        private float _bellToastUntil;
         private float _nextTextUpdate;
         private float _fpsAccum; private int _fpsFrames; private float _fpsValue;
         private float _vantageDistance;
@@ -38,6 +39,17 @@ namespace AshesAndCrowns.UI
         }
 
         public void SetVantageDistance(float metresOutsideRadius) => _vantageDistance = metresOutsideRadius;
+
+        /// <summary>Date line under the army panel. Call at low cadence (strings allocate).</summary>
+        public void SetClock(string text) { if (_clock != null) _clock.text = text; }
+
+        public void ShowBell(string bellName)
+        {
+            if (_bellToast == null) return;
+            _bellToast.text = "The bells ring " + bellName + ".";
+            _bellToast.style.display = DisplayStyle.Flex;
+            _bellToastUntil = Time.unscaledTime + 6f;
+        }
 
         public void SetMode(System.Enum mode)
         {
@@ -119,7 +131,9 @@ namespace AshesAndCrowns.UI
             _armies = MakeLabel("Your men: --   Enemy: --", 14, Parchment);
             _commandSummary = MakeLabel(string.Empty, 12, Parchment); _commandSummary.style.whiteSpace = WhiteSpace.Normal;
             _threat = MakeLabel(string.Empty, 13, new Color(0.8f, 0.55f, 0.45f));
-            armyPanel.Add(_armies); armyPanel.Add(_commandSummary); armyPanel.Add(_threat);
+            _clock = MakeLabel(string.Empty, 12, new Color(0.7f, 0.66f, 0.58f)); _clock.style.whiteSpace = WhiteSpace.Normal; _clock.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _bellToast = MakeLabel(string.Empty, 15, Parchment); _bellToast.style.unityFontStyleAndWeight = FontStyle.Italic; _bellToast.style.display = DisplayStyle.None;
+            armyPanel.Add(_armies); armyPanel.Add(_commandSummary); armyPanel.Add(_threat); armyPanel.Add(_clock); armyPanel.Add(_bellToast);
             _root.Add(armyPanel);
 
             // Bottom-right: fps
@@ -157,11 +171,20 @@ namespace AshesAndCrowns.UI
             _nextTextUpdate = Time.unscaledTime + 0.125f;
             if (_fpsAccum > 0f) _fpsValue = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;
 
-            _fps.text = $"{_fpsValue:F0} fps   {_director.PlayerAlive + _director.EnemyAlive} soldiers";
-            _armies.text = $"Your men: {_director.PlayerAlive}   Enemy: {_director.EnemyAlive}   (lost {_director.PlayerLosses} / {_director.EnemyLosses})";
-            _commandSummary.text = _command != null && _command.enabled ? _command.Summary : (_vantageDistance > 0f ? $"Command vantage {_vantageDistance:F0} m away" : string.Empty);
-            int near = _director.CountWithin(_vitals.transform.position, _balance.melee.enemyEngagePlayerRange, Side.Enemy);
-            _threat.text = near == 0 ? string.Empty : near == 1 ? "An enemy closes on you." : $"{near} enemies close on you.";
+            if (_bellToast.style.display == DisplayStyle.Flex && Time.unscaledTime > _bellToastUntil) _bellToast.style.display = DisplayStyle.None;
+            if (_director != null && _director.IsReady)
+            {
+                _fps.text = $"{_fpsValue:F0} fps   {_director.PlayerAlive + _director.EnemyAlive} soldiers";
+                _armies.text = $"Your men: {_director.PlayerAlive}   Enemy: {_director.EnemyAlive}   (lost {_director.PlayerLosses} / {_director.EnemyLosses})";
+                _commandSummary.text = _command != null && _command.enabled ? _command.Summary : (_vantageDistance > 0f ? $"Command vantage {_vantageDistance:F0} m away" : string.Empty);
+                int near = _director.CountWithin(_vitals.transform.position, _balance.melee.enemyEngagePlayerRange, Side.Enemy);
+                _threat.text = near == 0 ? string.Empty : near == 1 ? "An enemy closes on you." : $"{near} enemies close on you.";
+            }
+            else
+            {
+                _fps.text = $"{_fpsValue:F0} fps";
+                _armies.text = string.Empty; _commandSummary.text = string.Empty; _threat.text = string.Empty;
+            }
             _wounds.text = WoundsText();
         }
 

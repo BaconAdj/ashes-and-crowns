@@ -89,6 +89,25 @@ namespace AshesAndCrowns.Sim
         public float[] sunColor = { 0.80f, 0.84f, 0.92f };
         public float sunIntensity = 1.05f, sunPitchDegrees = 28f, sunYawDegrees = -140f;
         public float saturation = -42f, contrast = 14f, postExposure = -0.25f, vignette = 0.36f, filmGrain = 0.38f;
+        // Day/night
+        public float noonSunIntensity = 1.1f, dawnSunIntensity = 0.45f, moonIntensity = 0.08f;
+        public float[] nightAmbientColor = { 0.05f, 0.06f, 0.09f };
+        public float[] dawnSunColor = { 0.85f, 0.62f, 0.45f };
+        public float[] nightFogColor = { 0.08f, 0.09f, 0.12f };
+        public float cloudSunDimming = 0.55f;   // sun intensity multiplier at full cloud cover
+        public float rainParticlesPerSecond = 2500f, snowParticlesPerSecond = 900f;
+    }
+
+    [Serializable] public sealed class VillageBalance
+    {
+        public int hutCount = 9;
+        public float greenRadiusMetres = 22f, flattenRadiusMetres = 70f;
+        public float[] hutFootprintMetres = { 5.5f, 4f };
+        public float hutWallHeight = 2.2f, hutRoofHeight = 2.4f;
+        public float[] churchNave = { 9f, 6f, 18f };   // width, wall height, length
+        public float churchTowerHeight = 16f;
+        public float[] alehouseFootprint = { 10f, 7f };
+        public float alehouseWallHeight = 3f;
     }
 
     [Serializable] public sealed class Balance
@@ -104,6 +123,8 @@ namespace AshesAndCrowns.Sim
         public MeleeBalance melee = new MeleeBalance();
         public WoundBalance wounds = new WoundBalance();
         public LookBalance look = new LookBalance();
+        public WeatherBalance weather = new WeatherBalance();
+        public VillageBalance village = new VillageBalance();
     }
 
     public static class BalanceValidator
@@ -137,11 +158,27 @@ namespace AshesAndCrowns.Sim
             if (b.time.bellHours == null || b.time.bellNames == null || b.time.bellHours.Length != b.time.bellNames.Length)
                 errors.Add("time.bellHours and time.bellNames must have the same length");
             if (b.simulation.realHoursToGameHours <= 0f) errors.Add("simulation.realHoursToGameHours must be positive");
+            Positive(errors, b.time.realSecondsPerGameHour, "time.realSecondsPerGameHour");
+            if (b.time.startMonth < 1 || b.time.startMonth > 12) errors.Add("time.startMonth must be 1..12");
+            if (b.weather == null) errors.Add("weather missing");
+            else
+            {
+                Positive(errors, b.weather.changeIntervalHours, "weather.changeIntervalHours");
+                Twelve(errors, b.weather.overcastByMonth, "weather.overcastByMonth");
+                Twelve(errors, b.weather.rainByMonth, "weather.rainByMonth");
+                Twelve(errors, b.weather.fogByMonth, "weather.fogByMonth");
+                Twelve(errors, b.weather.snowByMonth, "weather.snowByMonth");
+                if (b.weather.rainByMonth != null && b.weather.rainByMonth.Length == 12)
+                    for (int m = 0; m < 12; m++)
+                        if (b.weather.overcastByMonth[m] + b.weather.rainByMonth[m] + b.weather.fogByMonth[m] + b.weather.snowByMonth[m] > 1f)
+                            errors.Add("weather probabilities for month " + (m + 1) + " exceed 1");
+            }
             return errors;
         }
 
         private static void Positive(List<string> errors, float v, string name) { if (!(v > 0f)) errors.Add(name + " must be positive"); }
         private static void Positive(List<string> errors, int v, string name) { if (v <= 0) errors.Add(name + " must be positive"); }
+        private static void Twelve(List<string> errors, float[] a, string name) { if (a == null || a.Length != 12) errors.Add(name + " must have 12 entries"); }
         private static void Unit(List<string> errors, float v, string name) { if (v < 0f || v > 1f) errors.Add(name + " must be within 0..1"); }
     }
 }

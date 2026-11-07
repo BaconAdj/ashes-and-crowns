@@ -29,26 +29,40 @@ namespace AshesAndCrowns.EditorTools
         [MenuItem("Ashes and Crowns/Setup Project (URP, Input, Settings)", priority = 0)]
         public static void SetupProjectMenu() => EnsureEverything(openScene: false);
 
-        [MenuItem("Ashes and Crowns/Rebuild Phase 0 Scene", priority = 1)]
-        public static void RebuildSceneMenu()
+        [MenuItem("Ashes and Crowns/Open England Scene (Phase 1)", priority = 1)]
+        public static void OpenEnglandMenu()
         {
-            EnsureProjectSettings();
-            Phase0SceneBuilder.Build();
-            RegisterScene();
+            if (!File.Exists(Paths.Phase1Scene)) RebuildEnglandMenu();
+            EditorSceneManager.OpenScene(Paths.Phase1Scene);
         }
 
-        [MenuItem("Ashes and Crowns/Open Phase 0 Scene", priority = 2)]
+        [MenuItem("Ashes and Crowns/Open Battlefield Scene (Phase 0)", priority = 2)]
         public static void OpenSceneMenu()
         {
             if (!File.Exists(Paths.Phase0Scene)) RebuildSceneMenu();
             EditorSceneManager.OpenScene(Paths.Phase0Scene);
         }
 
-        [MenuItem("Ashes and Crowns/Play Phase 0", priority = 3)]
-        public static void PlayMenu()
+        [MenuItem("Ashes and Crowns/Play England", priority = 3)]
+        public static void PlayEnglandMenu() { OpenEnglandMenu(); EditorApplication.isPlaying = true; }
+
+        [MenuItem("Ashes and Crowns/Play Battlefield", priority = 4)]
+        public static void PlayMenu() { OpenSceneMenu(); EditorApplication.isPlaying = true; }
+
+        [MenuItem("Ashes and Crowns/Rebuild/England Scene", priority = 20)]
+        public static void RebuildEnglandMenu()
         {
-            OpenSceneMenu();
-            EditorApplication.isPlaying = true;
+            EnsureProjectSettings();
+            Phase1SceneBuilder.Build();
+            RegisterScenes();
+        }
+
+        [MenuItem("Ashes and Crowns/Rebuild/Battlefield Scene", priority = 21)]
+        public static void RebuildSceneMenu()
+        {
+            EnsureProjectSettings();
+            Phase0SceneBuilder.Build();
+            RegisterScenes();
         }
 
         /// <summary>Batch-mode entry point: unity run ... -executeMethod AshesAndCrowns.EditorTools.ProjectBootstrap.SetupHeadless</summary>
@@ -61,12 +75,13 @@ namespace AshesAndCrowns.EditorTools
         public static void EnsureEverything(bool openScene)
         {
             EnsureProjectSettings();
-            bool sceneExisted = File.Exists(Paths.Phase0Scene);
-            if (!sceneExisted) Phase0SceneBuilder.Build();
-            RegisterScene();
-            if (openScene && !Application.isBatchMode && EditorSceneManager.GetActiveScene().path != Paths.Phase0Scene)
-                EditorSceneManager.OpenScene(Paths.Phase0Scene);
-            Debug.Log("[Ashes and Crowns] project setup verified" + (sceneExisted ? "." : "; Phase 0 scene generated."));
+            bool built = false;
+            if (!File.Exists(Paths.Phase0Scene)) { Phase0SceneBuilder.Build(); built = true; }
+            if (!File.Exists(Paths.Phase1Scene)) { Phase1SceneBuilder.Build(); built = true; }
+            RegisterScenes();
+            if (openScene && !Application.isBatchMode && File.Exists(Paths.Phase1Scene) && EditorSceneManager.GetActiveScene().path != Paths.Phase1Scene)
+                EditorSceneManager.OpenScene(Paths.Phase1Scene);
+            Debug.Log("[Ashes and Crowns] project setup verified" + (built ? "; scenes generated." : "."));
         }
 
         public static void EnsureProjectSettings()
@@ -165,12 +180,12 @@ namespace AshesAndCrowns.EditorTools
             return ps;
         }
 
-        private static void RegisterScene()
+        private static void RegisterScenes()
         {
-            if (!File.Exists(Paths.Phase0Scene)) return;
-            var scenes = EditorBuildSettings.scenes;
-            foreach (var s in scenes) if (s.path == Paths.Phase0Scene) return;
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(Paths.Phase0Scene, true) };
+            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>();
+            if (File.Exists(Paths.Phase1Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase1Scene, true));
+            if (File.Exists(Paths.Phase0Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase0Scene, true));
+            EditorBuildSettings.scenes = list.ToArray();
         }
     }
 }

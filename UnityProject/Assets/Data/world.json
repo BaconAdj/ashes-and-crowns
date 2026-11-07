@@ -1,23 +1,172 @@
 {
-  "_comment": "Fixed geography of a scaled-down England. nx/nz are normalized 0..1 map coordinates. Phase 0 uses only the battlefield entry; Phase 1 and 5 fill this in from a heightmap.",
-  "scaleMetresPerUnit": 50,
-  "mapSize": { "width": 4096, "depth": 4096 },
+  "_comment": "Fixed geography of a scaled-down England. nx/nz are normalized 0..1 map coordinates (x east, z north) computed from real lat/lon; see england_coast.json. overworld: the Unity terrain size in metres and its height scale.",
+  "scaleMetresPerUnit": 82.2,
+  "mapSize": {
+    "width": 4096,
+    "depth": 4096
+  },
   "locations": [
-    { "id": "london",      "name": "London",      "nx": 0.72, "nz": 0.64, "type": "city",   "population": 18000, "garrison": 600, "allegiance": "stephen" },
-    { "id": "winchester",  "name": "Winchester",  "nx": 0.60, "nz": 0.78, "type": "city",   "population": 6000,  "garrison": 300, "allegiance": "stephen", "notes": "Royal treasury" },
-    { "id": "oxford",      "name": "Oxford",      "nx": 0.56, "nz": 0.62, "type": "town",   "population": 4000,  "garrison": 200, "allegiance": "contested" },
-    { "id": "wallingford", "name": "Wallingford", "nx": 0.58, "nz": 0.66, "type": "castle", "population": 900,   "garrison": 150, "allegiance": "matilda" },
-    { "id": "bristol",     "name": "Bristol",     "nx": 0.28, "nz": 0.72, "type": "city",   "population": 5000,  "garrison": 400, "allegiance": "matilda" },
-    { "id": "gloucester",  "name": "Gloucester",  "nx": 0.32, "nz": 0.60, "type": "city",   "population": 3500,  "garrison": 350, "allegiance": "matilda" },
-    { "id": "lincoln",     "name": "Lincoln",     "nx": 0.62, "nz": 0.36, "type": "city",   "population": 5000,  "garrison": 250, "allegiance": "stephen" }
+    {
+      "id": "london",
+      "name": "London",
+      "nx": 0.71169,
+      "nz": 0.27388,
+      "type": "city",
+      "population": 18000,
+      "garrison": 600,
+      "allegiance": "stephen",
+      "lat": 51.507,
+      "lon": -0.128
+    },
+    {
+      "id": "winchester",
+      "name": "Winchester",
+      "nx": 0.59398,
+      "nz": 0.2005,
+      "type": "city",
+      "population": 6000,
+      "garrison": 300,
+      "allegiance": "stephen",
+      "notes": "Royal treasury",
+      "lat": 51.063,
+      "lon": -1.308
+    },
+    {
+      "id": "oxford",
+      "name": "Oxford",
+      "nx": 0.59896,
+      "nz": 0.31438,
+      "type": "town",
+      "population": 4000,
+      "garrison": 200,
+      "allegiance": "contested",
+      "lat": 51.752,
+      "lon": -1.258
+    },
+    {
+      "id": "wallingford",
+      "name": "Wallingford",
+      "nx": 0.61223,
+      "nz": 0.28926,
+      "type": "castle",
+      "population": 900,
+      "garrison": 150,
+      "allegiance": "matilda",
+      "lat": 51.6,
+      "lon": -1.125
+    },
+    {
+      "id": "bristol",
+      "name": "Bristol",
+      "nx": 0.46628,
+      "nz": 0.26512,
+      "type": "city",
+      "population": 5000,
+      "garrison": 400,
+      "allegiance": "matilda",
+      "lat": 51.454,
+      "lon": -2.588
+    },
+    {
+      "id": "gloucester",
+      "name": "Gloucester",
+      "nx": 0.5007,
+      "nz": 0.33306,
+      "type": "city",
+      "population": 3500,
+      "garrison": 350,
+      "allegiance": "matilda",
+      "lat": 51.865,
+      "lon": -2.243
+    },
+    {
+      "id": "lincoln",
+      "name": "Lincoln",
+      "nx": 0.67079,
+      "nz": 0.55934,
+      "type": "city",
+      "population": 5000,
+      "garrison": 250,
+      "allegiance": "stephen",
+      "lat": 53.234,
+      "lon": -0.538
+    },
+    {
+      "id": "ashby_village",
+      "name": "Ashby",
+      "nx": 0.61672,
+      "nz": 0.29835,
+      "lat": 51.655,
+      "lon": -1.08,
+      "type": "village",
+      "population": 140,
+      "garrison": 0,
+      "allegiance": "stephen",
+      "notes": "Phase 1 village in the Thames valley between Oxford and Wallingford"
+    }
   ],
-  "rivers": [ { "id": "thames", "name": "Thames", "points": [[0.40, 0.66], [0.56, 0.63], [0.72, 0.64], [0.82, 0.62]] } ],
+  "rivers": [
+    {
+      "id": "thames",
+      "name": "Thames",
+      "points": [
+        [
+          0.4,
+          0.66
+        ],
+        [
+          0.56,
+          0.63
+        ],
+        [
+          0.72,
+          0.64
+        ],
+        [
+          0.82,
+          0.62
+        ]
+      ]
+    }
+  ],
   "phase0Battlefield": {
-    "terrainSize": 400, "terrainHeight": 40, "noiseSeed": 1135,
-    "vantageHill": { "x": 120, "z": 90, "height": 13, "radius": 38 },
-    "playerArmyCentre": { "x": 200, "z": 150 },
-    "enemyArmyCentre":  { "x": 200, "z": 262 },
-    "playerSpawn": { "x": 148, "z": 118 },
-    "horseSpawn":  { "x": 152, "z": 121 }
+    "terrainSize": 400,
+    "terrainHeight": 40,
+    "noiseSeed": 1135,
+    "vantageHill": {
+      "x": 120,
+      "z": 90,
+      "height": 13,
+      "radius": 38
+    },
+    "playerArmyCentre": {
+      "x": 200,
+      "z": 150
+    },
+    "enemyArmyCentre": {
+      "x": 200,
+      "z": 262
+    },
+    "playerSpawn": {
+      "x": 148,
+      "z": 118
+    },
+    "horseSpawn": {
+      "x": 152,
+      "z": 121
+    }
+  },
+  "overworld": {
+    "terrainSizeMetres": 8192,
+    "heightmapResolution": 2049,
+    "maxTerrainHeightMetres": 160,
+    "seaLevelMetres": 12,
+    "realHeightToWorldHeight": 0.12,
+    "coastFalloffKm": 6,
+    "landBaseHeightM": 30
+  },
+  "phase1Start": {
+    "villageId": "ashby_village",
+    "churchTowerHeightM": 16
   }
 }

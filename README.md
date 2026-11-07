@@ -7,7 +7,7 @@ Unity 6 (URP). Design document: `docs/GDD.md`.
 1. Install Unity 6000.0 LTS via Unity Hub (any 6000.0.x).
 2. Unity Hub > Add > select the `UnityProject/` folder, open it. First import takes a few minutes.
 3. On load the project configures itself (URP, Input System, UI Toolkit) and builds `Assets/Scenes/Phase0_Battlefield.unity`. If the console says the Input System was enabled, close and reopen the project once.
-4. Press Play. If the scene isn't open: menu `Ashes and Crowns > Open Phase 0 Scene`.
+4. Press Play. The England scene opens by default; the Phase 0 battlefield is under `Ashes and Crowns > Open Battlefield Scene`.
 
 ## Controls (Phase 0)
 | Action | Keys |
@@ -19,6 +19,10 @@ Unity 6 (URP). Design document: `docs/GDD.md`.
 | Swing / block | Left mouse / hold right mouse |
 | Command (only inside the ring on the hill) | LMB select unit banner, RMB move, C charge, H hold, 1–4 formation, arrows pan, wheel zoom |
 | Begin again after death | R |
+| Debug time (England scene) | `]` skips an hour, `[` skips a day |
+
+## The world clock
+Church bells are the clock: Prime, Terce, Sext, None, Vespers and Compline ring from the village tower and the HUD names the next bell. A game day lasts 36 real minutes. The sun follows real solar geometry for southern England; weather changes in spells of a few hours, with rain, snow and fog by season.
 
 ## The command position
 You command your army only while you stand inside the ring at the standard on the hill. Ride down into the fight and you lose the tactical camera and every order you could give; the army keeps its last orders and the sergeants fight on. To command again, ride back up. As a soldier in another's army you never command.

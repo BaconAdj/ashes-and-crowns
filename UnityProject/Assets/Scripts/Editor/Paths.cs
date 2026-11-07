@@ -13,5 +13,6 @@ namespace AshesAndCrowns.EditorTools
         public const string PanelSettings = UiFolder + "/AshesPanelSettings.asset";
         public const string Theme = UiFolder + "/AshesTheme.tss";
         public const string Phase0Scene = Scenes + "/Phase0_Battlefield.unity";
+        public const string Phase1Scene = Scenes + "/Phase1_England.unity";
     }
 }

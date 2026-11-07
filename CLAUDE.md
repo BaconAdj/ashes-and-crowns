@@ -37,7 +37,8 @@ Sim must never reference UnityEngine. Battle must never reference Game.
 - Deterministic: all randomness through `Sim.DeterministicRng` (seeded per run, `Fork(streamId)` per system). Never `UnityEngine.Random` or `System.Random` in gameplay.
 - Battle and anything per-frame: zero managed allocations (no LINQ, no closures, no string concat in Update; cache strings, update text at low cadence). Soldiers are structure-of-arrays NativeArrays driven by Burst jobs; rendering via `Graphics.RenderMeshInstanced`.
 - One MonoBehaviour per file, file named after the class. Public fields only for inspector wiring; otherwise properties.
-- Scenes are built by code (`Phase0SceneBuilder`), never hand-edited; if you need a scene change, change the builder and rebuild via menu `Ashes and Crowns > Rebuild Phase 0 Scene`.
+- Scenes are built by code (`Phase0SceneBuilder`, `Phase1SceneBuilder`, shared helpers in `SceneKit`), never hand-edited; change the builder and rebuild via menu `Ashes and Crowns > Rebuild > ...`. Generated assets live in `Assets/Generated` and `Assets/Art/Palette` and are not committed; textures are written as PNG and imported (a Texture2D saved as .asset renders white).
+- Geography comes from `Assets/Data/england_coast.json` + `world.json` (normalized 0..1 coordinates, x east, z north); `EnglandTerrainBuilder` rasterises it. World scale: 8192 m terrain = 673 km; villages and battles are 1:1.
 - Art direction: desaturated, mud/iron/blood/cold light; URP Lit with `_BaseColor`; everything through the palette materials in `Assets/Art/Palette`. No cartoon colours.
 - Tests first for Sim rules and the save system (TDD). PlayMode tests for the death flow and battle smoke.
 - Commit at the end of each milestone. Never force-push or rewrite history. Push only when the user says so.
@@ -56,4 +57,6 @@ Sim must never reference UnityEngine. Battle must never reference Game.
 - First open: Unity Hub > Add > `UnityProject/`. On load, `ProjectBootstrap` creates the URP asset, enables the Input System (one restart needed), creates UI Toolkit panel settings and builds `Assets/Scenes/Phase0_Battlefield.unity`.
 
 ## Phase status
-- Phase 0 (vertical slice): code complete, **not yet opened in a Unity editor** (none in the authoring environment). First open may surface compile fixes. See the Phase 0 summary in `docs/DECISIONS.md`.
+- Phase 0 (vertical slice): verified on the user's Mac (Unity 6000.6.8f1, about 100 fps with 100 soldiers).
+- Phase 1 (world foundation): code complete, awaiting the user's first open. Scenes: `Phase1_England.unity` (default) and `Phase0_Battlefield.unity`. Menus under `Ashes and Crowns`.
+- The editor in use is 6000.6.x; the manifest pins 6000.0-era package versions and Unity upgrades them on open.

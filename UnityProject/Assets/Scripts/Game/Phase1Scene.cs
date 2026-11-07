@@ -1,0 +1,87 @@
+using AshesAndCrowns.Combat;
+using AshesAndCrowns.UI;
+using UnityEngine;
+
+namespace AshesAndCrowns.Game
+{
+    /// <summary>Runtime driver for the England scene: clock, weather, bells, village spawn.</summary>
+    [DefaultExecutionOrder(-500)]
+    public sealed class Phase1Scene : MonoBehaviour
+    {
+        public Terrain terrain;
+        public WorldClock clock;
+        public DayNightController dayNight;
+        public WeatherController weather;
+        public BellTower bells;
+        public Material rainMaterial, snowMaterial;
+        public PlayerController player;
+        public HorseController horse;
+        public PlayerVitals vitals;
+        public ThirdPersonCamera thirdPersonCamera;
+        public HudController hud;
+        public PerfProbe perf;
+        public Transform spawnPoint;
+        public Transform horseSpawnPoint;
+
+        private float _nextClockText;
+
+        private void Start()
+        {
+            var boot = GameBootstrap.Instance;
+            var balance = boot.Balance;
+            clock.Init(balance, boot.Rng);
+            dayNight.Init(balance);
+            weather.Init(balance, rainMaterial, snowMaterial);
+            weather.follow = Camera.main != null ? Camera.main.transform : player.transform;
+
+            PlaceOnGround(player.transform, spawnPoint.position, 0.2f);
+            PlaceOnGround(horse.transform, horseSpawnPoint.position, 0.2f);
+            vitals.Init(balance, boot.Rng);
+            player.Init(balance, boot.Input);
+            horse.Init(balance, boot.Input);
+            thirdPersonCamera.Init(balance, boot.Input);
+            hud.Init(balance, vitals, null, null, null);
+            bells.hud = hud;
+            Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+            hud.SetMode(GameMode.OnFoot);
+        }
+
+        private void Update()
+        {
+            var input = GameBootstrap.Instance.Input;
+            if (input.Mount.WasPressedThisFrame())
+            {
+                if (horse.Mounted) { horse.Dismount(player.transform); player.enabled = true; }
+                else if (Vector3.Distance(player.transform.position, horse.transform.position) <= GameBootstrap.Instance.Balance.player.mountRadius)
+                { horse.Mount(player.transform); player.enabled = false; }
+                thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
+                thirdPersonCamera.SetRiding(horse.Mounted);
+                hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
+            }
+            if (input.ToggleCursor.WasPressedThisFrame())
+            {
+                bool locked = Cursor.lockState == CursorLockMode.Locked;
+                Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = locked;
+            }
+            // Debug: ] skips an hour, [ skips a day, so day/night and weather can be checked quickly.
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null)
+            {
+                if (kb.rightBracketKey.wasPressedThisFrame) clock.SkipHours(1f);
+                if (kb.leftBracketKey.wasPressedThisFrame) clock.SkipHours(24f);
+            }
+            if (Time.unscaledTime >= _nextClockText && clock.IsReady)
+            {
+                _nextClockText = Time.unscaledTime + 1f;
+                var c = clock.Calendar;
+                hud.SetClock($"{c.LongDate()}\n{c.HourOfDay:00.0}h  {c.Season}  |  next bell {c.NextBellName} in {c.HoursUntilNextBell:F1} h  |  {weather.Description}");
+            }
+        }
+
+        private void PlaceOnGround(Transform t, Vector3 at, float lift)
+        {
+            float y = terrain.SampleHeight(at) + terrain.transform.position.y + lift;
+            t.position = new Vector3(at.x, y, at.z);
+        }
+    }
+}
