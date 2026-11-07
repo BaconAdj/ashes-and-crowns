@@ -51,6 +51,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - `Daylight` computes real solar elevation and azimuth for 52 degrees north; `DayNightController` drives sun, ambient and fog colour from it; weather is a per-month spell table (`WeatherModel`) blended smoothly. Debug keys `]` (+1 h) and `[` (+1 day) in the England scene.
 - Buildings: procedural meshes in C# are the fallback; `Tools/blender/*.py` reproduce the same shapes as FBX. The village builder prefers FBX when present. The Blender run has to happen on the user's machine (no Blender in the cloud container).
 
+## 2026-11-07 — Phase 1 static review applied
+- Missing `using AshesAndCrowns.UI` in the England scene builder (compile error), inside-out triangle winding in the procedural buildings, snow emission capped by maxParticles, particle systems explicitly started. Noted for later: the England scene has no death path yet (nothing can wound you there until Phase 4).
+
 ## Phase 1 summary (what exists, what is stubbed)
 - Built: England terrain from real coastline + stylised relief, sea plane, three terrain layers by height/slope; day/night with real solar geometry; weather spells with rain and snow particles and fog; church bells as the clock with HUD toast and audio stub; village of a church, alehouse, nine huts and a well on flattened ground; new England scene, menus, build settings; Sim tests (49 total) and a PlayMode clock test.
 - Stubbed: bell audio clips, trees and forests, roads, rivers as visible water (they only carve the ground), other settlements, interiors, NPCs.

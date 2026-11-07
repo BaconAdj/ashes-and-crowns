@@ -22,7 +22,7 @@ namespace AshesAndCrowns.Game
                 V.Add(a); V.Add(b); V.Add(c); V.Add(d);
                 float w = Vector3.Distance(a, b) * uvScale, h = Vector3.Distance(a, d) * uvScale;
                 UV.Add(new Vector2(0, 0)); UV.Add(new Vector2(w, 0)); UV.Add(new Vector2(w, h)); UV.Add(new Vector2(0, h));
-                tris.Add(i); tris.Add(i + 2); tris.Add(i + 1); tris.Add(i); tris.Add(i + 3); tris.Add(i + 2);
+                tris.Add(i); tris.Add(i + 1); tris.Add(i + 2); tris.Add(i); tris.Add(i + 2); tris.Add(i + 3);
             }
 
             public void Tri(List<int> tris, Vector3 a, Vector3 b, Vector3 c)
@@ -105,10 +105,10 @@ namespace AshesAndCrowns.Game
             b.Box(b.Walls, 0f, towerZ, towerHeight, towerSide + 0.3f, 0.6f, towerSide + 0.3f);
             float capY = towerHeight + 0.6f; float h = towerSide * 0.45f; float s = towerSide / 2 + 0.15f;
             var apex = new Vector3(0f, capY + h, towerZ);
-            b.Tri(b.Roof, new Vector3(-s, capY, towerZ + s), new Vector3(s, capY, towerZ + s), apex);
-            b.Tri(b.Roof, new Vector3(s, capY, towerZ + s), new Vector3(s, capY, towerZ - s), apex);
-            b.Tri(b.Roof, new Vector3(s, capY, towerZ - s), new Vector3(-s, capY, towerZ - s), apex);
-            b.Tri(b.Roof, new Vector3(-s, capY, towerZ - s), new Vector3(-s, capY, towerZ + s), apex);
+            b.Tri(b.Roof, new Vector3(s, capY, towerZ + s), new Vector3(-s, capY, towerZ + s), apex);
+            b.Tri(b.Roof, new Vector3(s, capY, towerZ - s), new Vector3(s, capY, towerZ + s), apex);
+            b.Tri(b.Roof, new Vector3(-s, capY, towerZ - s), new Vector3(s, capY, towerZ - s), apex);
+            b.Tri(b.Roof, new Vector3(-s, capY, towerZ + s), new Vector3(-s, capY, towerZ - s), apex);
             // buttresses along the nave
             for (int i = -1; i <= 1; i++)
             {

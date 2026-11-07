@@ -65,6 +65,8 @@ namespace AshesAndCrowns.EditorTools
             if (m.HasProperty("_DstBlend")) m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
             if (m.HasProperty("_ZWrite")) m.SetFloat("_ZWrite", 0f);
             m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.SetOverrideTag("RenderType", "Transparent");
+            if (m.HasProperty("_AlphaClip")) m.SetFloat("_AlphaClip", 0f);
             m.renderQueue = (int)RenderQueue.Transparent;
             AssetDatabase.CreateAsset(m, path);
             return m;

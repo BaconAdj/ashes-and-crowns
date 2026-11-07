@@ -95,7 +95,7 @@ namespace AshesAndCrowns.EditorTools
             var playerGo = new GameObject("Player");
             var pcc = playerGo.AddComponent<CharacterController>();
             pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f;
-            var body = SceneKit.Primitive(PrimitiveType.Capsule, "Body", playerGo.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.55f, 0.75f, 0.55f), leather);
+            SceneKit.Primitive(PrimitiveType.Capsule, "Body", playerGo.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.55f, 0.75f, 0.55f), leather);
             SceneKit.Primitive(PrimitiveType.Sphere, "Head", playerGo.transform, new Vector3(0f, 1.78f, 0f), new Vector3(0.3f, 0.32f, 0.3f), steel);
             var weaponPivot = new GameObject("WeaponPivot").transform;
             weaponPivot.SetParent(playerGo.transform, false); weaponPivot.localPosition = new Vector3(0.38f, 1.2f, 0.1f);
