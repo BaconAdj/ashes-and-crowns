@@ -14,6 +14,7 @@ namespace AshesAndCrowns.Game
         public WorldClock clock;
         public PlayerVitals vitals;
         public Transform home;      // sleeping within homeRadius counts as resting safely
+        public VillageLife village; // for the current settlement and arrests
         private Balance _balance;
         private bool _subscribed;
         public bool RestingAtHome;  // set by VillageLife while asleep
@@ -48,6 +49,12 @@ namespace AshesAndCrowns.Game
                 ctx.Market.TickDay();
                 ctx.Standing.TickDay();
                 ctx.Outbreak = Mathf.Max(0f, ctx.Outbreak - _balance.disease.settlementOutbreakDecayPerDay);
+                ctx.Reputation?.TickDay();
+                foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
+                var here = ctx.Current;
+                if (ctx.Crime != null && here != null && village != null && ctx.Crime.TickDay(here, false, rng)) { village.Arrest(here); break; }
+                if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && JobBoard.Today(clock.Calendar) > ctx.ActiveJob.DeadlineDay)
+                { ctx.ActiveJob.State = JobState.Failed; ctx.Standing.DebtDefaulted(); ctx.Reputation.Record(Deed.BrokeContract); ctx.ActiveJob = null; }
             }
             // Missed Sunday mass? Checked the day after a Sunday or feast.
             var cal = clock.Calendar;

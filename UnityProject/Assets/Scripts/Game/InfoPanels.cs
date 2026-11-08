@@ -55,6 +55,16 @@ namespace AshesAndCrowns.Game
                 if (v < 0.5f) continue;
                 _sb.Append(Skills.DisplayName(s)).Append(' ').Append(v.ToString("F0")).Append("   ");
             }
+            var ctx = RunSession.Context;
+            if (ctx.Reputation != null)
+            {
+                _sb.Append("\n\nCrown: ").Append(ctx.Reputation.Describe(Faction.Crown)).Append("   Angevins: ").Append(ctx.Reputation.Describe(Faction.Angevin))
+                   .Append("   Church: ").Append(ctx.Reputation.Describe(Faction.Church)).Append("   Commons: ").Append(ctx.Reputation.Describe(Faction.Commons));
+                if (ctx.Reputation.Notoriety > 0.05f) _sb.Append("\nNotoriety ").Append((ctx.Reputation.Notoriety * 100f).ToString("F0")).Append('%');
+                if (ctx.Crime != null && ctx.Crime.Outlawed) _sb.Append("\nYOU ARE OUTLAWED.");
+                if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken) { var to = ctx.FindSettlement(ctx.ActiveJob.ToId); _sb.Append("\nWork: ").Append(JobBoard.KindName(ctx.ActiveJob.Kind)).Append(" to ").Append(to != null ? to.Name : ctx.ActiveJob.ToId).Append(", ").Append(ctx.ActiveJob.Pay).Append(" pennies."); }
+                if (ctx.Needs != null) _sb.Append("\nBelly ").Append((ctx.Needs.Hunger * 100f).ToString("F0")).Append("%   rest ").Append((ctx.Needs.Rest * 100f).ToString("F0")).Append('%');
+            }
             return _sb.ToString();
         }
 

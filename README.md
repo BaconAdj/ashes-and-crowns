@@ -19,6 +19,7 @@ Unity 6 (URP). Design document: `docs/GDD.md`.
 | Swing / block | Left mouse / hold right mouse |
 | Command (only inside the ring on the hill) | LMB select unit banner, RMB move, C charge, H hold, 1–4 formation, arrows pan, wheel zoom |
 | Character / family / baronage | C / F / B |
+| Map | M |
 | Inventory / eat | I / G |
 | Use a place or speak (church, alehouse, hut, work bench, villager) | E when the prompt shows |
 | Hands-on moment | Space on the beat |
@@ -31,6 +32,9 @@ With no save on disk the England scene opens on character creation: name, sex, o
 
 ## The peasant day
 Dawn bells wake you. At the bench behind your hut, E works the day: a short hands-on moment sets the quality, ten hours pass, goods land in your pack. The alehouse buys and sells at prices that move with the season, stock and war; haggling is a skill. Sunday mass between Terce and Sext is seen by the village; standing opens doors and lowers prices. Wounds must be bound at home or they turn bad. Eat, or starve.
+
+## England
+Eight villages beside the real towns and cities, each with its own market, lord and allegiance. Prices differ by region, so goods carried across the country sell. The alehouse offers work: letters, caravan guard, escort, garrison days, labour, bounties. Walk into the destination to be paid. Steal and be seen and the reeve will come for you; the Church gives forty days of sanctuary, no more. Commoners hang; nobles lose their heads.
 
 ## The world clock
 Church bells are the clock: Prime, Terce, Sext, None, Vespers and Compline ring from the village tower and the HUD names the next bell. A game day lasts 36 real minutes. The sun follows real solar geometry for southern England; weather changes in spells of a few hours, with rain, snow and fog by season.

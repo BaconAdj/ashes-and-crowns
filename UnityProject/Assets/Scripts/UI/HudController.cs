@@ -27,7 +27,8 @@ namespace AshesAndCrowns.UI
 
         private VisualElement _root, _bloodFill, _staminaFill, _hungerFill, _hitFlash, _death, _chronicle, _quit, _narration, _info, _dialogue, _market, _moment, _momentTrack, _momentMarker, _momentZone;
         private Label _prompt, _standing, _toast, _dialogueTitle, _dialogueBody, _marketTitle, _marketMsg, _momentTitle, _momentHint;
-        private VisualElement _dialogueButtons, _marketList;
+        private VisualElement _dialogueButtons, _marketList, _mapOverlay, _mapImage;
+        private Label _mapCaption;
         private float _toastUntil;
         private System.Action<float> _momentDone; private float _momentT, _momentSpeed, _momentZoneWidth; private int _momentBeats; private float _momentQuality;
         private Label _narrationText, _infoTitle, _infoBody;
@@ -152,6 +153,39 @@ namespace AshesAndCrowns.UI
         }
 
         public void HideInfoPanel() { if (_info != null) _info.style.display = DisplayStyle.None; }
+
+        public void ShowMap(Texture2D map, IReadOnlyList<Settlement> settlements, Vector2 playerNormalized, string highlightId)
+        {
+            if (_mapOverlay == null) return;
+            _mapImage.style.backgroundImage = new StyleBackground(map);
+            _mapImage.Clear();
+            foreach (var s in settlements)
+            {
+                var dot = new VisualElement { pickingMode = PickingMode.Ignore };
+                float size = s.Type == Sim.SettlementType.City ? 12f : s.Type == Sim.SettlementType.Town ? 9f : 6f;
+                dot.style.position = Position.Absolute; dot.style.width = size; dot.style.height = size;
+                dot.style.left = new Length(s.Nx * 100f, LengthUnit.Percent); dot.style.bottom = new Length(s.Nz * 100f, LengthUnit.Percent);
+                dot.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(50, LengthUnit.Percent));
+                dot.style.borderBottomLeftRadius = dot.style.borderBottomRightRadius = dot.style.borderTopLeftRadius = dot.style.borderTopRightRadius = size;
+                dot.style.backgroundColor = s.Id == highlightId ? new Color(0.85f, 0.7f, 0.3f) : s.Allegiance == Sim.Allegiance.Stephen ? new Color(0.25f, 0.3f, 0.5f) : s.Allegiance == Sim.Allegiance.Matilda ? new Color(0.55f, 0.2f, 0.18f) : new Color(0.2f, 0.2f, 0.2f);
+                _mapImage.Add(dot);
+                var name = new Label(s.Name) { pickingMode = PickingMode.Ignore };
+                name.style.position = Position.Absolute; name.style.fontSize = s.Type >= Sim.SettlementType.Town ? 12 : 10; name.style.color = new Color(0.12f, 0.1f, 0.08f);
+                name.style.left = new Length(s.Nx * 100f, LengthUnit.Percent); name.style.bottom = new Length(s.Nz * 100f, LengthUnit.Percent);
+                name.style.translate = new Translate(8, 4);
+                _mapImage.Add(name);
+            }
+            var you = new VisualElement { pickingMode = PickingMode.Ignore };
+            you.style.position = Position.Absolute; you.style.width = 10; you.style.height = 10; you.style.backgroundColor = Parchment;
+            you.style.left = new Length(playerNormalized.x * 100f, LengthUnit.Percent); you.style.bottom = new Length(playerNormalized.y * 100f, LengthUnit.Percent);
+            you.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(50, LengthUnit.Percent));
+            you.style.rotate = new Rotate(45f);
+            _mapImage.Add(you);
+            _mapCaption.text = "Blue: for Stephen.  Red: for Matilda.  Gold: where your work takes you.  The pale mark is you.  (M closes)";
+            _mapOverlay.style.display = DisplayStyle.Flex;
+        }
+
+        public void HideMap() { if (_mapOverlay != null) _mapOverlay.style.display = DisplayStyle.None; }
 
         public void SetPrompt(string text) { if (_prompt != null && _prompt.text != text) _prompt.text = text; }
         public void SetHunger(float value01) { if (_hungerFill != null) _hungerFill.style.width = new Length(Mathf.Clamp01(value01) * 100f, LengthUnit.Percent); }
@@ -371,6 +405,14 @@ namespace AshesAndCrowns.UI
             _momentTrack.Add(_momentZone); _momentTrack.Add(_momentMarker);
             _moment.Add(_momentTitle); _moment.Add(_momentHint); _moment.Add(_momentTrack);
             _root.Add(_moment);
+
+            // Map
+            _mapOverlay = MakeOverlay(0.85f);
+            _mapImage = new VisualElement { pickingMode = PickingMode.Ignore };
+            _mapImage.style.width = 720; _mapImage.style.height = 720; _mapImage.style.backgroundColor = new Color(0.16f, 0.17f, 0.19f);
+            _mapCaption = MakeLabel(string.Empty, 12, Parchment); _mapCaption.style.marginTop = 8;
+            _mapOverlay.Add(_mapImage); _mapOverlay.Add(_mapCaption);
+            _root.Add(_mapOverlay);
 
             ApplyModeText();
             _vitals.Wounded += (_, severity) => _hitFlash.style.backgroundColor = new Color(0.5f, 0f, 0f, Mathf.Clamp01(0.25f + severity * 2f));

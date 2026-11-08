@@ -106,3 +106,17 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 4 summary (what exists, what is stubbed)
 - Built: hunger, rest, starvation, sepsis and treatment, three diseases, church year and mass, items and inventory, village market with seasonal prices, shocks and haggling, eight trades with a daily routine and a timing-based hands-on moment, apprenticeship, village standing, starting kits per rank, HUD belly bar, standing line, prompts, dialogue, market and moment overlays, inventory (I), eat (G). 17 new Sim tests (98 under .NET).
 - Stubbed: distinct hands-on activities per trade (one timing mini-game stands in for stalking, hammering and netting), per-trade workplaces, village events (war comes to the village: Phase 11), coins as physical loot, selling to other settlements (Phase 5).
+
+## 2026-11-08 — Phase 5 England
+- Settlements: the real places from `world.json` plus eight procedural villages per run, placed on land away from the coast and each other, named from the place lists, held by the nearest minor lord. Procedural villages are built at play time by `SettlementSpawner` (huts, alehouse, church, flattened disc) because they change with the seed; fixed places keep their keep stubs and get a site marker.
+- Markets differ by region: coastal and river places have cheap fish, uplands cheap wool and cheese, villages cheap grain and timber, towns and cities cheap tools, weapons and (cities) armour. Supply scales stock and demand runs inversely, so carrying goods between regions pays (`BestCargo`).
+- Travel: 28 km a day on foot, 48 mounted; a job's deadline is travel days × 1.8 + 2.
+- Jobs at the alehouse: message, caravan guard (weapon needed), escort (warriors and above), garrison duty and labour (served day by day on the spot), bounty (Phase 6 supplies the fight). Delivery happens when you walk into the destination settlement. Deadlines fail quietly and cost standing and reputation.
+- Global reputation with Crown, Angevins, Church and Commons plus notoriety; deeds move pairs in opposite directions; slow decay.
+- Crime: theft at the alehouse (witnesses roll to report), wanted level per settlement, arrest rolls on arrival and daily while you stay, trial by rank and standing: fine, flogging, mutilation (poaching), outlawry, hanging (commoners), beheading (nobles). Forty days of sanctuary in a church, once per crime, then it runs out. Execution ends the run through the body ("the noose", "the block").
+- Save format v5: settlements with markets and boards, reputation, crimes, sanctuary, active job, home settlement. Older saves rebuild England from the seed.
+- The map (M) is drawn at runtime from the coast polygon; dots coloured by allegiance; gold is the job destination.
+
+## Phase 5 summary (what exists, what is stubbed)
+- Built: settlement generation, regional markets and trade opportunities, travel maths, job board and contracts, global reputation, crime/arrest/trial/execution, runtime village spawner, settlement sites with arrival toasts, map screen, info panel additions, save v5. 9 new tests (105 under .NET).
+- Stubbed: roads and trade routes as visible paths, caravans and escorts as travelling NPCs (guard and escort jobs pay on arrival with no fight yet), bounties without a target (Phase 6), town interiors and markets as places (a site marker stands in), outlaw hunters, bailiffs as NPCs.

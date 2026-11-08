@@ -41,6 +41,26 @@ namespace AshesAndCrowns.Game
         public ItemsData Items;
         public TradesData Trades;
 
+        // Phase 5: England
+        public List<Settlement> Settlements = new List<Settlement>();
+        public GlobalReputation Reputation;
+        public CrimeRecord Crime;
+        public Job ActiveJob;
+        public int NextJobId;
+        public string HomeSettlementId = string.Empty;
+        public string CurrentSettlementId = string.Empty;   // where the player stands, or empty
+        public NamesData Names;
+
+        public Settlement FindSettlement(string id) { foreach (var s in Settlements) if (s.Id == id) return s; return null; }
+        public Settlement Current => string.IsNullOrEmpty(CurrentSettlementId) ? null : FindSettlement(CurrentSettlementId);
+        public Settlement Home => FindSettlement(HomeSettlementId);
+
+        public void EnsureEngland(Balance b)
+        {
+            if (Reputation == null) Reputation = new GlobalReputation(b.reputation);
+            if (Crime == null) Crime = new CrimeRecord(b.crime);
+        }
+
         public void EnsureSurvival(Balance b, ItemsData items, TradesData trades)
         {
             Items = items; Trades = trades;

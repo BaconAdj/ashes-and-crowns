@@ -23,7 +23,10 @@ namespace AshesAndCrowns.Game
         public SurvivalSystem survival;
         public Transform church, alehouse, home, workplace;
         public Transform mastersRoot;       // children named "Master_<trade>"
+        public SettlementSpawner spawner;   // every settlement site, home included
         public float useRadius = 4f;
+        private SettlementSite _site; private float _nextSiteScan; private string _lastSiteId = string.Empty;
+        public SettlementSite CurrentSite => _site;
 
         private Balance _balance;
         private string _prompt = string.Empty;
@@ -59,6 +62,7 @@ namespace AshesAndCrowns.Game
             if (kb.gKey.wasPressedThisFrame) EatSomething();
             if (kb.iKey.wasPressedThisFrame) ShowInventory();
 
+            if (Time.unscaledTime >= _nextSiteScan) { _nextSiteScan = Time.unscaledTime + 1f; ScanSite(); }
             FindNearest();
             if (Time.unscaledTime >= _nextPrompt) { _nextPrompt = Time.unscaledTime + 0.25f; hud.SetPrompt(_nearest != null ? "[E] " + PromptFor(_nearestKind) : string.Empty); UpdateHudLines(ctx); }
             if (HasPlaceInReach && GameBootstrap.Instance.Input.Mount.WasPressedThisFrame()) Use(_nearestKind, _nearest);
@@ -76,6 +80,70 @@ namespace AshesAndCrowns.Game
             _nearest = null; float best = useRadius;
             Check(church, "church", ref best); Check(alehouse, "alehouse", ref best); Check(home, "home", ref best); Check(workplace, "work", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) Check(m, "master", ref best);
+        }
+
+        private void ScanSite()
+        {
+            var ctx = RunSession.Context;
+            SettlementSite best = null; float bestD = float.MaxValue;
+            Vector3 p = Body().position;
+            if (spawner != null)
+                foreach (var site in spawner.Sites)
+                {
+                    if (site == null || site.centre == null) continue;
+                    float d = Vector3.Distance(new Vector3(p.x, 0f, p.z), new Vector3(site.centre.position.x, 0f, site.centre.position.z));
+                    if (d <= site.radius && d < bestD) { bestD = d; best = site; }
+                }
+            _site = best;
+            string id = best != null ? best.settlementId : string.Empty;
+            ctx.CurrentSettlementId = id;
+            if (id != _lastSiteId)
+            {
+                _lastSiteId = id;
+                var s = ctx.Current;
+                if (s != null)
+                {
+                    hud.Toast("You come to " + s.Name + (s.Allegiance == Allegiance.Neutral ? "." : ", which holds for " + s.Allegiance + "."));
+                    if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.ToId == s.Id && ctx.ActiveJob.DaysRequired == 0) DeliverJob(s);
+                    LawCheck(s);
+                }
+            }
+        }
+
+        /// <summary>Arriving somewhere you are wanted: the law may take you.</summary>
+        private void LawCheck(Settlement s)
+        {
+            var ctx = RunSession.Context;
+            if (s.WantedHere <= 0f && !ctx.Crime.Outlawed) return;
+            var rng = GameBootstrap.Instance.Rng.Fork(101); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            bool inChurch = church != null && Vector3.Distance(Body().position, church.position) < 10f;
+            if (ctx.Crime.TickDay(s, inChurch, rng)) Arrest(s);
+        }
+
+        public void Arrest(Settlement s)
+        {
+            var ctx = RunSession.Context;
+            var rng = GameBootstrap.Instance.Rng.Fork(102); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            int stolen = 0; foreach (var c in ctx.Crime.Crimes) if (c.Kind == CrimeKind.Theft && c.Known && !c.Tried) stolen += 6;
+            Sentence sentence = ctx.Crime.Trial(ctx.Character, ctx.Standing.Value, stolen, rng, out Crime tried);
+            s.WantedHere = 0f;
+            string crime = tried != null ? tried.Kind.ToString().ToLowerInvariant() : "nothing";
+            string outcome;
+            switch (sentence)
+            {
+                case Sentence.Acquitted: outcome = "The reeve hears you out, looks at the people who will speak for you, and lets you go."; break;
+                case Sentence.Fine: { int fine = Mathf.Min(ctx.Character.Coins, 4 + Mathf.RoundToInt(CrimeRecord.Severity(tried.Kind) * 20f)); ctx.Character.Coins -= fine; outcome = $"Fined {fine} pennies. They count them twice."; break; }
+                case Sentence.Flogging: vitals.TakeHit(0.18f, "the lash"); ctx.Standing.FightLost(); outcome = "Tied to the post on the green and flogged while the village watches."; break;
+                case Sentence.Mutilation: vitals.TakeHit(0.45f, "the reeve's knife"); ctx.Character.ApplyMaim(BodyPart.RightArm, rng); outcome = "They take your right hand at the wrist. The stump is seared."; break;
+                case Sentence.Outlawry: ctx.Crime.Outlaw(); foreach (var o in ctx.Settlements) o.WantedHere = Mathf.Max(o.WantedHere, 0.5f); outcome = "Outlawed. Any man may kill you now and answer for nothing."; break;
+                case Sentence.Hanging: outcome = "Hanged from the elm by the church. The village watches. It takes a while."; break;
+                default: outcome = "Beheaded in the castle yard, as befits your blood."; break;
+            }
+            clock.SkipHours(sentence == Sentence.Acquitted ? 2f : 24f);
+            Dialogue("Taken by the law", $"Men with cudgels at the alehouse door. You are tried in {s.Name} for {crime} and {CrimeRecord.Describe(sentence)}.\n\n{outcome}", ("...", () =>
+            {
+                if (CrimeRecord.IsExecution(sentence)) { vitals.Body.Drain(1f, sentence == Sentence.Hanging ? "the noose" : "the block"); vitals.NotifyDeadFromBody(); }
+            }));
         }
 
         private void Check(Transform t, string kind, ref float best)
@@ -145,10 +213,93 @@ namespace AshesAndCrowns.Game
 
         private void Alehouse()
         {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            string title = s != null ? "The alehouse of " + s.Name : "The alehouse";
+            var opts = new List<(string, System.Action)>(6) { ("Buy and sell", () => OpenMarket(true)), ("Ask for work", AskForWork) };
+            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.DaysRequired > 0 && s != null && ctx.ActiveJob.ToId == s.Id) opts.Add(($"Serve a day ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})", ServeDay));
+            opts.Add(("A gallon of ale and the rumour of the day (1 penny)", () => { if (ctx.Character.Coins >= 1) { ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }));
+            opts.Add(("Lift a purse while nobody looks", Steal));
+            opts.Add(("Leave", null));
+            Dialogue(title, "Smoke, wet wool and talk. The alewife sells what the place has to spare.", opts.ToArray());
+        }
+
+        private void AlehouseOld()
+        {
             Dialogue("The alehouse", "Smoke, wet wool and talk. The alewife sells what the village has to spare.",
                 ("Buy and sell", () => OpenMarket(true)),
                 ("A gallon of ale and the rumour of the day (1 penny)", () => { var c = RunSession.Context; if (c.Character.Coins >= 1) { c.Character.Coins -= 1; c.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }),
                 ("Leave", null));
+        }
+
+        private void AskForWork()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            if (s == null) { Dialogue("Work", "Nobody here hires strangers.", ("Leave", null)); return; }
+            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken)
+            {
+                var to = ctx.FindSettlement(ctx.ActiveJob.ToId);
+                Dialogue("Your work", $"You already carry {ctx.ActiveJob.Employer}'s business: {JobBoard.KindName(ctx.ActiveJob.Kind)} to {(to != null ? to.Name : ctx.ActiveJob.ToId)}, due in {ctx.ActiveJob.DeadlineDay - JobBoard.Today(clock.Calendar)} days.", ("Abandon it (your name suffers)", () => { ctx.ActiveJob.State = JobState.Failed; ctx.Standing.DebtDefaulted(); ctx.Reputation.Record(Deed.BrokeContract); ctx.ActiveJob = null; }), ("Keep it", null));
+                return;
+            }
+            var rng = GameBootstrap.Instance.Rng.Fork(103); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            int next = ctx.NextJobId;
+            JobBoard.Refresh(s, ctx.Settlements, DataFiles.LoadCoast().mapSideKm, _balance.settlements, _balance.jobs, clock.Calendar, new NameGenerator(ctx.Names, rng.Fork(1)), rng, ref next);
+            ctx.NextJobId = next;
+            var opts = new List<(string, System.Action)>(4);
+            foreach (Job j in s.Jobs)
+            {
+                Job job = j; bool can = JobBoard.CanTake(job, ctx.Character, ctx.Inventory);
+                opts.Add((JobBoard.KindName(job.Kind) + ": " + job.Blurb + (can ? "" : "  [not for you]"), () =>
+                {
+                    if (!can) { Dialogue(job.Employer, "\"Not you.\" The employer looks past you.", ("Leave", null)); return; }
+                    JobBoard.Take(job, ctx.Character); ctx.ActiveJob = job;
+                    Dialogue(job.Employer, "\"Good. Don't make me regret it.\"" + (job.Advance > 0 ? $" {job.Advance} pennies pressed into your hand." : ""), ("Leave", null));
+                }));
+            }
+            opts.Add(("Nothing today", null));
+            Dialogue("Work in " + s.Name, "The alewife knows who is hiring.", opts.ToArray());
+        }
+
+        private void DeliverJob(Settlement s)
+        {
+            var ctx = RunSession.Context; var job = ctx.ActiveJob;
+            int pay = JobBoard.Complete(job, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing);
+            ctx.Reputation.Record(pay > 0 ? Deed.HonouredContract : Deed.BrokeContract);
+            if (pay > 0) ctx.Character.Use(Skill.Haggling, _balance.character, 0.5f);
+            Dialogue("At " + s.Name, pay > 0 ? $"You hand over {job.Employer}'s business and are paid {pay} pennies." : "You arrive too late. Nobody pays for yesterday's errand, and they will remember it.", ("...", null));
+            ctx.ActiveJob = null;
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
+        private void ServeDay()
+        {
+            var ctx = RunSession.Context; var job = ctx.ActiveJob; if (job == null) return;
+            job.DaysServed++;
+            ctx.Needs.Work(10f); ctx.Needs.Eat(0.35f); // bread and pottage with the work
+            if (job.Kind == JobKind.GarrisonDuty) ctx.Character.Use(Skill.Polearm, _balance.character, 0.5f); else ctx.Character.Use(Skill.Farming, _balance.character, 0.3f);
+            clock.SkipHours(24f);
+            if (job.DaysServed >= job.DaysRequired)
+            {
+                int pay = JobBoard.Complete(job, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing);
+                ctx.Reputation.Record(Deed.HonouredContract);
+                Dialogue("Paid off", $"The days are served. {pay} pennies.", ("...", null));
+                ctx.ActiveJob = null;
+            }
+            else Dialogue("Another day", $"Day {job.DaysServed} of {job.DaysRequired}. Bread, a fire, and the long hours.", ("...", null));
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
+        private void Steal()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            var rng = GameBootstrap.Instance.Rng.Fork(104); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            int witnesses = rng.Range(0, 5);
+            int take = rng.Range(1, 7);
+            ctx.Character.Coins += take; ctx.Character.Use(Skill.Stealth, _balance.character);
+            float wanted = ctx.Crime.Commit(CrimeKind.Theft, s != null ? s.Id : "road", JobBoard.Today(clock.Calendar), witnesses, rng, ctx.Reputation);
+            if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
+            if (wanted > 0f) ctx.Standing.TheftSeen();
+            Dialogue("A purse", $"{take} pennies. " + (wanted > 0f ? "Someone saw. The room goes quiet." : "Nobody saw."), ("Leave quickly", () => { if (wanted > 0f && s != null) LawCheck(s); }));
         }
 
         private string Rumour()

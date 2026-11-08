@@ -382,5 +382,49 @@
     "decayTowardNeutralPerDay": 0.004,
     "respectedAbove": 0.7,
     "despisedBelow": 0.3
+  },
+  "settlements": {
+    "proceduralVillages": 8,
+    "minSpacingKm": 25,
+    "coastalKm": 12,
+    "villagePopMin": 60,
+    "villagePopMax": 220,
+    "walkKmPerDay": 28,
+    "rideKmPerDay": 48,
+    "roadSpeedBonus": 1.25,
+    "villageWealthMin": 0.6,
+    "villageWealthMax": 1.3
+  },
+  "jobs": {
+    "maxOffersPerSettlement": 3,
+    "refreshChancePerDay": 0.35,
+    "messagePayPerDay": 2,
+    "guardPayPerDay": 3,
+    "escortPayPerDay": 4,
+    "garrisonPayPerDay": 2,
+    "bountyPay": 40,
+    "labourPayPerDay": 1,
+    "deadlineSlack": 1.8,
+    "guardDangerBase": 0.25,
+    "escortDangerBase": 0.35,
+    "bountyDanger": 0.7,
+    "messageDanger": 0.15,
+    "minRankForEscort": 1
+  },
+  "reputation": {
+    "decayPerDay": 0.002,
+    "knownBelow": -0.3,
+    "favouredAbove": 0.3
+  },
+  "crime": {
+    "witnessReportChance": 0.45,
+    "arrestChancePerDayAtFullWanted": 0.5,
+    "wantedDecayPerDay": 0.01,
+    "sanctuaryDays": 40,
+    "fineTheft": 4,
+    "fineAssault": 8,
+    "hangingThresholdTheftPennies": 12,
+    "noblePardonChance": 0.35,
+    "standingSavesChance": 0.25
   }
 }

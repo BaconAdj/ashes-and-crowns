@@ -109,7 +109,36 @@ namespace AshesAndCrowns.Save
                 Strings(w, s.MarketIds); Floats(w, s.MarketStocks); w.Write(s.MarketShock); w.Write(s.MarketShockStrength); w.Write(s.MarketWealth);
                 w.Write(s.Outbreak); w.Write(s.LastMassDay);
             }
+            if (version >= 5)
+            {
+                var sets = s.Settlements ?? new SettlementSnapshot[0];
+                w.Write(sets.Length);
+                foreach (var t in sets)
+                {
+                    w.Write(t.Id ?? ""); w.Write(t.Name ?? ""); w.Write(t.Type); w.Write(t.Nx); w.Write(t.Nz); w.Write(t.Population); w.Write(t.Wealth); w.Write(t.Allegiance); w.Write(t.LordId);
+                    w.Write(t.Outbreak); w.Write(t.WantedHere); w.Write(t.Coastal); w.Write(t.Upland); w.Write(t.River); w.Write(t.IsFixed);
+                    Strings(w, t.GoodIds); Floats(w, t.GoodStocks); Floats(w, t.GoodBaselines); Floats(w, t.GoodDemands); w.Write(t.Shock); w.Write(t.ShockStrength);
+                    var jobs = t.Jobs ?? new JobSnapshot[0]; w.Write(jobs.Length); foreach (var j in jobs) WriteJob(w, j);
+                }
+                var rep = s.Reputation ?? new float[4]; for (int i = 0; i < 4; i++) w.Write(i < rep.Length ? rep[i] : 0f); w.Write(s.Notoriety);
+                var crimes = s.Crimes ?? new CrimeSnapshot[0]; w.Write(crimes.Length); foreach (var c in crimes) { w.Write(c.Kind); w.Write(c.Where ?? ""); w.Write(c.Day); w.Write(c.Witnesses); w.Write(c.Known); w.Write(c.Tried); }
+                w.Write(s.Outlawed); w.Write(s.SanctuaryDaysLeft); w.Write(s.SanctuaryExpired);
+                w.Write(s.ActiveJob != null); if (s.ActiveJob != null) WriteJob(w, s.ActiveJob);
+                w.Write(s.NextJobId); w.Write(s.HomeSettlementId ?? "");
+            }
         }
+
+        private static void WriteJob(BinaryWriter w, JobSnapshot j)
+        {
+            w.Write(j.Id); w.Write(j.Kind); w.Write(j.FromId ?? ""); w.Write(j.ToId ?? ""); w.Write(j.Employer ?? ""); w.Write(j.Blurb ?? "");
+            w.Write(j.Pay); w.Write(j.Advance); w.Write(j.DaysRequired); w.Write(j.DaysServed); w.Write(j.DeadlineDay); w.Write(j.Danger); w.Write(j.State);
+        }
+
+        private static JobSnapshot ReadJob(BinaryReader r) => new JobSnapshot
+        {
+            Id = r.ReadInt32(), Kind = r.ReadByte(), FromId = r.ReadString(), ToId = r.ReadString(), Employer = r.ReadString(), Blurb = r.ReadString(),
+            Pay = r.ReadInt32(), Advance = r.ReadInt32(), DaysRequired = r.ReadInt32(), DaysServed = r.ReadInt32(), DeadlineDay = r.ReadInt64(), Danger = r.ReadSingle(), State = r.ReadByte()
+        };
 
         private static void Strings(BinaryWriter w, string[] a) { a = a ?? new string[0]; w.Write(a.Length); foreach (string x in a) w.Write(x ?? ""); }
         private static string[] Strings(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > 100000) throw new SaveCorruptException("bad string array"); var a = new string[n]; for (int i = 0; i < n; i++) a[i] = r.ReadString(); return a; }
@@ -188,6 +217,28 @@ namespace AshesAndCrowns.Save
                 s.ApprenticeTrade = r.ReadString(); s.ApprenticeMaster = r.ReadInt32(); s.ApprenticeSeasons = r.ReadSingle(); s.ApprenticeCompetence = r.ReadSingle();
                 s.MarketIds = Strings(r); s.MarketStocks = Floats(r); s.MarketShock = r.ReadByte(); s.MarketShockStrength = r.ReadSingle(); s.MarketWealth = r.ReadSingle();
                 s.Outbreak = r.ReadSingle(); s.LastMassDay = r.ReadInt64();
+            }
+            if (version >= 5)
+            {
+                int ns = r.ReadInt32(); if (ns < 0 || ns > 10000) throw new SaveCorruptException("bad settlement count");
+                s.Settlements = new SettlementSnapshot[ns];
+                for (int i = 0; i < ns; i++)
+                {
+                    var t = new SettlementSnapshot
+                    {
+                        Id = r.ReadString(), Name = r.ReadString(), Type = r.ReadByte(), Nx = r.ReadSingle(), Nz = r.ReadSingle(), Population = r.ReadInt32(), Wealth = r.ReadSingle(), Allegiance = r.ReadByte(), LordId = r.ReadInt32(),
+                        Outbreak = r.ReadSingle(), WantedHere = r.ReadSingle(), Coastal = r.ReadBoolean(), Upland = r.ReadBoolean(), River = r.ReadBoolean(), IsFixed = r.ReadBoolean()
+                    };
+                    t.GoodIds = Strings(r); t.GoodStocks = Floats(r); t.GoodBaselines = Floats(r); t.GoodDemands = Floats(r); t.Shock = r.ReadByte(); t.ShockStrength = r.ReadSingle();
+                    int nj = r.ReadInt32(); if (nj < 0 || nj > 1000) throw new SaveCorruptException("bad job count"); t.Jobs = new JobSnapshot[nj]; for (int k = 0; k < nj; k++) t.Jobs[k] = ReadJob(r);
+                    s.Settlements[i] = t;
+                }
+                s.Reputation = new float[4]; for (int i = 0; i < 4; i++) s.Reputation[i] = r.ReadSingle(); s.Notoriety = r.ReadSingle();
+                int nc = r.ReadInt32(); if (nc < 0 || nc > 100000) throw new SaveCorruptException("bad crime count");
+                s.Crimes = new CrimeSnapshot[nc]; for (int i = 0; i < nc; i++) s.Crimes[i] = new CrimeSnapshot { Kind = r.ReadByte(), Where = r.ReadString(), Day = r.ReadInt64(), Witnesses = r.ReadInt32(), Known = r.ReadBoolean(), Tried = r.ReadBoolean() };
+                s.Outlawed = r.ReadBoolean(); s.SanctuaryDaysLeft = r.ReadSingle(); s.SanctuaryExpired = r.ReadBoolean();
+                if (r.ReadBoolean()) s.ActiveJob = ReadJob(r);
+                s.NextJobId = r.ReadInt32(); s.HomeSettlementId = r.ReadString();
             }
             return s;
         }

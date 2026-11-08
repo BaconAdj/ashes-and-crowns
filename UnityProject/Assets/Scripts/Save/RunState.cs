@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -53,6 +53,28 @@ namespace AshesAndCrowns.Save
         public string ApprenticeTrade = string.Empty; public int ApprenticeMaster; public float ApprenticeSeasons, ApprenticeCompetence;
         public string[] MarketIds = new string[0]; public float[] MarketStocks = new float[0]; public byte MarketShock; public float MarketShockStrength, MarketWealth = 1f;
         public float Outbreak; public long LastMassDay = -1;
+
+        // Version 5: England
+        public SettlementSnapshot[] Settlements = new SettlementSnapshot[0];
+        public float[] Reputation = new float[4]; public float Notoriety;
+        public CrimeSnapshot[] Crimes = new CrimeSnapshot[0]; public bool Outlawed; public float SanctuaryDaysLeft; public bool SanctuaryExpired;
+        public JobSnapshot ActiveJob; public int NextJobId;
+        public string HomeSettlementId = string.Empty;
+    }
+
+    public sealed class SettlementSnapshot
+    {
+        public string Id = "", Name = ""; public byte Type; public float Nx, Nz; public int Population; public float Wealth; public byte Allegiance; public int LordId;
+        public float Outbreak, WantedHere; public bool Coastal, Upland, River, IsFixed;
+        public string[] GoodIds = new string[0]; public float[] GoodStocks = new float[0], GoodBaselines = new float[0], GoodDemands = new float[0]; public byte Shock; public float ShockStrength;
+        public JobSnapshot[] Jobs = new JobSnapshot[0];
+    }
+
+    public sealed class CrimeSnapshot { public byte Kind; public string Where = ""; public long Day; public int Witnesses; public bool Known, Tried; }
+
+    public sealed class JobSnapshot
+    {
+        public int Id; public byte Kind; public string FromId = "", ToId = "", Employer = "", Blurb = ""; public int Pay, Advance, DaysRequired, DaysServed; public long DeadlineDay; public float Danger; public byte State;
     }
 
     /// <summary>Flat arrays mirroring BattleDirector's structure-of-arrays.</summary>

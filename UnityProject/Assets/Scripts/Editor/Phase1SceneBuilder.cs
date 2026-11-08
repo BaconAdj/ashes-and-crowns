@@ -80,6 +80,8 @@ namespace AshesAndCrowns.EditorTools
             Mesh keepMesh = AssetDatabase.LoadAssetAtPath<Mesh>(Paths.Generated + "/Keep_Procedural.asset");
             if (keepMesh == null) { keepMesh = ProceduralBuildings.Keep(12f, 18f, 22f, 6f); AssetDatabase.CreateAsset(keepMesh, Paths.Generated + "/Keep_Procedural.asset"); }
             var stubsRoot = new GameObject("Strongholds").transform;
+            var fixedSites = new GameObject("FixedSites").transform;
+            vill.Root.SetParent(null, true);
             foreach (Location l in world.locations)
             {
                 if (l.type == "village") continue;
@@ -90,6 +92,8 @@ namespace AshesAndCrowns.EditorTools
                 var mc = go.AddComponent<MeshCollider>(); mc.sharedMesh = keepMesh;
                 var sp = new GameObject(l.id).transform; sp.SetParent(spawnRoot, true);
                 sp.position = pos + new Vector3(0f, 0.4f, 30f); sp.rotation = Quaternion.LookRotation(Vector3.back);
+                var siteGo = new GameObject("Site_" + l.id); siteGo.transform.SetParent(fixedSites, true); siteGo.transform.position = pos + new Vector3(0f, 0.4f, 28f);
+                var site = siteGo.AddComponent<SettlementSite>(); site.settlementId = l.id; site.centre = siteGo.transform; site.alehouse = siteGo.transform; site.radius = 90f;
             }
 
             HudController hud = SceneKit.BuildHud(panel);
@@ -115,6 +119,13 @@ namespace AshesAndCrowns.EditorTools
             life.clock = clock; life.vitals = vitals; life.player = pc; life.horse = horse; life.hud = hud; life.saveManager = save; life.survival = survival;
             life.church = vill.Church; life.alehouse = vill.Alehouse; life.home = vill.Home; life.workplace = vill.Workplace; life.mastersRoot = vill.Masters;
             driver.villageLife = life;
+            var ashbySite = vill.Root.GetComponent<SettlementSite>(); if (ashbySite != null) ashbySite.transform.SetParent(fixedSites, true);
+            var assets = sceneGo.AddComponent<WorldAssets>();
+            assets.wattle = vill.Wattle; assets.thatch = vill.Thatch; assets.stone = vill.Stone; assets.slate = vill.Slate; assets.darkWood = vill.DarkWood; assets.hut = vill.HutMesh; assets.alehouse = vill.AlehouseMesh; assets.church = vill.ChurchMesh; assets.terrain = terrain;
+            var spawnerGo = new GameObject("Settlements");
+            var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
+            save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life;
+            var map = sceneGo.AddComponent<MapScreen>(); map.hud = hud; map.saveManager = save; map.player = playerGo.transform; map.terrainSize = size;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

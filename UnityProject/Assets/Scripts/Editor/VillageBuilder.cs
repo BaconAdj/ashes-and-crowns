@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood; public Mesh HutMesh, AlehouseMesh, ChurchMesh; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -89,7 +89,8 @@ namespace AshesAndCrowns.EditorTools
             work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre };
+            var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
         }
 
         private static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)

@@ -35,6 +35,12 @@ namespace AshesAndCrowns.Game
             ctx.Baronage = BaronageGenerator.Generate(balance.baronage, anchors, coast.mapSideKm, nameGen, boot.Rng.Fork(43));
             ctx.SpawnLocationId = RunSetup.ChooseSpawn(ctx.Character, villages, castles, boot.Rng.Fork(44));
             ctx.EnsureSurvival(balance, DataFiles.LoadItems(), DataFiles.LoadTrades());
+            ctx.Names = names;
+            ctx.Settlements = EnglandSetup.Generate(balance, world, coast, ctx.Items, ctx.Baronage, nameGen, boot.Rng.Fork(45));
+            ctx.EnsureEngland(balance);
+            ctx.HomeSettlementId = ctx.SpawnLocationId;
+            var homeSettlement = ctx.FindSettlement(ctx.HomeSettlementId);
+            if (homeSettlement != null) ctx.Market = homeSettlement.Market;
             StartingKit(ctx);
             Debug.Log($"[run] {ctx.Character.Name}, {ctx.Character.Rank} ({bg.name}); {ctx.Family.Count} kin, {ctx.Baronage.Count} minor lords; spawn {ctx.SpawnLocationId}");
             return ctx;

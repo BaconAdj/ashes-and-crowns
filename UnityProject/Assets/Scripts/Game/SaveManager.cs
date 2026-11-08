@@ -36,6 +36,7 @@ namespace AshesAndCrowns.Game
         public OpeningNarration narration;   // optional
         public PlayerAppearance appearance;  // optional
         public Transform spawnPoints;        // optional: children named by location id
+        public SettlementSpawner spawner;    // optional (England): builds the run's villages once the context exists
 
         private Balance _balance;
         private SaveStore _store;
@@ -167,6 +168,16 @@ namespace AshesAndCrowns.Game
                     s.MarketShock = (byte)ctx.Market.Shock; s.MarketShockStrength = ctx.Market.ShockStrength; s.MarketWealth = ctx.Market.Wealth;
                     s.Outbreak = ctx.Outbreak; s.LastMassDay = ctx.LastMassDay;
                 }
+                if (ctx.Settlements != null && ctx.Settlements.Count > 0)
+                {
+                    s.Settlements = new SettlementSnapshot[ctx.Settlements.Count];
+                    for (int i = 0; i < ctx.Settlements.Count; i++) s.Settlements[i] = SnapshotSettlement(ctx.Settlements[i]);
+                    for (int i = 0; i < 4; i++) s.Reputation[i] = ctx.Reputation.Get((Faction)i); s.Notoriety = ctx.Reputation.Notoriety;
+                    s.Crimes = new CrimeSnapshot[ctx.Crime.Crimes.Count];
+                    for (int i = 0; i < s.Crimes.Length; i++) { var c = ctx.Crime.Crimes[i]; s.Crimes[i] = new CrimeSnapshot { Kind = (byte)c.Kind, Where = c.Where, Day = c.Day, Witnesses = c.Witnesses, Known = c.Known, Tried = c.Tried }; }
+                    s.Outlawed = ctx.Crime.Outlawed; s.SanctuaryDaysLeft = ctx.Crime.SanctuaryDaysLeft; s.SanctuaryExpired = ctx.Crime.SanctuaryExpired;
+                    s.ActiveJob = ctx.ActiveJob != null ? SnapshotJob(ctx.ActiveJob) : null; s.NextJobId = ctx.NextJobId; s.HomeSettlementId = ctx.HomeSettlementId;
+                }
             }
             if (clock != null && clock.IsReady)
             {
@@ -213,6 +224,8 @@ namespace AshesAndCrowns.Game
                 rc.Market.RestoreShock((WarShock)s.MarketShock, s.MarketShockStrength);
                 rc.Market.Wealth = s.MarketWealth; rc.Outbreak = s.Outbreak; rc.LastMassDay = s.LastMassDay;
             }
+            RestoreEngland(s, rc);
+            if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
             var cc = player.GetComponent<CharacterController>();
             if (horse.Mounted && !s.Mounted) horse.Dismount(player.transform);
@@ -268,6 +281,63 @@ namespace AshesAndCrowns.Game
             SaveNow(AffairsChoice.None);
         }
 
+        // ------------------------------------------------------------------ England snapshots
+
+        private static SettlementSnapshot SnapshotSettlement(Settlement t)
+        {
+            var o = new SettlementSnapshot
+            {
+                Id = t.Id, Name = t.Name, Type = (byte)t.Type, Nx = t.Nx, Nz = t.Nz, Population = t.Population, Wealth = t.Wealth, Allegiance = (byte)t.Allegiance, LordId = t.LordId,
+                Outbreak = t.Outbreak, WantedHere = t.WantedHere, Coastal = t.Coastal, Upland = t.Upland, River = t.River, IsFixed = t.IsFixed
+            };
+            if (t.Market != null)
+            {
+                int g = t.Market.Goods.Count; o.GoodIds = new string[g]; o.GoodStocks = new float[g]; o.GoodBaselines = new float[g]; o.GoodDemands = new float[g];
+                for (int i = 0; i < g; i++) { var m = t.Market.Goods[i]; o.GoodIds[i] = m.Id; o.GoodStocks[i] = m.Stock; o.GoodBaselines[i] = m.Baseline; o.GoodDemands[i] = m.Demand; }
+                o.Shock = (byte)t.Market.Shock; o.ShockStrength = t.Market.ShockStrength;
+            }
+            o.Jobs = new JobSnapshot[t.Jobs.Count]; for (int i = 0; i < o.Jobs.Length; i++) o.Jobs[i] = SnapshotJob(t.Jobs[i]);
+            return o;
+        }
+
+        private static JobSnapshot SnapshotJob(Job j) => new JobSnapshot { Id = j.Id, Kind = (byte)j.Kind, FromId = j.FromId, ToId = j.ToId, Employer = j.Employer, Blurb = j.Blurb, Pay = j.Pay, Advance = j.Advance, DaysRequired = j.DaysRequired, DaysServed = j.DaysServed, DeadlineDay = j.DeadlineDay, Danger = j.Danger, State = (byte)j.State };
+        private static Job RestoreJob(JobSnapshot j) => new Job { Id = j.Id, Kind = (JobKind)j.Kind, FromId = j.FromId, ToId = j.ToId, Employer = j.Employer, Blurb = j.Blurb, Pay = j.Pay, Advance = j.Advance, DaysRequired = j.DaysRequired, DaysServed = j.DaysServed, DeadlineDay = j.DeadlineDay, Danger = j.Danger, State = (JobState)j.State };
+
+        private void RestoreEngland(RunState s, RunContext rc)
+        {
+            var boot = GameBootstrap.Instance;
+            rc.EnsureEngland(_balance);
+            if (rc.Names == null) rc.Names = DataFiles.LoadNames();
+            if (s.Version >= 5 && s.Settlements != null && s.Settlements.Length > 0)
+            {
+                rc.Settlements.Clear();
+                foreach (var t in s.Settlements)
+                {
+                    var o = new Settlement
+                    {
+                        Id = t.Id, Name = t.Name, Type = (SettlementType)t.Type, Nx = t.Nx, Nz = t.Nz, Population = t.Population, Wealth = t.Wealth, Allegiance = (Allegiance)t.Allegiance, LordId = t.LordId,
+                        Outbreak = t.Outbreak, WantedHere = t.WantedHere, Coastal = t.Coastal, Upland = t.Upland, River = t.River, IsFixed = t.IsFixed, Market = new Market(_balance.economy, rc.Items)
+                    };
+                    for (int i = 0; i < t.GoodIds.Length; i++) { o.Market.Stock(t.GoodIds[i], i < t.GoodBaselines.Length ? t.GoodBaselines[i] : 1f, i < t.GoodDemands.Length ? t.GoodDemands[i] : 1f); var g = o.Market.Find(t.GoodIds[i]); if (g != null && i < t.GoodStocks.Length) g.Stock = t.GoodStocks[i]; }
+                    o.Market.RestoreShock((WarShock)t.Shock, t.ShockStrength); o.Market.Wealth = t.Wealth;
+                    foreach (var j in t.Jobs) o.Jobs.Add(RestoreJob(j));
+                    rc.Settlements.Add(o);
+                }
+                for (int i = 0; i < 4 && i < s.Reputation.Length; i++) rc.Reputation.Set((Faction)i, s.Reputation[i]); rc.Reputation.SetNotoriety(s.Notoriety);
+                rc.Crime.Crimes.Clear(); foreach (var c in s.Crimes) rc.Crime.Crimes.Add(new Crime { Kind = (CrimeKind)c.Kind, Where = c.Where, Day = c.Day, Witnesses = c.Witnesses, Known = c.Known, Tried = c.Tried });
+                rc.Crime.SetOutlawed(s.Outlawed); rc.Crime.SetSanctuary(s.SanctuaryDaysLeft, s.SanctuaryExpired);
+                rc.ActiveJob = s.ActiveJob != null ? RestoreJob(s.ActiveJob) : null; rc.NextJobId = s.NextJobId; rc.HomeSettlementId = s.HomeSettlementId;
+            }
+            else if (rc.Settlements.Count == 0)
+            {
+                // Older save: build England fresh from the seed.
+                rc.Settlements = EnglandSetup.Generate(_balance, boot.World, DataFiles.LoadCoast(), rc.Items, rc.Baronage, new NameGenerator(rc.Names, boot.Rng.Fork(41)), boot.Rng.Fork(45));
+                rc.HomeSettlementId = string.IsNullOrEmpty(rc.SpawnLocationId) ? "ashby_village" : rc.SpawnLocationId;
+            }
+            var home = rc.Home;
+            if (home != null && home.Market != null) rc.Market = home.Market;
+        }
+
         // ------------------------------------------------------------------ new character
 
         private void StartNewCharacter()
@@ -282,6 +352,7 @@ namespace AshesAndCrowns.Game
             RunSession.Context = RunFactory.CreateDefault(vitals);
             RunSession.Context.OpeningSeen = true;
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
+            if (spawner != null) spawner.Build(RunSession.Context.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
             SaveNow(AffairsChoice.None); // a run exists from its first frame
         }
 
@@ -292,6 +363,7 @@ namespace AshesAndCrowns.Game
             catch (Exception e) { Debug.LogError("[run] could not create the character: " + e.Message); creation.Show(DataFiles.LoadBackgrounds(), OnCharacterChosen); return; }
             RunSession.Context = ctx;
             if (appearance != null) appearance.Apply(ctx.Character);
+            if (spawner != null) spawner.Build(ctx.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
             Transform spawn = FindSpawn(ctx.SpawnLocationId);
             if (spawn != null) PlaceBody(spawn.position, spawn.rotation);
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
