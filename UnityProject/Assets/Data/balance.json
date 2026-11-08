@@ -267,7 +267,8 @@
     "alehouseWallHeight": 3.0
   },
   "save": {
-    "autosaveIntervalSeconds": 30
+    "autosaveIntervalSeconds": 30,
+    "dirtySaveDelaySeconds": 2
   },
   "absence": {
     "dangerNone": 0.09,

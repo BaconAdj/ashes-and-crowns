@@ -36,8 +36,8 @@ namespace AshesAndCrowns.Tests.PlayMode
         [TearDown]
         public void TearDown()
         {
-            if (_root != null) Object.Destroy(_root);
-            var boot = GameBootstrap.Instance; if (boot != null) Object.Destroy(boot.gameObject);
+            if (_root != null) Object.DestroyImmediate(_root);
+            var boot = GameBootstrap.Instance; if (boot != null) Object.DestroyImmediate(boot.gameObject);
             SaveManager.SaveDirectoryOverride = null;
             if (Directory.Exists(_dir)) Directory.Delete(_dir, true);
         }
@@ -57,7 +57,7 @@ namespace AshesAndCrowns.Tests.PlayMode
             _horse = horseGo.AddComponent<HorseController>(); _horse.seat = new GameObject("Seat").transform; _horse.seat.SetParent(horseGo.transform, false);
             _horse.Init(balance, GameBootstrap.Instance.Input);
             var clockGo = new GameObject("Clock"); clockGo.transform.SetParent(_root.transform);
-            _clock = clockGo.AddComponent<WorldClock>(); _clock.Init(balance, GameBootstrap.Instance.Rng);
+            _clock = clockGo.AddComponent<WorldClock>(); _clock.Init(balance, GameBootstrap.Instance.Rng); _clock.timeScale = 0f;
             var hudGo = new GameObject("HUD"); hudGo.transform.SetParent(_root.transform);
             var doc = hudGo.AddComponent<UnityEngine.UIElements.UIDocument>();
             doc.panelSettings = ScriptableObject.CreateInstance<UnityEngine.UIElements.PanelSettings>();

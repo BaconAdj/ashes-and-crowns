@@ -11,5 +11,8 @@ namespace AshesAndCrowns.Game
         public static long NextSeed;
         /// <summary>True once this process has already resolved the on-launch resume, so scene reloads don't redo it.</summary>
         public static bool LaunchHandled;
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; }
     }
 }

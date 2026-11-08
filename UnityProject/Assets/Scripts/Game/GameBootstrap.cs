@@ -25,6 +25,12 @@ namespace AshesAndCrowns.Game
             Balance = DataFiles.LoadBalance();
             World = DataFiles.LoadWorld();
             long seed = RunSession.NextSeed != 0 ? RunSession.NextSeed : (seedOverride != 0 ? seedOverride : Balance.simulation.defaultSeed);
+            if (RunSession.NextSeed == 0 && seedOverride == 0)
+            {
+                // A run in progress keeps its seed, so forked rng streams line up with the save.
+                try { var peek = new AshesAndCrowns.Save.SaveStore(SaveManager.SaveDirectory).Load(); if (peek.Found) seed = peek.State.Seed; }
+                catch (System.Exception e) { Debug.LogWarning("[save] could not peek the save for the seed: " + e.Message); }
+            }
             RunSession.NextSeed = 0;
             Seed = seed;
             Rng = new DeterministicRng((ulong)seed);

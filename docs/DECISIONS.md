@@ -69,6 +69,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Catch-up (`AbsenceResolver`): elapsed real time × `simulation.realHoursToGameHours`, capped at `maxCatchUpGameDays`. Per game day a danger roll by choice × hostility; outcomes are an attack (wounds), a fever, or a robbery. Resting choices heal. Quitting mid-battle applies blows from the enemies that were within reach. Death during absence deletes the save and shows "You did not wake" with the chronicle.
 - Clock moved backwards or no elapsed time: nothing happens. Very long absences hit the cap and the chronicle says so.
 
+## 2026-11-08 — Phase 2 static review applied
+- No compile errors. Applied: event saves coalesce into one write within `save.dirtySaveDelaySeconds` (no fsync per blow); dead-on-resume now puts the battlefield into Dead mode; a save for a scene missing from the build no longer gets applied to the wrong scene; the run seed is restored from the save so forked rng streams match; `RunSession` statics reset when domain reload is off; battle import validates every array length; PlayMode tests use DestroyImmediate and a frozen clock.
+
 ## Phase 2 summary (what exists, what is stubbed)
 - Built: Save assembly (RunState, codec, store) with 15 EditMode tests; AbsenceResolver with 7 tests; snapshots for rng, weather, body; BattleDirector export/import; SaveManager (autosave, resume across scenes, death deletion, quit screen, chronicle, Begin Again with a fresh seed); HUD chronicle and quit overlays; 3 PlayMode tests. 71 tests run under .NET, plus 5 PlayMode in Unity.
 - Stubbed: coins (robbery reports pennies but no wallet exists yet), steward/guards/fortify choices (need rank), named character, peak wealth, titles, "how history diverged" on the death screen.

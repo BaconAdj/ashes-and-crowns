@@ -345,7 +345,12 @@ namespace AshesAndCrowns.Battle
         public bool ImportSnapshot(BattleSnapshot b)
         {
             if (!_ready || b == null) return false;
-            if (b.SoldierCount != SoldierCount || b.UnitCount != UnitCount || b.Positions.Length != SoldierCount * 3 || b.UnitAnchor.Length != UnitCount * 3)
+            int n = SoldierCount, u = UnitCount;
+            bool shape = b.SoldierCount == n && b.UnitCount == u && b.Positions.Length == n * 3 && b.Yaws.Length == n && b.Health.Length == n && b.Cooldowns.Length == n
+                      && b.Alive.Length == n && b.Side.Length == n && b.UnitOf.Length == n && b.SlotOf.Length == n && b.Targets.Length == n
+                      && b.UnitSide.Length == u && b.UnitFormation.Length == u && b.UnitOrder.Length == u && b.UnitAlive.Length == u && b.UnitStart.Length == u
+                      && b.UnitCount_.Length == u && b.UnitAliveCount.Length == u && b.UnitAnchor.Length == u * 3 && b.UnitYaw.Length == u && b.UnitTarget.Length == u * 3;
+            if (!shape)
             {
                 Debug.LogWarning("[Ashes and Crowns] saved battle does not match the current army layout; starting the battle fresh");
                 return false;
@@ -353,8 +358,9 @@ namespace AshesAndCrowns.Battle
             for (int i = 0; i < SoldierCount; i++) _positions[i] = new float3(b.Positions[i * 3], b.Positions[i * 3 + 1], b.Positions[i * 3 + 2]);
             _yaws.CopyFrom(b.Yaws); _health.CopyFrom(b.Health); _cooldowns.CopyFrom(b.Cooldowns);
             _alive.CopyFrom(b.Alive); _side.CopyFrom(b.Side); _unitOf.CopyFrom(b.UnitOf); _slotOf.CopyFrom(b.SlotOf); _targets.CopyFrom(b.Targets);
-            for (int u = 0; u < UnitCount; u++)
+            for (int k = 0; k < UnitCount; k++)
             {
+                int u = k;
                 _units[u] = new UnitState
                 {
                     Side = b.UnitSide[u], Formation = b.UnitFormation[u], Order = b.UnitOrder[u], Alive = b.UnitAlive[u],

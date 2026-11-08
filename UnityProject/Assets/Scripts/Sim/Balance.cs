@@ -101,6 +101,7 @@ namespace AshesAndCrowns.Sim
     [Serializable] public sealed class SaveBalance
     {
         public float autosaveIntervalSeconds = 30f;
+        public float dirtySaveDelaySeconds = 2f;   // a wound/kill/bell schedules a save this soon, instead of writing per event
     }
 
     /// <summary>Dangers while the game is closed, per game day, by how the player left their affairs.</summary>

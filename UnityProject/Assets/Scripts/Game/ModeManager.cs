@@ -30,13 +30,12 @@ namespace AshesAndCrowns.Game
         private GameInput _input;
         private GameMode _mode = GameMode.OnFoot;
         private bool _wasInVantage;
-        private float _startTime;
 
         public GameMode Mode => _mode;
 
         public void Init(Balance balance, GameInput input)
         {
-            _balance = balance; _input = input; _startTime = Time.time;
+            _balance = balance; _input = input;
             vitals.Died += OnPlayerDied;
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
             SetMode(GameMode.OnFoot);
@@ -84,7 +83,7 @@ namespace AshesAndCrowns.Game
 
         private void OnPlayerDied()
         {
-            director.SetPlayerCharacterAlive(false);
+            if (director != null) director.SetPlayerCharacterAlive(false);
             if (horse.Mounted) horse.Dismount(player.transform);
             SetMode(GameMode.Dead);
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
@@ -93,5 +92,8 @@ namespace AshesAndCrowns.Game
 
         /// <summary>Restore mount state after a resume (the horse already has the rider parented).</summary>
         public void RefreshAfterResume() => SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
+
+        /// <summary>The SaveManager found the player dead on resume (no Died event fires in that case).</summary>
+        public void NotifyDied() { if (_mode != GameMode.Dead) OnPlayerDied(); }
     }
 }

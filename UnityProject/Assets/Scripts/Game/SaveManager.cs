@@ -78,14 +78,17 @@ namespace AshesAndCrowns.Game
                 if (r.Found)
                 {
                     if (r.Source == LoadSource.Backup) Debug.LogWarning("[save] main file unreadable (" + r.MainError + "); resumed from backup");
-                    if (r.State.SceneId != SceneManager.GetActiveScene().name && Application.CanStreamedLevelBeLoaded(r.State.SceneId))
+                    if (r.State.SceneId != SceneManager.GetActiveScene().name)
                     {
-                        RunSession.PendingResume = r.State;
-                        SceneManager.LoadScene(r.State.SceneId);
-                        return;
+                        if (Application.CanStreamedLevelBeLoaded(r.State.SceneId))
+                        {
+                            RunSession.PendingResume = r.State;
+                            SceneManager.LoadScene(r.State.SceneId);
+                            return;
+                        }
+                        Debug.LogWarning("[save] save belongs to scene " + r.State.SceneId + " which is not in the build; starting this scene fresh");
                     }
-                    Apply(r.State, resolveAbsence: true);
-                    return;
+                    else { Apply(r.State, resolveAbsence: true); return; }
                 }
                 if (r.MainError != null && r.MainError != "no main save") Debug.LogWarning("[save] no usable save: " + r.MainError + " / " + r.BackupError);
             }
@@ -125,7 +128,8 @@ namespace AshesAndCrowns.Game
             if (Time.unscaledTime >= _nextAutosave) SaveNow(AffairsChoice.None);
         }
 
-        private void MarkDirty() { if (!_dead && !_quitting) SaveNow(AffairsChoice.None); }
+        /// <summary>Coalesce event-driven saves: schedule one soon rather than fsync on every blow.</summary>
+        private void MarkDirty() { if (!_dead && !_quitting) _nextAutosave = Mathf.Min(_nextAutosave, Time.unscaledTime + _balance.save.dirtySaveDelaySeconds); }
 
         // ------------------------------------------------------------------ capture / apply
 
@@ -191,6 +195,7 @@ namespace AshesAndCrowns.Game
                     _dead = true;
                     bool gone = _store.DeleteAll();
                     if (!gone) Debug.LogError("[save] could not delete the save after death");
+                    if (modes != null) modes.NotifyDied();
                     Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
                     hud.ShowDeath(vitals.Body.CauseOfDeath ?? report.CauseOfDeath ?? "unknown", s.HoursSurvived / 24.0, s.Kills, s.MenLost, report.Chronicle, neverWoke: true);
                     return;

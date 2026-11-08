@@ -1,7 +1,6 @@
 using AshesAndCrowns.Battle;
 using AshesAndCrowns.Combat;
 using System.Collections.Generic;
-using AshesAndCrowns.Save;
 using AshesAndCrowns.Sim;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -80,7 +79,7 @@ namespace AshesAndCrowns.UI
                     break;
                 default:
                     _mode.text = "ON FOOT";
-                    _hint.text = "WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc frees the mouse.";
+                    _hint.text = "WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc to leave your affairs.";
                     break;
             }
         }
