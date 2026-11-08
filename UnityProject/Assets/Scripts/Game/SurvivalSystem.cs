@@ -63,7 +63,7 @@ namespace AshesAndCrowns.Game
                     var elog = new List<string>(2);
                     EstateRules.DayTick(ctx.Estate, manor, ctx.CurrentSettlementId == ctx.Estate.SettlementId, rng, _balance.lordship, elog);
                     ctx.PendingNotices.AddRange(elog);
-                    if (clock.Calendar.Day == 1) EstateRules.EndMonth(ctx.Estate);
+                    if (++ctx.EstateDaysThisMonth >= 30) { ctx.EstateDaysThisMonth = 0; EstateRules.EndMonth(ctx.Estate); }
                     if (ctx.PendingDemand == Allegiance.Neutral && AllegianceRules.DemandArrives(ctx.Lordship, rng, _balance.lordship, out Allegiance from)) ctx.PendingDemand = from;
                 }
                 if (AllegianceRules.DayTick(ctx.Lordship, rng, _balance.lordship))
@@ -80,7 +80,23 @@ namespace AshesAndCrowns.Game
                     var rlog = new List<string>(4);
                     RealmRules.Season(ctx.Realm, ctx.Baronage, ctx.Settlements, rng, _balance.lordship, rlog);
                     ctx.Realm.Chronicle.AddRange(rlog); if (ctx.Realm.Chronicle.Count > 40) ctx.Realm.Chronicle.RemoveRange(0, ctx.Realm.Chronicle.Count - 40);
+                    ctx.WarHeat = Mathf.Clamp01(rlog.Count / 3f);
                     ctx.PendingNotices.AddRange(rlog);
+                }
+                // the knife in the dark
+                if (ctx.Plot == null) ctx.Plot = IntrigueRules.Roll(ctx.Character, ctx.Family, ctx.Baronage, ctx.Estate, ctx.Reputation.Notoriety, rng.Fork(5), _balance.intrigue);
+                else
+                {
+                    ctx.Plot.DaysUntil--;
+                    string w = IntrigueRules.Warning(ctx.Plot, ctx.Character, rng.Fork(6), _balance.intrigue);
+                    if (w != null && ctx.PendingWhisper == null) ctx.PendingWhisper = w;
+                }
+                // war comes to the village
+                var hereS = ctx.Current;
+                if (hereS != null && ctx.Siege == null && ctx.PendingRaiders == 0)
+                {
+                    var ev = VillageEvents.Roll(hereS, ctx.WarHeat, rng.Fork(7), _balance.villageEvents);
+                    if (ev != VillageEventKind.None) { string t = VillageEvents.Apply(ev, hereS, rng.Fork(8), _balance.villageEvents, out int raiders); ctx.PendingNotices.Add(t); if (raiders > 0) ctx.PendingRaiders = raiders; }
                 }
                 if (ctx.Castle != null && ctx.Castle.Active && ctx.PendingObjector == null && ctx.Siege == null && ctx.CurrentSettlementId == ctx.Castle.SiteSettlementId)
                 {

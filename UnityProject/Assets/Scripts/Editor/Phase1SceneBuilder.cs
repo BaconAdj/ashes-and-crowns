@@ -136,6 +136,11 @@ namespace AshesAndCrowns.EditorTools
             var lordship = sceneGo.AddComponent<LordshipDirector>();
             lordship.clock = clock; lordship.hud = hud; lordship.saveManager = save; lordship.village = life; lordship.siege = siege; lordship.vitals = vitals;
             life.lordship = lordship;
+            var intrigue = sceneGo.AddComponent<IntrigueDirector>();
+            intrigue.clock = clock; intrigue.hud = hud; intrigue.saveManager = save; intrigue.village = life; intrigue.encounter = enc; intrigue.vitals = vitals;
+            life.intrigue = intrigue;
+            var blood = sceneGo.AddComponent<BloodDecals>(); blood.vitals = vitals; blood.melee = melee; blood.player = playerGo.transform;
+            blood.material = SceneKit.Mat("Blood", SceneKit.LitShader, new Color(0.22f, 0.04f, 0.03f), 0f, 0.6f, instancing: true);
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

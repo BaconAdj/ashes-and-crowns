@@ -601,5 +601,36 @@
     "tallageGain": 800,
     "tallageLoyaltyLoss": 0.08,
     "debaseUnrest": 0.1
+  },
+  "intrigue": {
+    "plotChancePerDayBase": 0.004,
+    "plotChancePerRank": 0.004,
+    "plotChancePerNotoriety": 0.01,
+    "plotChancePerHostileRelative": 0.006,
+    "plotDaysMin": 6,
+    "plotDaysMax": 20,
+    "warningChancePerDay": 0.35,
+    "warningCunningWeight": 0.03,
+    "poisonDeathChance": 0.45,
+    "knifeDeathChance": 0.35,
+    "ambushDeathChance": 0.3,
+    "guardFoilBonus": 0.35,
+    "tasterFoilsPoison": 0.9,
+    "confrontCunningWeight": 0.05,
+    "guardCostPennies": 20,
+    "tasterCostPennies": 15,
+    "relativeHostileBelow": -0.2,
+    "vassalLoyaltyBelow": 0.3,
+    "dispositionDropOnFalseAccusation": 0.4
+  },
+  "villageEvents": {
+    "chancePerDayBase": 0.01,
+    "chancePerDayWarWeight": 0.03,
+    "raiderCountMin": 2,
+    "raiderCountMax": 5,
+    "raidPopulationLoss": 0.06,
+    "raidWealthLoss": 0.2,
+    "forageWealthLoss": 0.1,
+    "refugeeShock": 0.7
   }
 }

@@ -154,6 +154,12 @@ namespace AshesAndCrowns.Save
                 var ch = s.RealmChronicle ?? new string[0]; w.Write(ch.Length); foreach (var line in ch) w.Write(line ?? "");
                 w.Write(s.DaysIntoSeason); w.Write(s.NextNpcId); w.Write(s.PendingDemand);
             }
+            if (version >= 10)
+            {
+                w.Write(s.HasPlot); w.Write(s.PlotKind); w.Write(s.PlotterKind); w.Write(s.PlotterId); w.Write(s.PlotDaysUntil); w.Write(s.PlotWarnings); w.Write(s.PlotterName ?? ""); w.Write(s.PlotGuarded); w.Write(s.PlotTasted);
+                var wl = s.PlotWarningLines ?? new string[0]; w.Write(wl.Length); foreach (var line in wl) w.Write(line ?? "");
+                w.Write(s.PendingRaiders); w.Write(s.EstateDaysThisMonth); w.Write(s.WarHeat);
+            }
         }
 
         private static void WriteJob(BinaryWriter w, JobSnapshot j)
@@ -296,6 +302,12 @@ namespace AshesAndCrowns.Save
                 s.HasRealm = r.ReadBoolean(); s.RealmTreasury = r.ReadInt32(); s.RealmSeasons = r.ReadInt32(); s.RealmChurch = r.ReadSingle();
                 int nch = r.ReadInt32(); if (nch < 0 || nch > 1000) throw new SaveCorruptException("bad chronicle count"); s.RealmChronicle = new string[nch]; for (int i = 0; i < nch; i++) s.RealmChronicle[i] = r.ReadString();
                 s.DaysIntoSeason = r.ReadInt32(); s.NextNpcId = r.ReadInt32(); s.PendingDemand = r.ReadByte();
+            }
+            if (version >= 10)
+            {
+                s.HasPlot = r.ReadBoolean(); s.PlotKind = r.ReadByte(); s.PlotterKind = r.ReadByte(); s.PlotterId = r.ReadInt32(); s.PlotDaysUntil = r.ReadInt32(); s.PlotWarnings = r.ReadInt32(); s.PlotterName = r.ReadString(); s.PlotGuarded = r.ReadBoolean(); s.PlotTasted = r.ReadBoolean();
+                int nw = r.ReadInt32(); if (nw < 0 || nw > 100) throw new SaveCorruptException("bad warning count"); s.PlotWarningLines = new string[nw]; for (int i = 0; i < nw; i++) s.PlotWarningLines[i] = r.ReadString();
+                s.PendingRaiders = r.ReadInt32(); s.EstateDaysThisMonth = r.ReadInt32(); s.WarHeat = r.ReadSingle();
             }
             return s;
         }

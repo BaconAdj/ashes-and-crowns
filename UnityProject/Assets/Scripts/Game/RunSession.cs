@@ -89,6 +89,12 @@ namespace AshesAndCrowns.Game
         public int DaysIntoSeason;
         public Allegiance PendingDemand;
         public int NextNpcId = 100;
+        public int EstateDaysThisMonth;
+        // Phase 11: betrayal and war in the lanes
+        public Plot Plot;
+        public string PendingWhisper;
+        public int PendingRaiders;
+        public float WarHeat;   // 0..1 from the last realm season
         public MinorLord LordById(int id) { foreach (var l in Baronage) if (l.Id == id) return l; return null; }
         public MercenaryCompany CompanyAt(string settlementId) { foreach (var c in Companies) if (c.BasedAtId == settlementId && c.ContractDaysLeft > 0) return c; return null; }
 

@@ -34,7 +34,7 @@ namespace AshesAndCrowns.Game
             if (_balance == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if ((village != null && village.IsBusy) || (siege != null && siege.IsOpen)) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
-            if (ctx.Estate != null && ctx.Estate.PendingCrisis != EstateCrisis.None && AtEstate(ctx)) { Crisis(); return; }
+            if (ctx.Estate != null && ctx.Estate.PendingCrisis != EstateCrisis.None && AtEstate(ctx) && EstateSettlement(ctx) != null) { Crisis(); return; }
             if (ctx.Estate != null && ctx.PendingDemand != Allegiance.Neutral && AtEstate(ctx)) { Demand(); return; }
         }
 
@@ -69,7 +69,7 @@ namespace AshesAndCrowns.Game
                 ("Take silver from the chest (50 pennies)", () => { if (e.Treasury >= 50) { e.Treasury -= 50; ctx.Character.Coins += 50; hud.Toast("Fifty pennies in your purse."); } else hud.Toast("The chest is thin."); Save(); }),
                 ("Hire ten spears for the garrison (30 pennies from the chest)", () => { if (e.Treasury >= 30) { e.Treasury -= 30; e.GarrisonMen += 10; hud.Toast($"Garrison: {e.GarrisonMen}."); } else hud.Toast("The chest is thin."); Save(); }),
             };
-            if (e.InRevolt) opts.Add(("Put down the revolt with the garrison", () => { var rng = Rng(153); bool ok = rng.Chance(Mathf.Clamp01(e.GarrisonMen / 40f)); e.GarrisonMen -= rng.Range(1, 5); if (ok) { e.InRevolt = false; e.Unrest = 0.45f; s.Population = (int)(s.Population * 0.95f); ctx.Reputation.Record(Deed.Murder); Show("The revolt", "Twelve dead at the tithe barn and the ringleaders hanging from the lych-gate. It is quiet now. It will be quiet for a long time.", ("...", null)); } else Show("The revolt", "The garrison is driven back to the hall with stones. Tonight you sleep in mail.", ("...", null)); Save(); }));
+            if (e.InRevolt) opts.Add(("Put down the revolt with the garrison", () => { var rng = Rng(153); bool ok = rng.Chance(Mathf.Clamp01(e.GarrisonMen / 40f)); e.GarrisonMen = Mathf.Max(0, e.GarrisonMen - rng.Range(1, 5)); if (ok) { e.InRevolt = false; e.Unrest = 0.45f; s.Population = (int)(s.Population * 0.95f); ctx.Reputation.Record(Deed.Murder); Show("The revolt", "Twelve dead at the tithe barn and the ringleaders hanging from the lych-gate. It is quiet now. It will be quiet for a long time.", ("...", null)); } else Show("The revolt", "The garrison is driven back to the hall with stones. Tonight you sleep in mail.", ("...", null)); Save(); }));
             opts.Add(("Allegiance: declare or deal", () => Allegiances()));
             if (ctx.Character.Rank == Rank.Monarch) opts.Add(("Hold the king's council", () => Council()));
             opts.Add(("Leave the hall", null));

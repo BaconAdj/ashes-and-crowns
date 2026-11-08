@@ -221,6 +221,8 @@ namespace AshesAndCrowns.Game
                 var su = ctx.Suit; if (su != null) { s.HasSuit = true; s.SuitHeiress = su.Heiress; s.SuitDowryId = su.DowrySettlementId; s.SuitFather = su.FatherLordId; s.SuitVisits = su.Visits; s.SuitFavour = su.Favour; s.SuitConsented = su.Consented; s.SuitMarried = su.Married; }
                 var rl = ctx.Realm; if (rl != null) { s.HasRealm = true; s.RealmTreasury = rl.CrownTreasury; s.RealmSeasons = rl.SeasonsElapsed; s.RealmChurch = rl.ChurchFavour; s.RealmChronicle = rl.Chronicle.ToArray(); }
                 s.DaysIntoSeason = ctx.DaysIntoSeason; s.NextNpcId = ctx.NextNpcId; s.PendingDemand = (byte)ctx.PendingDemand;
+                var pl = ctx.Plot; if (pl != null) { s.HasPlot = true; s.PlotKind = (byte)pl.Kind; s.PlotterKind = (byte)pl.Plotter; s.PlotterId = pl.PlotterId; s.PlotDaysUntil = pl.DaysUntil; s.PlotWarnings = pl.WarningsGiven; s.PlotterName = pl.PlotterName; s.PlotGuarded = pl.Guarded; s.PlotTasted = pl.Tasted; s.PlotWarningLines = pl.Warnings.ToArray(); }
+                s.PendingRaiders = ctx.PendingRaiders; s.EstateDaysThisMonth = ctx.EstateDaysThisMonth; s.WarHeat = ctx.WarHeat;
             }
             if (clock != null && clock.IsReady)
             {
@@ -300,6 +302,11 @@ namespace AshesAndCrowns.Game
                 rc.Suit = !s.HasSuit ? null : new Suit { Heiress = s.SuitHeiress ?? string.Empty, DowrySettlementId = s.SuitDowryId ?? string.Empty, FatherLordId = s.SuitFather, Visits = s.SuitVisits, Favour = s.SuitFavour, Consented = s.SuitConsented, Married = s.SuitMarried };
                 if (s.HasRealm) { rc.Realm = new RealmState { CrownTreasury = s.RealmTreasury, SeasonsElapsed = s.RealmSeasons, ChurchFavour = s.RealmChurch }; if (s.RealmChronicle != null) rc.Realm.Chronicle.AddRange(s.RealmChronicle); }
                 rc.DaysIntoSeason = s.DaysIntoSeason; rc.NextNpcId = s.NextNpcId > 0 ? s.NextNpcId : 100; rc.PendingDemand = (Allegiance)s.PendingDemand;
+            }
+            if (s.Version >= 10)
+            {
+                if (s.HasPlot) { rc.Plot = new Plot { Kind = (PlotKind)s.PlotKind, Plotter = (PlotterKind)s.PlotterKind, PlotterId = s.PlotterId, DaysUntil = s.PlotDaysUntil, WarningsGiven = s.PlotWarnings, PlotterName = s.PlotterName ?? string.Empty, Guarded = s.PlotGuarded, Tasted = s.PlotTasted }; if (s.PlotWarningLines != null) rc.Plot.Warnings.AddRange(s.PlotWarningLines); }
+                rc.PendingRaiders = s.PendingRaiders; rc.EstateDaysThisMonth = s.EstateDaysThisMonth; rc.WarHeat = s.WarHeat;
             }
             if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);

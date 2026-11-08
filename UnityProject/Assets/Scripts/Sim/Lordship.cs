@@ -104,6 +104,13 @@ namespace AshesAndCrowns.Sim
 
         public static string Resolve(Estate e, Settlement s, int choice, CharacterSheet c, GlobalReputation rep, NameGenerator names, DeterministicRng rng, LordshipBalance b)
         {
+            string t = ResolveText(e, s ?? new Settlement(), choice, c, rep, names, rng, b);
+            e.Unrest = Clamp01(e.Unrest); if (e.Granary < 0f) e.Granary = 0f; if (e.GarrisonMen < 0) e.GarrisonMen = 0; if (e.Prosperity < 0.1f) e.Prosperity = 0.1f;
+            return t;
+        }
+
+        private static string ResolveText(Estate e, Settlement s, int choice, CharacterSheet c, GlobalReputation rep, NameGenerator names, DeterministicRng rng, LordshipBalance b)
+        {
             EstateCrisis k = e.PendingCrisis; e.PendingCrisis = EstateCrisis.None;
             switch (k)
             {
@@ -136,7 +143,6 @@ namespace AshesAndCrowns.Sim
                     if (choice == 1) { e.Granary -= 5f; rep?.Record(Deed.GaveAlms); return "They go on toward the abbey with bread in their shirts."; }
                     rep?.Record(Deed.RobbedTraveller); e.Unrest -= 0.02f; return "They go. One of them curses your name at the gate, loudly, for a long time.";
             }
-            e.Unrest = Clamp01(e.Unrest);
             return string.Empty;
         }
 
@@ -180,7 +186,7 @@ namespace AshesAndCrowns.Sim
                 case Verdict.Flog: e.Unrest = EstateRules.Clamp01(e.Unrest + (m.Kind == CourtCase.Poaching ? 0.04f : 0f)); return "Twenty strokes at the church gate. The village watches in silence.";
                 case Verdict.Hang:
                     e.Unrest = EstateRules.Clamp01(e.Unrest + (m.Kind == CourtCase.Theft && m.Pennies > 12 ? 0.02f : 0.12f));
-                    rep?.Record(m.Kind == CourtCase.Theft && m.Pennies > 12 ? Deed.PaidTithe : Deed.Murder);
+                    if (!(m.Kind == CourtCase.Theft && m.Pennies > 12)) rep?.Record(Deed.Murder);
                     return m.Kind == CourtCase.Theft && m.Pennies > 12 ? "He hangs for a shilling and more. The law allows it. Nobody argues." : "He hangs. The priest will not look at you. This was not a hanging matter and everyone knows it.";
                 default:
                     e.Unrest = EstateRules.Clamp01(e.Unrest - 0.04f);

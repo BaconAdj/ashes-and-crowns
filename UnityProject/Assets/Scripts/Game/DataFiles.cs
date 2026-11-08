@@ -23,6 +23,14 @@ namespace AshesAndCrowns.Game
             return File.ReadAllText(path);
         }
 
+        /// <summary>strings.&lt;lang&gt;.json, or null for English (code keeps the English text).</summary>
+        public static StringsData LoadStrings(string lang)
+        {
+            if (string.IsNullOrEmpty(lang) || lang == "en") return null;
+            string path = Path.Combine(Root, "strings." + lang + ".json");
+            return File.Exists(path) ? JsonUtility.FromJson<StringsData>(File.ReadAllText(path)) : null;
+        }
+
         public static Balance LoadBalance()
         {
             var balance = JsonUtility.FromJson<Balance>(ReadText("balance.json"));

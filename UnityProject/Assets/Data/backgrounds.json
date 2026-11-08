@@ -1,565 +1,565 @@
 {
- "_comment": "Three to four backgrounds per rank. Attribute bonuses add to the player's allocation; skills start at the given levels (0-100); trade is the starting trade for peasants. Family templates describe who exists at the start.",
- "attributePoints": 10,
- "attributeMin": 3,
- "attributeMax": 9,
- "attributeBase": 4,
- "ranks": [
-  {
-   "id": "peasant",
-   "name": "Peasant",
-   "blurb": "A free tenant with a hut, a few coins and a trade. The ground floor.",
-   "spawn": "village",
-   "backgrounds": [
+  "_comment": "Three to four backgrounds per rank. Attribute bonuses add to the player's allocation; skills start at the given levels (0-100); trade is the starting trade for peasants. Family templates describe who exists at the start.",
+  "attributePoints": 10,
+  "attributeMin": 3,
+  "attributeMax": 9,
+  "attributeBase": 4,
+  "ranks": [
     {
-     "id": "farmers_son",
-     "name": "Farmer's son",
-     "blurb": "You grew up behind the plough. Strong back, few prospects.",
-     "trade": "farmer",
-     "coins": 6,
-     "family": [
-      "father",
-      "mother",
-      "sibling",
-      "sibling"
-     ],
-     "attributeKeys": [
-      "strength",
-      "endurance"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "farming",
-      "polearm",
-      "riding"
-     ],
-     "skillValues": [
-      35,
-      10,
-      5
-     ],
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
+      "id": "peasant",
+      "name": "Peasant",
+      "blurb": "A free tenant with a hut, a few coins and a trade. The ground floor.",
+      "spawn": "village",
+      "backgrounds": [
+        {
+          "id": "farmers_son",
+          "name": "Farmer's son",
+          "blurb": "You grew up behind the plough. Strong back, few prospects.",
+          "trade": "farmer",
+          "coins": 6,
+          "family": [
+            "father",
+            "mother",
+            "sibling",
+            "sibling"
+          ],
+          "attributeKeys": [
+            "strength",
+            "endurance"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "farming",
+            "polearm",
+            "riding"
+          ],
+          "skillValues": [
+            35,
+            10,
+            5
+          ],
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "smiths_apprentice",
+          "name": "Smith's apprentice",
+          "blurb": "Your master died of the flux last winter and left you his forge and his debts.",
+          "trade": "blacksmith",
+          "coins": 16,
+          "family": [
+            "mother",
+            "sibling"
+          ],
+          "attributeKeys": [
+            "strength"
+          ],
+          "attributeValues": [
+            2
+          ],
+          "skillKeys": [
+            "smithing",
+            "oneHanded",
+            "haggling"
+          ],
+          "skillValues": [
+            30,
+            15,
+            10
+          ],
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "poacher",
+          "name": "Poacher",
+          "blurb": "You know the deer trails better than the forester does. He knows your name.",
+          "trade": "hunter",
+          "coins": 4,
+          "family": [
+            "wife",
+            "child"
+          ],
+          "attributeKeys": [
+            "cunning",
+            "endurance"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "hunting",
+            "bow",
+            "stealth"
+          ],
+          "skillValues": [
+            40,
+            30,
+            25
+          ],
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "millers_widow",
+          "name": "Miller's widow",
+          "blurb": "The mill is yours now, and every man in the village thinks he should have it instead.",
+          "trade": "miller",
+          "coins": 14,
+          "family": [
+            "child",
+            "child",
+            "brotherInLaw"
+          ],
+          "attributeKeys": [
+            "charisma",
+            "cunning"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "milling",
+            "haggling",
+            "medicine"
+          ],
+          "skillValues": [
+            35,
+            25,
+            10
+          ],
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        }
+      ]
     },
     {
-     "id": "smiths_apprentice",
-     "name": "Smith's apprentice",
-     "blurb": "Your master died of the flux last winter and left you his forge and his debts.",
-     "trade": "blacksmith",
-     "coins": 9,
-     "family": [
-      "mother",
-      "sibling"
-     ],
-     "attributeKeys": [
-      "strength"
-     ],
-     "attributeValues": [
-      2
-     ],
-     "skillKeys": [
-      "smithing",
-      "oneHanded",
-      "haggling"
-     ],
-     "skillValues": [
-      30,
-      15,
-      10
-     ],
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
+      "id": "warrior",
+      "name": "Warrior",
+      "blurb": "A free sword: weapon, armour, small savings, no master.",
+      "spawn": "village",
+      "backgrounds": [
+        {
+          "id": "flemish_mercenary",
+          "name": "Flemish mercenary",
+          "blurb": "You came over with the companies Stephen hired. The pay stopped; you stayed.",
+          "coins": 20,
+          "family": [],
+          "attributeKeys": [
+            "strength",
+            "endurance"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "oneHanded",
+            "polearm",
+            "leadership"
+          ],
+          "skillValues": [
+            35,
+            30,
+            10
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "veteran_of_the_welsh_march",
+          "name": "Veteran of the Welsh march",
+          "blurb": "Ten years holding a border tower against the Welsh. You limp when it rains.",
+          "coins": 15,
+          "family": [
+            "wife",
+            "child",
+            "child"
+          ],
+          "wounds": [
+            {
+              "part": "LeftLeg",
+              "severity": 0.3
+            }
+          ],
+          "attributeKeys": [
+            "endurance"
+          ],
+          "attributeValues": [
+            2
+          ],
+          "skillKeys": [
+            "bow",
+            "oneHanded",
+            "riding"
+          ],
+          "skillValues": [
+            30,
+            30,
+            20
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false
+        },
+        {
+          "id": "outlawed_squire",
+          "name": "Outlawed squire",
+          "blurb": "You killed a man in a quarrel over a horse. The horse is yours; the county is not.",
+          "coins": 12,
+          "family": [
+            "father",
+            "sibling"
+          ],
+          "wanted": true,
+          "attributeKeys": [
+            "charisma",
+            "cunning"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "riding",
+            "oneHanded",
+            "twoHanded"
+          ],
+          "skillValues": [
+            40,
+            30,
+            15
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wounds": []
+        }
+      ]
     },
     {
-     "id": "poacher",
-     "name": "Poacher",
-     "blurb": "You know the deer trails better than the forester does. He knows your name.",
-     "trade": "hunter",
-     "coins": 4,
-     "family": [
-      "wife",
-      "child"
-     ],
-     "attributeKeys": [
-      "cunning",
-      "endurance"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "hunting",
-      "bow",
-      "stealth"
-     ],
-     "skillValues": [
-      40,
-      30,
-      25
-     ],
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
+      "id": "knight",
+      "name": "Knight",
+      "blurb": "A household knight: sworn, fed, and owned.",
+      "spawn": "castle",
+      "backgrounds": [
+        {
+          "id": "younger_son",
+          "name": "Younger son",
+          "blurb": "Your brother has the land. You have the sword and the obligation.",
+          "coins": 30,
+          "family": [
+            "elderBrother",
+            "mother",
+            "sister"
+          ],
+          "attributeKeys": [
+            "strength",
+            "charisma"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "riding",
+            "oneHanded",
+            "leadership"
+          ],
+          "skillValues": [
+            45,
+            40,
+            20
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "dubbed_on_the_field",
+          "name": "Dubbed on the field",
+          "blurb": "You were a sergeant until a lord saw you hold a gate. Nobody at table lets you forget it.",
+          "coins": 18,
+          "family": [
+            "wife",
+            "child"
+          ],
+          "attributeKeys": [
+            "strength"
+          ],
+          "attributeValues": [
+            2
+          ],
+          "skillKeys": [
+            "polearm",
+            "oneHanded",
+            "leadership"
+          ],
+          "skillValues": [
+            45,
+            35,
+            25
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "hostage_returned",
+          "name": "Hostage returned",
+          "blurb": "Twelve years in another lord's hall as surety for your father's loyalty. You speak better French than English.",
+          "coins": 25,
+          "family": [
+            "father",
+            "sibling",
+            "sibling"
+          ],
+          "attributeKeys": [
+            "cunning",
+            "charisma"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "riding",
+            "oneHanded",
+            "courtIntrigue"
+          ],
+          "skillValues": [
+            40,
+            30,
+            30
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        }
+      ]
     },
     {
-     "id": "millers_widow",
-     "name": "Miller's widow",
-     "blurb": "The mill is yours now, and every man in the village thinks he should have it instead.",
-     "trade": "miller",
-     "coins": 14,
-     "family": [
-      "child",
-      "child",
-      "brotherInLaw"
-     ],
-     "attributeKeys": [
-      "charisma",
-      "cunning"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "milling",
-      "haggling",
-      "medicine"
-     ],
-     "skillValues": [
-      35,
-      25,
-      10
-     ],
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
+      "id": "lord",
+      "name": "Lord",
+      "blurb": "A small castle, a village that pays you, a garrison, and rivals.",
+      "spawn": "castle",
+      "backgrounds": [
+        {
+          "id": "new_man",
+          "name": "New man",
+          "blurb": "Henry raised your father from the dust. The old families remember the dust.",
+          "coins": 120,
+          "family": [
+            "wife",
+            "heir",
+            "child",
+            "steward"
+          ],
+          "attributeKeys": [
+            "cunning"
+          ],
+          "attributeValues": [
+            2
+          ],
+          "skillKeys": [
+            "leadership",
+            "courtIntrigue",
+            "riding"
+          ],
+          "skillValues": [
+            35,
+            35,
+            30
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "old_blood",
+          "name": "Old blood",
+          "blurb": "Your grandfather came over with the Conqueror. The castle is older than the kingdom and leaks.",
+          "coins": 80,
+          "family": [
+            "wife",
+            "heir",
+            "mother",
+            "steward"
+          ],
+          "attributeKeys": [
+            "charisma"
+          ],
+          "attributeValues": [
+            2
+          ],
+          "skillKeys": [
+            "leadership",
+            "riding",
+            "oneHanded"
+          ],
+          "skillValues": [
+            40,
+            35,
+            30
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "widow_regent",
+          "name": "Widow regent",
+          "blurb": "Your husband died at Henry's court. You hold the castle for a son of nine. Everyone wants to marry you.",
+          "coins": 100,
+          "family": [
+            "heir",
+            "child",
+            "steward"
+          ],
+          "attributeKeys": [
+            "charisma",
+            "cunning"
+          ],
+          "attributeValues": [
+            1,
+            1
+          ],
+          "skillKeys": [
+            "courtIntrigue",
+            "leadership",
+            "haggling"
+          ],
+          "skillValues": [
+            45,
+            25,
+            20
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        }
+      ]
+    },
+    {
+      "id": "monarch",
+      "name": "King or Queen",
+      "blurb": "The contested crown. Everything at once.",
+      "spawn": "capital",
+      "backgrounds": [
+        {
+          "id": "stephen",
+          "name": "Stephen of Blois",
+          "blurb": "Crowned, doubted. Brave in the field, too forgiving at the table.",
+          "fixedFigure": "stephen",
+          "coins": 4000,
+          "family": [
+            "queen",
+            "heir",
+            "child"
+          ],
+          "attributeKeys": [
+            "strength",
+            "charisma"
+          ],
+          "attributeValues": [
+            1,
+            2
+          ],
+          "skillKeys": [
+            "leadership",
+            "oneHanded",
+            "riding",
+            "courtIntrigue"
+          ],
+          "skillValues": [
+            55,
+            50,
+            50,
+            20
+          ],
+          "trade": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "matilda",
+          "name": "Empress Matilda",
+          "blurb": "Rightful, resisted. Daughter of a king, widow of an emperor, wife of an Angevin.",
+          "fixedFigure": "matilda",
+          "coins": 2500,
+          "family": [
+            "heir",
+            "child",
+            "halfBrother"
+          ],
+          "attributeKeys": [
+            "cunning",
+            "charisma"
+          ],
+          "attributeValues": [
+            2,
+            1
+          ],
+          "skillKeys": [
+            "leadership",
+            "courtIntrigue",
+            "riding"
+          ],
+          "skillValues": [
+            45,
+            60,
+            35
+          ],
+          "trade": "",
+          "wanted": false,
+          "wounds": []
+        },
+        {
+          "id": "third_claimant",
+          "name": "A bastard of Henry",
+          "blurb": "One of the old king's many by-blows, with a forged charter and a few hundred men who believe it.",
+          "coins": 600,
+          "family": [
+            "mother",
+            "halfSibling",
+            "captain"
+          ],
+          "attributeKeys": [],
+          "attributeValues": [],
+          "skillKeys": [
+            "leadership",
+            "oneHanded",
+            "courtIntrigue",
+            "riding"
+          ],
+          "skillValues": [
+            35,
+            35,
+            35,
+            35
+          ],
+          "trade": "",
+          "fixedFigure": "",
+          "wanted": false,
+          "wounds": []
+        }
+      ]
     }
-   ]
-  },
-  {
-   "id": "warrior",
-   "name": "Warrior",
-   "blurb": "A free sword: weapon, armour, small savings, no master.",
-   "spawn": "village",
-   "backgrounds": [
-    {
-     "id": "flemish_mercenary",
-     "name": "Flemish mercenary",
-     "blurb": "You came over with the companies Stephen hired. The pay stopped; you stayed.",
-     "coins": 20,
-     "family": [],
-     "attributeKeys": [
-      "strength",
-      "endurance"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "oneHanded",
-      "polearm",
-      "leadership"
-     ],
-     "skillValues": [
-      35,
-      30,
-      10
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "veteran_of_the_welsh_march",
-     "name": "Veteran of the Welsh march",
-     "blurb": "Ten years holding a border tower against the Welsh. You limp when it rains.",
-     "coins": 15,
-     "family": [
-      "wife",
-      "child",
-      "child"
-     ],
-     "wounds": [
-      {
-       "part": "LeftLeg",
-       "severity": 0.3
-      }
-     ],
-     "attributeKeys": [
-      "endurance"
-     ],
-     "attributeValues": [
-      2
-     ],
-     "skillKeys": [
-      "bow",
-      "oneHanded",
-      "riding"
-     ],
-     "skillValues": [
-      30,
-      30,
-      20
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false
-    },
-    {
-     "id": "outlawed_squire",
-     "name": "Outlawed squire",
-     "blurb": "You killed a man in a quarrel over a horse. The horse is yours; the county is not.",
-     "coins": 12,
-     "family": [
-      "father",
-      "sibling"
-     ],
-     "wanted": true,
-     "attributeKeys": [
-      "charisma",
-      "cunning"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "riding",
-      "oneHanded",
-      "twoHanded"
-     ],
-     "skillValues": [
-      40,
-      30,
-      15
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wounds": []
-    }
-   ]
-  },
-  {
-   "id": "knight",
-   "name": "Knight",
-   "blurb": "A household knight: sworn, fed, and owned.",
-   "spawn": "castle",
-   "backgrounds": [
-    {
-     "id": "younger_son",
-     "name": "Younger son",
-     "blurb": "Your brother has the land. You have the sword and the obligation.",
-     "coins": 30,
-     "family": [
-      "elderBrother",
-      "mother",
-      "sister"
-     ],
-     "attributeKeys": [
-      "strength",
-      "charisma"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "riding",
-      "oneHanded",
-      "leadership"
-     ],
-     "skillValues": [
-      45,
-      40,
-      20
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "dubbed_on_the_field",
-     "name": "Dubbed on the field",
-     "blurb": "You were a sergeant until a lord saw you hold a gate. Nobody at table lets you forget it.",
-     "coins": 18,
-     "family": [
-      "wife",
-      "child"
-     ],
-     "attributeKeys": [
-      "strength"
-     ],
-     "attributeValues": [
-      2
-     ],
-     "skillKeys": [
-      "polearm",
-      "oneHanded",
-      "leadership"
-     ],
-     "skillValues": [
-      45,
-      35,
-      25
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "hostage_returned",
-     "name": "Hostage returned",
-     "blurb": "Twelve years in another lord's hall as surety for your father's loyalty. You speak better French than English.",
-     "coins": 25,
-     "family": [
-      "father",
-      "sibling",
-      "sibling"
-     ],
-     "attributeKeys": [
-      "cunning",
-      "charisma"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "riding",
-      "oneHanded",
-      "courtIntrigue"
-     ],
-     "skillValues": [
-      40,
-      30,
-      30
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    }
-   ]
-  },
-  {
-   "id": "lord",
-   "name": "Lord",
-   "blurb": "A small castle, a village that pays you, a garrison, and rivals.",
-   "spawn": "castle",
-   "backgrounds": [
-    {
-     "id": "new_man",
-     "name": "New man",
-     "blurb": "Henry raised your father from the dust. The old families remember the dust.",
-     "coins": 120,
-     "family": [
-      "wife",
-      "heir",
-      "child",
-      "steward"
-     ],
-     "attributeKeys": [
-      "cunning"
-     ],
-     "attributeValues": [
-      2
-     ],
-     "skillKeys": [
-      "leadership",
-      "courtIntrigue",
-      "riding"
-     ],
-     "skillValues": [
-      35,
-      35,
-      30
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "old_blood",
-     "name": "Old blood",
-     "blurb": "Your grandfather came over with the Conqueror. The castle is older than the kingdom and leaks.",
-     "coins": 80,
-     "family": [
-      "wife",
-      "heir",
-      "mother",
-      "steward"
-     ],
-     "attributeKeys": [
-      "charisma"
-     ],
-     "attributeValues": [
-      2
-     ],
-     "skillKeys": [
-      "leadership",
-      "riding",
-      "oneHanded"
-     ],
-     "skillValues": [
-      40,
-      35,
-      30
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "widow_regent",
-     "name": "Widow regent",
-     "blurb": "Your husband died at Henry's court. You hold the castle for a son of nine. Everyone wants to marry you.",
-     "coins": 100,
-     "family": [
-      "heir",
-      "child",
-      "steward"
-     ],
-     "attributeKeys": [
-      "charisma",
-      "cunning"
-     ],
-     "attributeValues": [
-      1,
-      1
-     ],
-     "skillKeys": [
-      "courtIntrigue",
-      "leadership",
-      "haggling"
-     ],
-     "skillValues": [
-      45,
-      25,
-      20
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    }
-   ]
-  },
-  {
-   "id": "monarch",
-   "name": "King or Queen",
-   "blurb": "The contested crown. Everything at once.",
-   "spawn": "capital",
-   "backgrounds": [
-    {
-     "id": "stephen",
-     "name": "Stephen of Blois",
-     "blurb": "Crowned, doubted. Brave in the field, too forgiving at the table.",
-     "fixedFigure": "stephen",
-     "coins": 4000,
-     "family": [
-      "queen",
-      "heir",
-      "child"
-     ],
-     "attributeKeys": [
-      "strength",
-      "charisma"
-     ],
-     "attributeValues": [
-      1,
-      2
-     ],
-     "skillKeys": [
-      "leadership",
-      "oneHanded",
-      "riding",
-      "courtIntrigue"
-     ],
-     "skillValues": [
-      55,
-      50,
-      50,
-      20
-     ],
-     "trade": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "matilda",
-     "name": "Empress Matilda",
-     "blurb": "Rightful, resisted. Daughter of a king, widow of an emperor, wife of an Angevin.",
-     "fixedFigure": "matilda",
-     "coins": 2500,
-     "family": [
-      "heir",
-      "child",
-      "halfBrother"
-     ],
-     "attributeKeys": [
-      "cunning",
-      "charisma"
-     ],
-     "attributeValues": [
-      2,
-      1
-     ],
-     "skillKeys": [
-      "leadership",
-      "courtIntrigue",
-      "riding"
-     ],
-     "skillValues": [
-      45,
-      60,
-      35
-     ],
-     "trade": "",
-     "wanted": false,
-     "wounds": []
-    },
-    {
-     "id": "third_claimant",
-     "name": "A bastard of Henry",
-     "blurb": "One of the old king's many by-blows, with a forged charter and a few hundred men who believe it.",
-     "coins": 600,
-     "family": [
-      "mother",
-      "halfSibling",
-      "captain"
-     ],
-     "attributeKeys": [],
-     "attributeValues": [],
-     "skillKeys": [
-      "leadership",
-      "oneHanded",
-      "courtIntrigue",
-      "riding"
-     ],
-     "skillValues": [
-      35,
-      35,
-      35,
-      35
-     ],
-     "trade": "",
-     "fixedFigure": "",
-     "wanted": false,
-     "wounds": []
-    }
-   ]
-  }
- ]
+  ]
 }

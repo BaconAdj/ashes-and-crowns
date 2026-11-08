@@ -65,6 +65,9 @@ namespace AshesAndCrowns.EditorTools
             RegisterScenes();
         }
 
+        [MenuItem("Ashes and Crowns/Language/English", priority = 40)] public static void LangEn() { PlayerPrefs.SetString("ashes.lang", "en"); PlayerPrefs.Save(); Debug.Log("[Ashes and Crowns] language: English (takes effect on the next Play)"); }
+        [MenuItem("Ashes and Crowns/Language/Français", priority = 41)] public static void LangFr() { PlayerPrefs.SetString("ashes.lang", "fr"); PlayerPrefs.Save(); Debug.Log("[Ashes and Crowns] langue : français (au prochain Play)"); }
+
         [MenuItem("Ashes and Crowns/Rebuild/Siege Scene", priority = 22)]
         public static void RebuildSiegeSceneMenu()
         {

@@ -29,6 +29,7 @@ namespace AshesAndCrowns.Game
         public MeleeController melee;       // optional: loadout refresh after trading
         public SiegeDirector siege;         // optional: sieges and castles
         public LordshipDirector lordship;   // optional: the hall
+        public IntrigueDirector intrigue;   // optional: the knife in the dark
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -61,6 +62,7 @@ namespace AshesAndCrowns.Game
 
             if (siege != null && siege.IsOpen) return;
             if (lordship != null && lordship.IsOpen) return;
+            if (intrigue != null && intrigue.IsOpen) return;
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)
@@ -244,6 +246,7 @@ namespace AshesAndCrowns.Game
                 opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", DesertService));
             }
             if (s != null && lordship != null && ctx.Estate != null && ctx.Estate.SettlementId == s.Id) opts.Add(("Go up to the hall", lordship.Hall));
+            if (intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) opts.Add(("Act on your suspicions", intrigue.Suspicions));
             if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
             if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) opts.Add(($"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies} pennies)", HireGarrison));
             if (s != null && (s.Type == SettlementType.Castle || s.Type == SettlementType.City || s.Type == SettlementType.Town)) opts.Add(("Seek an audience with the lord", Audience));

@@ -38,6 +38,9 @@ Dawn bells wake you. At the bench behind your hut, E works the day: a short hand
 ## Serving in the ranks
 Armed men may come for you with a quota: go, pay, or run. In towns a mercenary company may take you on. At the muster you march to battle as a body in a line: a ring marks your place, the banner and the sergeant tell you what to do, and you do not command. Break ranks and the provost hears of it; hold the line and the sergeant names you. Lose, and you may be ransomed, let go, or killed where you kneel. Deeds, a warhorse and mail, and a lord who likes you make a knight.
 
+## Betrayal
+The dog will not eat what falls from your table. A stranger asked which horse is yours. Your heir has been talking to the sergeant. Read the signs or do not; double the guard, keep a taster, accuse the right relative or the wrong one. Meanwhile refugees, foragers and raiders come down the lane, and the war decides whether your village is in its way.
+
 ## Lordship
 Land comes three ways: a lord's grant for blood spilled, an heiress with a manor in her dowry, or a tower nobody licensed. Then it is yours to keep: taxes, a steward who steals, a manor court every fortnight, blight and murrain and refugees at the gate, and two messengers a season asking whose side you are on. Say one thing and write another, and pray the courier is not caught. Meanwhile the war moves without you: barons change coats, towns fall, bishops lean.
 

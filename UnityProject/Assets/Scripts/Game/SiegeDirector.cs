@@ -207,6 +207,7 @@ namespace AshesAndCrowns.Game
                 if (ctx.Castle != null) ctx.Castle = null;
                 var built = ctx.FindSettlement("castle_" + (s.TargetId.StartsWith("castle_") ? s.TargetId.Substring(7) : s.TargetId)) ?? target;
                 if (built != null) { built.LordId = objector != null ? objector.Id : -1; built.Allegiance = objector != null ? objector.Declared : Allegiance.Neutral; }
+                if (ctx.Estate != null && built != null && ctx.Estate.SettlementId == built.Id) ctx.Estate = null;
                 if (ctx.Character.Rank == Rank.Lord) ctx.Character.Rank = Rank.Knight;
                 ctx.Garrison = 0;
                 CaptureOutcome o = ServiceRules.Capture(ctx.Character, ctx.Reputation, objector != null ? objector.Declared : Allegiance.Stephen, rng, _balance.service, out string capText);

@@ -39,6 +39,9 @@ namespace AshesAndCrowns.Battle
         private NativeArray<float> _yaws, _health, _cooldowns;
         private NativeArray<byte> _alive, _side, _playerAttackFlags;
         private NativeArray<int> _unitOf, _slotOf, _targets, _kills;
+        private NativeList<float3> _deaths;
+        /// <summary>Positions of the men who died in the last completed frame (read on the main thread after Update).</summary>
+        public NativeArray<float3> DeathsThisFrame => _deaths.IsCreated ? _deaths.AsArray() : default;
         private NativeArray<Matrix4x4> _matrices;
         private NativeArray<UnitState> _units;
         private NativeArray<float3> _centroids;
@@ -188,6 +191,7 @@ namespace AshesAndCrowns.Battle
             _slotOf = new NativeArray<int>(soldiers, Allocator.Persistent);
             _targets = new NativeArray<int>(soldiers, Allocator.Persistent);
             _kills = new NativeArray<int>(1, Allocator.Persistent);
+            _deaths = new NativeList<float3>(64, Allocator.Persistent);
             _matrices = new NativeArray<Matrix4x4>(soldiers, Allocator.Persistent);
             _units = new NativeArray<UnitState>(units, Allocator.Persistent);
             _centroids = new NativeArray<float3>(units, Allocator.Persistent);
@@ -211,6 +215,7 @@ namespace AshesAndCrowns.Battle
             if (_slotOf.IsCreated) _slotOf.Dispose();
             if (_targets.IsCreated) _targets.Dispose();
             if (_kills.IsCreated) _kills.Dispose();
+            if (_deaths.IsCreated) _deaths.Dispose();
             if (_matrices.IsCreated) _matrices.Dispose();
             if (_units.IsCreated) _units.Dispose();
             if (_centroids.IsCreated) _centroids.Dispose();
@@ -243,6 +248,7 @@ namespace AshesAndCrowns.Battle
                 Positions = _positions, Alive = _alive, SideOf = _side, UnitOf = _unitOf, Units = _units, UnitStance = _unitStance, Grid = _grid, P = _params,
                 PlayerPosition = playerPos, PlayerSide = (byte)Side.Player, PlayerAlive = (byte)(_playerCharacterAlive ? 1 : 0), Targets = _targets
             }.Schedule(SoldierCount, 64, hash);
+            _deaths.Clear();
             var move = new MoveJob
             {
                 Positions = _positions, Yaws = _yaws, Alive = _alive, UnitOf = _unitOf, SlotOf = _slotOf, Targets = _targets, Units = _units,
@@ -251,7 +257,7 @@ namespace AshesAndCrowns.Battle
             var combat = new CombatJob
             {
                 Positions = _positions, Targets = _targets, Alive = _alive, Health = _health, Cooldowns = _cooldowns,
-                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _runDownChancePerAttack, P = _params, PlayerPosition = playerPos, Dt = dt, Siege = _siege, PlayerSoldierEnd = _playerSoldierEnd,
+                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, Deaths = _deaths, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _runDownChancePerAttack, P = _params, PlayerPosition = playerPos, Dt = dt, Siege = _siege, PlayerSoldierEnd = _playerSoldierEnd,
                 Seed = _rng.NextUInt()
             }.Schedule(move);
             var summary = new UnitSummaryJob { Positions = _positions, Alive = _alive, Units = _units, Centroids = _centroids }.Schedule(combat);

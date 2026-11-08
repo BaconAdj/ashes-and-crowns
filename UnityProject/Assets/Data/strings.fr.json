@@ -1,0 +1,27 @@
+{
+  "language": "fr",
+  "keys": [
+    "ON FOOT", "RIDING", "IN COMMAND", "IN THE RANKS", "DEAD",
+    "WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc to leave your affairs.",
+    "W/S speed, A/D steer, Shift gallop, E dismount. LMB swing, RMB block.",
+    "Left-click a banner to select a unit. Right-click: move. C: charge. H: hold. 1-4: formation. Arrows pan, wheel zooms.\nWalk or ride off the hill and you lose command.",
+    "You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nLMB swing, RMB block, Space dodge.",
+    "BLOOD", "STAMINA", "BELLY", "No wounds.", "Your men: --   Enemy: --", "-- fps",
+    "The world keeps moving while you are gone. How do you leave things?", "Stay (Esc)", "The market", "Haggle", "Leave the market",
+    "Blue: for Stephen.  Red: for Matilda.  Gold: where your work takes you.  The pale mark is you.  (M closes)",
+    "The bells ring ", "After the battle", "Press R to march home.", "You are watched.", "Suspicions", "The night", "Afterwards",
+    "An enemy closes on you.", "Here ends one life. The war did not notice."
+  ],
+  "values": [
+    "À PIED", "À CHEVAL", "AU COMMANDEMENT", "DANS LES RANGS", "MORT",
+    "ZQSD/WASD marcher, Maj courir, E monter à cheval. Clic gauche frapper, clic droit parer. Échap pour laisser vos affaires.",
+    "W/S allure, A/D diriger, Maj galop, E descendre. Clic gauche frapper, clic droit parer.",
+    "Clic gauche sur une bannière pour choisir une troupe. Clic droit : marcher. C : charger. H : tenir. 1-4 : formation. Flèches pour déplacer la vue, molette pour zoomer.\nQuittez la colline et vous perdez le commandement.",
+    "Vous ne commandez pas. Regardez la bannière et le sergent. Tenez votre place dans le cercle ; rompez les rangs et le prévôt l'apprendra.\nClic gauche frapper, clic droit parer, Espace esquiver.",
+    "SANG", "SOUFFLE", "VENTRE", "Aucune blessure.", "Vos hommes : --   Ennemi : --", "-- ips",
+    "Le monde continue sans vous. Comment laissez-vous vos affaires ?", "Rester (Échap)", "Le marché", "Marchander", "Quitter le marché",
+    "Bleu : pour Étienne.  Rouge : pour Mathilde.  Or : là où votre tâche vous mène.  La marque pâle, c'est vous.  (M pour fermer)",
+    "Les cloches sonnent ", "Après la bataille", "Appuyez sur R pour rentrer.", "On vous observe.", "Soupçons", "La nuit", "Ensuite",
+    "Un ennemi fond sur vous.", "Ici finit une vie. La guerre ne l'a pas remarqué."
+  ]
+}

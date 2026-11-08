@@ -23,6 +23,7 @@ namespace AshesAndCrowns.Game
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             Balance = DataFiles.LoadBalance();
+            L.Load(DataFiles.LoadStrings(PlayerPrefs.GetString("ashes.lang", "en")));
             World = DataFiles.LoadWorld();
             long seed = RunSession.NextSeed != 0 ? RunSession.NextSeed : (seedOverride != 0 ? seedOverride : Balance.simulation.defaultSeed);
             if (RunSession.NextSeed == 0 && seedOverride == 0)

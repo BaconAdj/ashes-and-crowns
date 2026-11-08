@@ -215,6 +215,7 @@ namespace AshesAndCrowns.Battle
         public NativeArray<float> Cooldowns;
         public NativeArray<byte> PlayerAttackFlags;
         public NativeArray<int> KillsThisFrame; // length 1
+        public NativeList<float3> Deaths;       // where men fell this frame (bounded by its capacity)
         [ReadOnly] public NativeArray<int> UnitOf;
         [ReadOnly] public NativeArray<byte> UnitStance;
         public float RunDownKillChance;        // per attack against a routing man
@@ -256,7 +257,7 @@ namespace AshesAndCrowns.Battle
                 if (UnitStance[UnitOf[t]] == 2)
                 {
                     // Running men are cut down from behind: brutal, effective.
-                    if (rng.NextFloat() < RunDownKillChance) { Health[t] = 0f; Alive[t] = 0; kills++; }
+                    if (rng.NextFloat() < RunDownKillChance) { Health[t] = 0f; Alive[t] = 0; kills++; if (Deaths.Length < Deaths.Capacity) Deaths.Add(Positions[t]); }
                     Cooldowns[i] = P.AttackCooldown * 0.5f;
                     continue;
                 }
@@ -270,7 +271,7 @@ namespace AshesAndCrowns.Battle
                 }
                 float h = Health[t] - dmg;
                 Health[t] = h;
-                if (h <= 0f) { Alive[t] = 0; kills++; }
+                if (h <= 0f) { Alive[t] = 0; kills++; if (Deaths.Length < Deaths.Capacity) Deaths.Add(Positions[t]); }
                 Cooldowns[i] = P.AttackCooldown * rng.NextFloat(0.8f, 1.2f);
             }
             KillsThisFrame[0] = kills;

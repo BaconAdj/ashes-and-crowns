@@ -64,7 +64,7 @@ namespace AshesAndCrowns.Game
             }
             director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames(), playerCount, enemyCount, layout);
             director.BattleEnded += OnBattleEnded;
-            if (siegeBattle) { siegeField.Show(layout, terrain); director.GateBroken += siegeField.OnGateBroken; }
+            if (siegeBattle) { siegeField.Show(layout, terrain); director.GateBroken += siegeField.OnGateBroken; director.GateBroken += () => AudioStubs.Play("siege_gate_crash"); AudioStubs.Play("siege_horns"); }
             bool asGrunt = launch != null ? launch.AsGrunt : (ctx != null && ctx.Service.Active && ctx.Service.Role != ServiceRole.Commander && !(siege != null && siege.PlayerCommands));
             if (asGrunt && grunt != null) { grunt.enabled = true; director.AiCommandsPlayerSide = true; }
             else if (grunt != null) grunt.enabled = false;

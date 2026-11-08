@@ -182,6 +182,8 @@ namespace AshesAndCrowns.EditorTools
             driver.terrain = terrain; driver.director = director; driver.banners = banners; driver.command = command; driver.modes = modes;
             driver.player = pc; driver.horse = horse; driver.vitals = vitals; driver.melee = melee; driver.thirdPersonCamera = tpc;
             driver.hud = hud; driver.sun = sun; driver.perf = perf;
+            var blood = sceneGo.AddComponent<BloodDecals>(); blood.director = director; blood.vitals = vitals; blood.melee = melee; blood.player = pc.transform;
+            blood.material = SceneKit.Mat("Blood", LitShader, new Color(0.22f, 0.04f, 0.03f), 0f, 0.6f, instancing: true);
             var grunt = sceneGo.AddComponent<GruntMode>();
             grunt.director = director; grunt.modes = modes; grunt.player = pc; grunt.horse = horse; grunt.vitals = vitals; grunt.melee = melee; grunt.hud = hud; grunt.ringMaterial = ring; grunt.enabled = false;
             driver.grunt = grunt; save.grunt = grunt;

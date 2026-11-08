@@ -34,7 +34,8 @@ namespace AshesAndCrowns.UI
         private Label _narrationText, _infoTitle, _infoBody;
         private Label _chronicleTitle, _chronicleBody, _quitTitle;
         private VisualElement _quitButtons;
-        private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast;
+        private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast, _whisper, _watched;
+        private float _whisperUntil;
         private float _bellToastUntil;
         private float _nextTextUpdate;
         private float _fpsAccum; private int _fpsFrames; private float _fpsValue;
@@ -55,7 +56,7 @@ namespace AshesAndCrowns.UI
         public void ShowBell(string bellName)
         {
             if (_bellToast == null) return;
-            _bellToast.text = "The bells ring " + bellName + ".";
+            _bellToast.text = L.T("The bells ring ") + bellName + ".";
             _bellToast.style.display = DisplayStyle.Flex;
             _bellToastUntil = Time.unscaledTime + 6f;
         }
@@ -74,24 +75,24 @@ namespace AshesAndCrowns.UI
             switch (_modeName)
             {
                 case "Command":
-                    _mode.text = "IN COMMAND";
-                    _hint.text = "Left-click a banner to select a unit. Right-click: move. C: charge. H: hold. 1-4: formation. Arrows pan, wheel zooms.\nWalk or ride off the hill and you lose command.";
+                    _mode.text = L.T("IN COMMAND");
+                    _hint.text = L.T("Left-click a banner to select a unit. Right-click: move. C: charge. H: hold. 1-4: formation. Arrows pan, wheel zooms.\nWalk or ride off the hill and you lose command.");
                     break;
                 case "Riding":
-                    _mode.text = "RIDING";
-                    _hint.text = "W/S speed, A/D steer, Shift gallop, E dismount. LMB swing, RMB block.";
+                    _mode.text = L.T("RIDING");
+                    _hint.text = L.T("W/S speed, A/D steer, Shift gallop, E dismount. LMB swing, RMB block.");
                     break;
                 case "Ranks":
-                    _mode.text = "IN THE RANKS";
-                    _hint.text = "You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nLMB swing, RMB block, Space dodge.";
+                    _mode.text = L.T("IN THE RANKS");
+                    _hint.text = L.T("You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nLMB swing, RMB block, Space dodge.");
                     break;
                 case "Dead":
-                    _mode.text = "DEAD";
+                    _mode.text = L.T("DEAD");
                     _hint.text = string.Empty;
                     break;
                 default:
-                    _mode.text = "ON FOOT";
-                    _hint.text = "WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc to leave your affairs.";
+                    _mode.text = L.T("ON FOOT");
+                    _hint.text = L.T("WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc to leave your affairs.");
                     break;
             }
         }
@@ -135,7 +136,7 @@ namespace AshesAndCrowns.UI
                 b.clicked += () => onChoose(choice);
                 _quitButtons.Add(b);
             }
-            var stay = MakeButton("Stay (Esc)");
+            var stay = MakeButton(L.T("Stay (Esc)"));
             stay.clicked += () => onStay();
             _quitButtons.Add(stay);
             _quit.style.display = DisplayStyle.Flex;
@@ -187,7 +188,7 @@ namespace AshesAndCrowns.UI
             you.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(50, LengthUnit.Percent));
             you.style.rotate = new Rotate(45f);
             _mapImage.Add(you);
-            _mapCaption.text = "Blue: for Stephen.  Red: for Matilda.  Gold: where your work takes you.  The pale mark is you.  (M closes)";
+            _mapCaption.text = L.T("Blue: for Stephen.  Red: for Matilda.  Gold: where your work takes you.  The pale mark is you.  (M closes)");
             _mapOverlay.style.display = DisplayStyle.Flex;
         }
 
@@ -215,6 +216,10 @@ namespace AshesAndCrowns.UI
         public void SetPrompt(string text) { if (_prompt != null && _prompt.text != text) _prompt.text = text; }
         public void SetHunger(float value01) { if (_hungerFill != null) _hungerFill.style.width = new Length(Mathf.Clamp01(value01) * 100f, LengthUnit.Percent); }
         public void SetStandingLine(string text) { if (_standing != null) _standing.text = text; }
+        /// <summary>The paranoia line: a warning shown quietly, in italics, for a while. Attentive players read it; others see nothing.</summary>
+        public void Whisper(string text) { if (_whisper == null) return; _whisper.text = text; _whisper.style.display = DisplayStyle.Flex; _whisperUntil = Time.unscaledTime + 9f; }
+        public void SetWatched(bool on) { if (_watched != null) _watched.style.display = on ? DisplayStyle.Flex : DisplayStyle.None; }
+
         public void Toast(string text) { if (_toast == null) return; _toast.text = text; _toast.style.display = DisplayStyle.Flex; _toastUntil = Time.unscaledTime + 4f; }
 
         public void ShowDialogue(string title, string body, (string label, System.Action act)[] options, System.Action<int> onPick)
@@ -236,7 +241,7 @@ namespace AshesAndCrowns.UI
         public void ShowMarket(Market market, ItemsData items, Inventory inventory, int month, float standing, System.Func<string, bool, string> onBuy, System.Func<string, string> onSell, System.Action onClose)
         {
             if (_market == null) return;
-            _marketTitle.text = "The market";
+            _marketTitle.text = L.T("The market");
             _marketMsg.text = market.Shock != WarShock.None ? "Prices are strange: " + market.Shock + "." : "Prices are the usual, for the season.";
             void Rebuild()
             {
@@ -249,11 +254,11 @@ namespace AshesAndCrowns.UI
                     var name = MakeLabel($"{def.name}  (have {inventory.Count(id)}, stall {Mathf.RoundToInt(g.Stock)})", 13, Parchment); name.style.width = 330; row.Add(name);
                     int buy = market.BuyPrice(id, month, standing), sell = market.SellPrice(id, month, standing);
                     var bb = MakeButton($"Buy {buy}d"); bb.style.width = 100; bb.style.marginBottom = 0; bb.clicked += () => { _marketMsg.text = onBuy(id, false); Rebuild(); }; row.Add(bb);
-                    var hb = MakeButton("Haggle"); hb.style.width = 90; hb.style.marginBottom = 0; hb.clicked += () => { _marketMsg.text = onBuy(id, true); Rebuild(); }; row.Add(hb);
+                    var hb = MakeButton(L.T("Haggle")); hb.style.width = 90; hb.style.marginBottom = 0; hb.clicked += () => { _marketMsg.text = onBuy(id, true); Rebuild(); }; row.Add(hb);
                     var sb = MakeButton($"Sell {sell}d"); sb.style.width = 100; sb.style.marginBottom = 0; sb.clicked += () => { _marketMsg.text = onSell(id); Rebuild(); }; row.Add(sb);
                     _marketList.Add(row);
                 }
-                var close = MakeButton("Leave the market"); close.clicked += () => { _market.style.display = DisplayStyle.None; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; onClose(); };
+                var close = MakeButton(L.T("Leave the market")); close.clicked += () => { _market.style.display = DisplayStyle.None; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; onClose(); };
                 _marketList.Add(close);
             }
             Rebuild();
@@ -315,17 +320,17 @@ namespace AshesAndCrowns.UI
 
             // Top-left: vitals
             var vitalsPanel = MakePanel(16, 16, null, null, 300);
-            vitalsPanel.Add(MakeLabel("BLOOD", 11, Parchment));
+            vitalsPanel.Add(MakeLabel(L.T("BLOOD"), 11, Parchment));
             _bloodFill = MakeBar(vitalsPanel, Blood);
-            vitalsPanel.Add(MakeLabel("STAMINA", 11, Parchment));
+            vitalsPanel.Add(MakeLabel(L.T("STAMINA"), 11, Parchment));
             _staminaFill = MakeBar(vitalsPanel, Iron);
-            _wounds = MakeLabel("No wounds.", 12, Parchment); _wounds.style.whiteSpace = WhiteSpace.Normal;
+            _wounds = MakeLabel(L.T("No wounds."), 12, Parchment); _wounds.style.whiteSpace = WhiteSpace.Normal;
             vitalsPanel.Add(_wounds);
             _root.Add(vitalsPanel);
 
             // Top-right: mode + hint
             var modePanel = MakePanel(16, null, 16, null, 520);
-            _mode = MakeLabel("ON FOOT", 18, Parchment); _mode.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _mode = MakeLabel(L.T("ON FOOT"), 18, Parchment); _mode.style.unityFontStyleAndWeight = FontStyle.Bold;
             _hint = MakeLabel(string.Empty, 12, Parchment); _hint.style.whiteSpace = WhiteSpace.Normal;
             modePanel.Add(_mode); modePanel.Add(_hint);
             _root.Add(modePanel);
@@ -337,7 +342,7 @@ namespace AshesAndCrowns.UI
             _orderBanner = MakeLabel(string.Empty, 30, new Color(0.85f, 0.78f, 0.6f)); _orderBanner.style.unityFontStyleAndWeight = FontStyle.Bold; _orderBanner.style.display = DisplayStyle.None;
             _orderShout = MakeLabel(string.Empty, 13, Parchment); _orderShout.style.unityFontStyleAndWeight = FontStyle.Italic; _orderShout.style.display = DisplayStyle.None;
             armyPanel.Add(_orderBanner); armyPanel.Add(_orderShout);
-            _armies = MakeLabel("Your men: --   Enemy: --", 14, Parchment);
+            _armies = MakeLabel(L.T("Your men: --   Enemy: --"), 14, Parchment);
             _commandSummary = MakeLabel(string.Empty, 12, Parchment); _commandSummary.style.whiteSpace = WhiteSpace.Normal;
             _threat = MakeLabel(string.Empty, 13, new Color(0.8f, 0.55f, 0.45f));
             _clock = MakeLabel(string.Empty, 12, new Color(0.7f, 0.66f, 0.58f)); _clock.style.whiteSpace = WhiteSpace.Normal; _clock.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -347,7 +352,7 @@ namespace AshesAndCrowns.UI
 
             // Bottom-right: fps
             var perfPanel = MakePanel(null, null, 16, 16, 180);
-            _fps = MakeLabel("-- fps", 12, Parchment);
+            _fps = MakeLabel(L.T("-- fps"), 12, Parchment);
             perfPanel.Add(_fps);
             _root.Add(perfPanel);
 
@@ -373,7 +378,7 @@ namespace AshesAndCrowns.UI
             _quit = MakeOverlay(0.8f);
             _quit.pickingMode = PickingMode.Position;
             _quitTitle = MakeLabel(string.Empty, 24, Parchment); _quitTitle.style.unityFontStyleAndWeight = FontStyle.Bold; _quitTitle.style.marginBottom = 6;
-            var quitHint = MakeLabel("The world keeps moving while you are gone. How do you leave things?", 14, new Color(0.7f, 0.66f, 0.58f)); quitHint.style.marginBottom = 18;
+            var quitHint = MakeLabel(L.T("The world keeps moving while you are gone. How do you leave things?"), 14, new Color(0.7f, 0.66f, 0.58f)); quitHint.style.marginBottom = 18;
             _quitButtons = new VisualElement(); _quitButtons.style.width = 560;
             _quit.Add(_quitTitle); _quit.Add(quitHint); _quit.Add(_quitButtons);
             _root.Add(_quit);
@@ -397,9 +402,11 @@ namespace AshesAndCrowns.UI
             _root.Add(_info);
 
             // Hunger bar under stamina, standing line, prompt, toast
-            vitalsPanel.Add(MakeLabel("BELLY", 11, Parchment));
+            vitalsPanel.Add(MakeLabel(L.T("BELLY"), 11, Parchment));
             _hungerFill = MakeBar(vitalsPanel, new Color(0.45f, 0.38f, 0.2f));
             _standing = MakeLabel(string.Empty, 12, new Color(0.7f, 0.66f, 0.58f)); _standing.style.whiteSpace = WhiteSpace.Normal; vitalsPanel.Add(_standing);
+            _whisper = MakeLabel(string.Empty, 12, new Color(0.62f, 0.58f, 0.66f)); _whisper.style.unityFontStyleAndWeight = FontStyle.Italic; _whisper.style.whiteSpace = WhiteSpace.Normal; _whisper.style.display = DisplayStyle.None; vitalsPanel.Add(_whisper);
+            _watched = MakeLabel(L.T("You are watched."), 11, new Color(0.55f, 0.45f, 0.5f)); _watched.style.display = DisplayStyle.None; vitalsPanel.Add(_watched);
             var promptPanel = MakePanel(null, null, null, 70, 520); promptPanel.style.left = new Length(50, LengthUnit.Percent); promptPanel.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0); promptPanel.style.alignItems = Align.Center;
             _prompt = MakeLabel(string.Empty, 15, Parchment); promptPanel.Add(_prompt);
             _toast = MakeLabel(string.Empty, 14, new Color(0.8f, 0.72f, 0.5f)); _toast.style.display = DisplayStyle.None; promptPanel.Add(_toast);
@@ -458,6 +465,7 @@ namespace AshesAndCrowns.UI
             _fpsAccum += Time.unscaledDeltaTime; _fpsFrames++;
             UpdateMoment();
             if (_toast != null && _toast.style.display == DisplayStyle.Flex && Time.unscaledTime > _toastUntil) _toast.style.display = DisplayStyle.None;
+            if (_whisper != null && _whisper.style.display == DisplayStyle.Flex && Time.unscaledTime > _whisperUntil) _whisper.style.display = DisplayStyle.None;
             if (Time.unscaledTime < _nextTextUpdate) return;
             _nextTextUpdate = Time.unscaledTime + 0.125f;
             if (_fpsAccum > 0f) _fpsValue = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;
@@ -470,7 +478,7 @@ namespace AshesAndCrowns.UI
                 _armies.text = $"Your men: {_director.PlayerAlive}   Enemy: {_director.EnemyAlive}   (lost {_director.PlayerLosses} / {_director.EnemyLosses})";
                 _commandSummary.text = _command != null && _command.enabled ? _command.Summary : (_vantageDistance > 0f ? $"Command vantage {_vantageDistance:F0} m away" : string.Empty);
                 int near = _director.CountWithin(_vitals.transform.position, _balance.melee.enemyEngagePlayerRange, Side.Enemy);
-                _threat.text = near == 0 ? string.Empty : near == 1 ? "An enemy closes on you." : $"{near} enemies close on you.";
+                _threat.text = near == 0 ? string.Empty : near == 1 ? L.T("An enemy closes on you.") : $"{near} enemies close on you.";
             }
             else
             {
@@ -496,7 +504,7 @@ namespace AshesAndCrowns.UI
         private string WoundsText()
         {
             var wounds = _vitals.Body.Wounds;
-            if (wounds.Count == 0) return "No wounds.";
+            if (wounds.Count == 0) return L.T("No wounds.");
             var sb = new System.Text.StringBuilder(64);
             int shown = 0;
             for (int i = wounds.Count - 1; i >= 0 && shown < 4; i--, shown++)
