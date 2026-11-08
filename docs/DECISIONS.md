@@ -139,6 +139,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Built: directional melee with parry, block, dodge, stamina and armour by region; NPC duellists; four encounter kinds; yield and mercy; weapon skill growth per kill; HUD fight line. 7 new tests (114 under .NET).
 - Stubbed: animations and weapon colliders, duels of honour by challenge, assassinations, mounted combat (no dodge in the saddle, no lance), ambush terrain and bandit camps, loot beyond coins.
 
+## 2026-11-08 — Phase 6 static review applied
+- One compile error (nullable tuple member access in the loadout refresh). Applied: the fighter state is the single owner of the player's stamina (sprint drain honoured, hunger slows recovery, no double regen); dead duellists fall; a yielded man can only be killed within reach; encounter rng is one stream advanced per use, with the bandits' robbery rolled per second; the robbery path no longer double-ends the fight; bodies are cleared without leaking registrations.
+
 ## 2026-11-08 — Phase 7 battle engine at scale
 - Default armies are now 1,000 a side in 20 units of 50 (`battle.soldiersPerSide`, `battle.unitSize`); `soldiersPerUnit` stays the escape hatch. The jobs and the spatial hash were built for this; the rendering is one instanced draw per 1,023 soldiers.
 - Morale runs four times a second per unit on the main thread (40 units: trivial). Perception is unit-to-unit: enemy centroids within 40 m are classed front, flank or rear by the unit's facing; flanked = anything on a flank or behind; surrounded = front and rear both occupied. Commander presence applies to the player's side when commanding within range, or fighting personally anywhere.

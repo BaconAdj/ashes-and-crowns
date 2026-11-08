@@ -49,6 +49,7 @@ namespace AshesAndCrowns.Combat
         {
             _balance = balance; _b = balance.duel; _rng = rng.Fork(13);
             _fighter = new FighterState(_b, balance.player.staminaMax);
+            vitals.ExternalStamina = true;
             RefreshLoadout();
             if (director != null) { director.EnemyStruckPlayer += OnSoldierStrikes; director.PlayerKilledSoldier += _ => _kills++; }
         }
@@ -57,8 +58,8 @@ namespace AshesAndCrowns.Combat
         public void RefreshLoadout()
         {
             var ctx = Game_Context();
-            _loadout = ctx != null ? Loadout.From(ctx.inventory, ctx.items, _b) : new Loadout { Damage = _balance.melee.baseDamage, Reach = _balance.melee.reach, Variance = _balance.melee.damageVariance, WeaponName = "sword" };
-            if (_fighter != null) _fighter.Skill = ctx != null ? ctx.skill : 20f;
+            _loadout = ctx.HasValue ? Loadout.From(ctx.Value.inventory, ctx.Value.items, _b) : new Loadout { Damage = _balance.melee.baseDamage, Reach = _balance.melee.reach, Variance = _balance.melee.damageVariance, WeaponName = "sword" };
+            if (_fighter != null) _fighter.Skill = ctx.HasValue ? ctx.Value.skill : 20f;
         }
 
         // The Combat assembly cannot see Game.RunSession, so the Game layer pushes the inventory in.
@@ -85,7 +86,10 @@ namespace AshesAndCrowns.Combat
             if (mouse != null && mouse.rightButton.isPressed) _fighter.TryBlock(dir); else _fighter.ReleaseBlock();
             if (kb != null && kb.spaceKey.wasPressedThisFrame && !mounted && _fighter.TryDodge()) Note("dodge");
 
+            _fighter.SetStamina(vitals.Stamina);            // honour sprint drain and anything else that touched it
+            float pre = _fighter.Stamina;
             bool strikes = _fighter.Tick(dt);
+            if (_fighter.Stamina > pre) _fighter.SetStamina(pre + (_fighter.Stamina - pre) * vitals.StaminaRegenScale); // hunger and sickness slow recovery
             if (strikes) Strike();
 
             // Duellists act against us.
@@ -120,8 +124,10 @@ namespace AshesAndCrowns.Combat
                 if (d == null || d.Dead) continue;
                 Vector3 to = d.transform.position - facingSource.position;
                 if (!CombatMath.InArc(to.x, to.z, facingSource.forward.x, facingSource.forward.z, _balance.melee.arcDegrees)) continue;
+                float dist = new Vector2(to.x, to.z).magnitude;
+                if (dist > _loadout.Reach) continue;
                 if (d.Yielded) { KillTheYielded(d); any = true; continue; }
-                HitResult r = MeleeRules.Resolve(_fighter, _loadout, d.Fighter, d.Loadout, d.DistanceToTarget, _rng, _b);
+                HitResult r = MeleeRules.Resolve(_fighter, _loadout, d.Fighter, d.Loadout, dist, _rng, _b);
                 _fighter.ConsumeStrike(); // one target per swing; StrikeConsumed stays set
                 if (r.Outcome == HitOutcome.Hit) { d.TakeHit(r, "your " + _loadout.WeaponName.ToLowerInvariant()); Note(r.Part == BodyPart.Head ? "a blow to the head" : "hit"); if (d.Dead) _kills++; }
                 else Note(r.Outcome == HitOutcome.Parried ? "parried!" : r.Outcome == HitOutcome.Blocked ? "blocked" : r.Outcome == HitOutcome.Dodged ? "he slips it" : "short");
@@ -139,7 +145,7 @@ namespace AshesAndCrowns.Combat
         private void KillTheYielded(Duelist d)
         {
             d.Body.ApplyHit(BodyPart.Head, 1f, "your " + _loadout.WeaponName.ToLowerInvariant());
-            d.Fighter.GoDown(); _kills++;
+            d.Die(); _kills++;
             Note("you kill a man who had yielded");
             OnKilledSurrendered?.Invoke();
         }

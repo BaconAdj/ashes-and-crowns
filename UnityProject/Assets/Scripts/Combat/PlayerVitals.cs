@@ -16,6 +16,8 @@ namespace AshesAndCrowns.Combat
         public string CauseOfDeath => Body?.CauseOfDeath;
         /// <summary>Hunger and sickness slow stamina recovery (set by the village systems).</summary>
         public float StaminaRegenScale = 1f;
+        /// <summary>True while a MeleeController owns stamina (it regenerates through the fighter state instead).</summary>
+        public bool ExternalStamina;
 
         public event Action Died;
         public event Action<BodyPart, float> Wounded;
@@ -66,7 +68,7 @@ namespace AshesAndCrowns.Combat
             bool wasDead = Body.IsDead;
             Body.Tick(Time.deltaTime);
             if (!wasDead && Body.IsDead) NotifyDeadFromBody();
-            if (!Body.IsDead) Stamina = Mathf.Min(StaminaMax, Stamina + _balance.player.staminaRegenPerSecond * StaminaRegenScale * Time.deltaTime);
+            if (!Body.IsDead && !ExternalStamina) Stamina = Mathf.Min(StaminaMax, Stamina + _balance.player.staminaRegenPerSecond * StaminaRegenScale * Time.deltaTime);
         }
     }
 }

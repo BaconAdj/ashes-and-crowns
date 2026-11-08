@@ -27,13 +27,15 @@ namespace AshesAndCrowns.Game
         private int _meleeBoutsLeft;
         private int _prize;
         private float _nextRoadRoll;
-        private int _subscribed;
+        private DeterministicRng _rng;
+        private float _robTimer;
 
         public bool InFight { get { foreach (var d in _active) if (d != null && !d.Out) return true; return false; } }
 
         private void Start()
         {
             _balance = GameBootstrap.Instance.Balance;
+            _rng = GameBootstrap.Instance.Rng.Fork(115);
             if (melee != null) { melee.DuelistDowned += OnDowned; melee.OnKilledSurrendered += OnKilledSurrendered; }
             if (clock != null) clock.HoursPassed += OnHours;
         }
@@ -123,10 +125,11 @@ namespace AshesAndCrowns.Game
         private void OnDowned(Duelist d)
         {
             var ctx = RunSession.Context;
+            if (_kind == "robbed") return;
             if (d.Dead)
             {
                 ctx.Character.Use(WeaponSkill(), _balance.character, 2f);
-                if (_kind == "ambush" || _kind == "hunters") { int loot = GameBootstrap.Instance.Rng.Fork(114).Range(0, 5); ctx.Character.Coins += loot; hud.Toast(d.displayName + " is dead." + (loot > 0 ? $" {loot} pennies in his purse." : "")); }
+                if (_kind == "ambush" || _kind == "hunters") { int loot = _rng.Range(0, 5); ctx.Character.Coins += loot; hud.Toast(d.displayName + " is dead." + (loot > 0 ? $" {loot} pennies in his purse." : "")); }
                 else if (_kind == "melee") { ctx.Standing.FightWon(); ctx.Reputation.Record(Deed.Murder); hud.Toast("You have killed a man in a festival melee. The crowd goes quiet."); }
                 else hud.Toast(d.displayName + " is dead.");
                 if (_kind == "bounty" && ctx.ActiveJob != null) { int pay = JobBoard.Complete(ctx.ActiveJob, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing); hud.Toast($"The outlaw's head is worth {pay} pennies."); ctx.ActiveJob = null; }
@@ -163,9 +166,13 @@ namespace AshesAndCrowns.Game
 
         private void ClearBodies()
         {
-            if (InFight) return;
-            foreach (var d in _active) if (d != null) { melee.UnregisterDuelist(d); Destroy(d.gameObject); }
-            _active.Clear();
+            for (int i = _active.Count - 1; i >= 0; i--)
+            {
+                var d = _active[i];
+                if (d == null) { _active.RemoveAt(i); continue; }
+                if (!d.Out) continue;
+                melee.UnregisterDuelist(d); Destroy(d.gameObject); _active.RemoveAt(i);
+            }
         }
 
         private Skill WeaponSkill()
@@ -181,12 +188,14 @@ namespace AshesAndCrowns.Game
         {
             if (!InFight) return;
             var ctx = RunSession.Context;
-            // Bandits run when they have taken enough.
-            if (_kind == "ambush" && ctx != null && vitals.Body.Blood < 0.25f)
+            // Bandits run when they have taken enough (a roll per second, not per frame).
+            _robTimer -= Time.deltaTime;
+            if (_kind == "ambush" && ctx != null && vitals.Body.Blood < 0.25f && _robTimer <= 0f)
             {
-                var rng = GameBootstrap.Instance.Rng.Fork(115);
-                if (rng.Chance(0.02f))
+                _robTimer = 1f;
+                if (_rng.Chance(0.35f))
                 {
+                    _kind = "robbed";
                     int stolen = ctx.Character.Coins / 2; ctx.Character.Coins -= stolen;
                     hud.Toast($"They take {stolen} pennies and leave you in the road. Lucky.");
                     foreach (var d in _active) if (d != null && !d.Out) { d.Fighter.Yield(); d.Spare(); }

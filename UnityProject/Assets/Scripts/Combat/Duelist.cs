@@ -76,10 +76,18 @@ namespace AshesAndCrowns.Combat
             if (Dead) transform.rotation = Quaternion.Euler(90f, transform.eulerAngles.y, 0f);
         }
 
+        public void Die()
+        {
+            Fighter.GoDown();
+            if (_cc != null) _cc.enabled = false;
+            transform.rotation = Quaternion.Euler(90f, transform.eulerAngles.y, 0f);
+            if (weaponPivot != null) weaponPivot.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        }
+
         public void TakeHit(HitResult r, string source)
         {
             Body.ApplyHit(r.Part, r.Severity, source);
-            if (Body.IsDead) { Fighter.GoDown(); if (_cc != null) _cc.enabled = false; return; }
+            if (Body.IsDead) { Die(); return; }
             if (Brain.ConsiderYield(Fighter, Body.Blood, _b)) Fighter.Yield();
         }
 

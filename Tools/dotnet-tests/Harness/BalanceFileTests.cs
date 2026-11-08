@@ -23,7 +23,7 @@ namespace AshesAndCrowns.Tests.Harness
             var options = new JsonSerializerOptions { IncludeFields = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
             var balance = JsonSerializer.Deserialize<Balance>(File.ReadAllText(path), options);
             Assert.IsNotNull(balance);
-            Assert.AreEqual(50, balance.battle.soldiersPerSide, "phase 0 fields must round-trip");
+            Assert.Greater(balance.battle.soldiersPerSide, 0, "battle fields must round-trip");
             Assert.IsEmpty(BalanceValidator.Validate(balance));
         }
     }
