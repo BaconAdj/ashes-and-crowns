@@ -58,6 +58,7 @@ namespace AshesAndCrowns.Game
             var kb = Keyboard.current; if (kb == null) return;
 
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
+            if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)
             {
                 if (_openKind != Open.Dialogue) return; // market and moment have their own controls
@@ -229,6 +230,10 @@ namespace AshesAndCrowns.Game
             if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.DaysRequired > 0 && s != null && ctx.ActiveJob.ToId == s.Id) opts.Add(($"Serve a day ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})", ServeDay));
             opts.Add(("A gallon of ale and the rumour of the day (1 penny)", () => { if (ctx.Character.Coins >= 1) { ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }));
             if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) opts.Add(("Enter the festival melee (stake 1 penny)", () => encounter.FestivalMelee(1)));
+            var company = s != null && s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
+            if (company != null && !ctx.Service.Active) opts.Add(($"Sign with {company.Name} ({company.Captain}, for {company.Employer}, {_balance.service.mercenaryWagePerDay}d a day)", () => Enlist(company)));
+            if (ctx.Service.Active) { opts.Add(($"Report to the muster of {ctx.Service.CompanyName}: march to battle", MarchToBattle)); opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", Desert)); }
+            if (s != null && (s.Type == SettlementType.Castle || s.Type == SettlementType.City || s.Type == SettlementType.Town)) opts.Add(("Seek an audience with the lord", Audience));
             opts.Add(("Lift a purse while nobody looks", Steal));
             opts.Add(("Leave", null));
             Dialogue(title, "Smoke, wet wool and talk. The alewife sells what the place has to spare.", opts.ToArray());
@@ -304,6 +309,104 @@ namespace AshesAndCrowns.Game
             if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
             if (wanted > 0f) ctx.Standing.TheftSeen();
             Dialogue("A purse", $"{take} pennies. " + (wanted > 0f ? "Someone saw. The room goes quiet." : "Nobody saw."), ("Leave quickly", () => { if (wanted > 0f && s != null) LawCheck(s); }));
+        }
+
+        private MercenaryCompany EnsureCompany(Settlement s)
+        {
+            var ctx = RunSession.Context;
+            var existing = ctx.CompanyAt(s.Id); if (existing != null) return existing;
+            var rng = GameBootstrap.Instance.Rng.Fork(121); rng.State ^= MapGeometry.StableHash(s.Id) ^ (ulong)(clock.Calendar.TotalHours / 24.0 / 30.0);
+            if (!rng.Chance(0.6f)) return null;
+            var co = ServiceRules.GenerateCompany(s.Id, s.Allegiance == Allegiance.Neutral ? (rng.Chance(0.5f) ? Allegiance.Stephen : Allegiance.Matilda) : s.Allegiance, new NameGenerator(ctx.Names, rng.Fork(2)), rng, _balance.service);
+            ctx.Companies.Add(co);
+            return co;
+        }
+
+        private void Enlist(MercenaryCompany co)
+        {
+            var ctx = RunSession.Context;
+            ctx.Service.Enlist(ServiceRole.Mercenary, co.Name, co.Captain, co.Employer, _balance.service.mercenaryWagePerDay);
+            if (co.Employer == Allegiance.Stephen) ctx.Reputation.Record(Deed.FoughtForStephen); else ctx.Reputation.Record(Deed.FoughtForMatilda);
+            survival.InCamp = true;
+            Dialogue(co.Captain, $"\"Three pennies a day when there is silver, a share of what we take, and you do what you are told. Welcome to {co.Name}.\" You are a sellsword now.", ("...", null));
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
+        private void CampDay()
+        {
+            var ctx = RunSession.Context;
+            var rng = GameBootstrap.Instance.Rng.Fork(122); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            string t = ServiceRules.CampDay(ctx.Service, ctx.Character, ctx.Needs, rng, _balance.service);
+            survival.InCamp = true;
+            clock.SkipHours(24f);
+            if (vitals.IsDead) return;
+            Dialogue("Camp", t + " Dice, rumour, and a man two fires over coughing all night.", ("...", null));
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
+        private void Desert()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            var rng = GameBootstrap.Instance.Rng.Fork(123); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            ctx.Service.Desert(ctx.Crime, s != null ? s.Id : "camp", JobBoard.Today(clock.Calendar), ctx.Reputation, rng);
+            if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + CrimeRecord.Severity(CrimeKind.Desertion));
+            survival.InCamp = false;
+            Dialogue("Gone", "You walk out past the pickets with a story about firewood. By morning you are a deserter, and the provost hangs deserters.", ("Keep walking", null));
+        }
+
+        private void MarchToBattle()
+        {
+            var ctx = RunSession.Context;
+            RunSession.PendingBattle = new BattleLaunch { AsGrunt = true, Side = ctx.Service.Side, CompanyName = ctx.Service.CompanyName, CompanySize = 60 };
+            saveManager?.SaveNow(AffairsChoice.None);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Phase0_Battlefield");
+        }
+
+        /// <summary>Called by the levy event: armed men at the door.</summary>
+        public void LevyAtTheDoor(Settlement s)
+        {
+            var ctx = RunSession.Context;
+            MinorLord lord = null; foreach (var l in ctx.Baronage) if (l.Id == s.LordId) lord = l;
+            string lordName = lord != null ? lord.FullName : "the king's sheriff";
+            Allegiance side = lord != null && lord.Declared != Allegiance.Neutral ? lord.Declared : Allegiance.Stephen;
+            Dialogue("Armed men at the door", $"A sergeant with {lordName}'s badge and six spearmen. \"The lord has a quota. You, and the two next door.\" You can go, you can pay {_balance.service.scutagePennies} pennies for another man to go, or you can run.",
+                ("Go with them", () => Levy(LevyChoice.Comply, s, lordName, side)),
+                ($"Pay {_balance.service.scutagePennies} pennies (scutage)", () => Levy(LevyChoice.PayScutage, s, lordName, side)),
+                ("Run", () => Levy(LevyChoice.Flee, s, lordName, side)));
+        }
+
+        private void Levy(LevyChoice choice, Settlement s, string lordName, Allegiance side)
+        {
+            var ctx = RunSession.Context;
+            var rng = GameBootstrap.Instance.Rng.Fork(124); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            string t = ServiceRules.ResolveLevy(choice, ctx.Character, ctx.Service, side, lordName, ctx.Crime, ctx.Reputation, s.Id, JobBoard.Today(clock.Calendar), _balance.service, rng, out bool leave);
+            if (ctx.Service.Deserter) s.WantedHere = Mathf.Min(1f, s.WantedHere + CrimeRecord.Severity(CrimeKind.Desertion));
+            survival.InCamp = ctx.Service.Active;
+            Dialogue(lordName + "'s levy", t + (ctx.Service.Active ? " Report to the muster at the alehouse when you are ready, or they will come again." : string.Empty), ("...", null));
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
+        private void Audience()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            MinorLord lord = null; foreach (var l in ctx.Baronage) if (l.Id == s.LordId) lord = l;
+            string lordName = lord != null ? lord.FullName : s.Name + "'s castellan";
+            var sv = ctx.Service;
+            if (sv.PatronId != (lord != null ? lord.Id.ToString() : s.Id)) { sv.PatronId = lord != null ? lord.Id.ToString() : s.Id; sv.PatronFavour = 0f; }
+            float favour = Mathf.Clamp01(sv.Renown / (float)_balance.service.knighthoodRenown * 0.6f + Mathf.Max(0f, ctx.Reputation.Get(s.Allegiance == Allegiance.Matilda ? Faction.Angevin : Faction.Crown)) * 0.5f + ctx.Standing.Value * 0.2f - (ctx.Crime.Outlawed ? 1f : 0f));
+            sv.PatronFavour = Mathf.Max(sv.PatronFavour, favour);
+            if (ctx.Character.Rank >= Rank.Knight) { Dialogue(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are.", ("Leave", null)); return; }
+            bool ok = ServiceRules.KnighthoodCheck(sv, ctx.Inventory, _balance.service, out string missing);
+            if (ok)
+            {
+                Dialogue(lordName, $"\"Kneel.\" The flat of a sword on your shoulder in a cold hall with twenty men watching. \"Rise, Sir {ctx.Character.Name}.\" You are a knight of {lordName}'s household now, fed at his table and always on call.",
+                    ("Rise", () => { ctx.Character.Rank = Rank.Knight; sv.Enlist(ServiceRole.Household, lordName + "'s household", lordName, s.Allegiance == Allegiance.Neutral ? Allegiance.Stephen : s.Allegiance, _balance.service.householdWagePerDay); ctx.Standing.Generosity(); hud.Toast("You are a knight."); saveManager?.SaveNow(AffairsChoice.None); }));
+            }
+            else
+            {
+                string tone = sv.PatronFavour >= _balance.service.patronDispositionNeeded ? "\"I know your name. Come back when you are equipped like a knight.\"" : sv.Renown > 0 ? "\"I have heard something of you. Not enough.\"" : "\"Who let this man in?\"";
+                Dialogue(lordName, tone + "\n\nStill wanting: " + missing + ".", ("Leave", null));
+            }
         }
 
         private string Rumour()

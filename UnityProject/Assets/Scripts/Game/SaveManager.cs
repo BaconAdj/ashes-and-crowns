@@ -99,6 +99,17 @@ namespace AshesAndCrowns.Game
                 }
                 if (r.MainError != null && r.MainError != "no main save") Debug.LogWarning("[save] no usable save: " + r.MainError + " / " + r.BackupError);
             }
+            if (RunSession.Context != null)
+            {
+                // Came from another scene in this process (battle and back): keep the run, place the body.
+                if (appearance != null) appearance.Apply(RunSession.Context.Character);
+                if (spawner != null && RunSession.Context.Settlements.Count > 0) spawner.Build(RunSession.Context.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
+                Transform back = FindSpawn(RunSession.Context.HomeSettlementId);
+                if (back != null && spawnPoints != null) PlaceBody(back.position, back.rotation);
+                if (RunSession.ReturnChronicle != null && RunSession.ReturnChronicle.Count > 0) { hud.ShowChronicle("After the battle", RunSession.ReturnChronicle); _chronicleOpen = true; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; RunSession.ReturnChronicle = null; }
+                SaveNow(AffairsChoice.None);
+                return;
+            }
             StartNewCharacter();
         }
 
@@ -180,6 +191,11 @@ namespace AshesAndCrowns.Game
                     s.Outlawed = ctx.Crime.Outlawed; s.SanctuaryDaysLeft = ctx.Crime.SanctuaryDaysLeft; s.SanctuaryExpired = ctx.Crime.SanctuaryExpired;
                     s.ActiveJob = ctx.ActiveJob != null ? SnapshotJob(ctx.ActiveJob) : null; s.NextJobId = ctx.NextJobId; s.HomeSettlementId = ctx.HomeSettlementId;
                 }
+                var sv = ctx.Service;
+                s.ServiceRole = (byte)sv.Role; s.ServiceCompany = sv.CompanyName; s.ServiceCaptain = sv.CaptainName; s.ServiceSide = (byte)sv.Side; s.ServiceWage = sv.WagePerDay; s.ServiceDays = sv.DaysServed; s.ServiceOwed = sv.WagesOwed;
+                s.ServiceBattles = sv.BattlesFought; s.ServiceRenown = sv.Renown; s.ServiceInfractions = sv.Infractions; s.ServiceDeserter = sv.Deserter; s.ServiceInCamp = sv.InCamp; s.ServiceKills = sv.WitnessedKills; s.ServiceLines = sv.LinesHeld; s.ServicePatron = sv.PatronId; s.ServicePatronFavour = sv.PatronFavour;
+                s.Companies = new CompanySnapshot[ctx.Companies.Count];
+                for (int i = 0; i < s.Companies.Length; i++) { var co = ctx.Companies[i]; s.Companies[i] = new CompanySnapshot { Name = co.Name, Captain = co.Captain, Employer = (byte)co.Employer, Size = co.Size, Reputation = co.Reputation, BasedAtId = co.BasedAtId, ContractDaysLeft = co.ContractDaysLeft }; }
             }
             if (clock != null && clock.IsReady)
             {
@@ -227,6 +243,14 @@ namespace AshesAndCrowns.Game
                 rc.Market.Wealth = s.MarketWealth; rc.Outbreak = s.Outbreak; rc.LastMassDay = s.LastMassDay;
             }
             RestoreEngland(s, rc);
+            if (s.Version >= 7)
+            {
+                var sv = rc.Service;
+                sv.Role = (ServiceRole)s.ServiceRole; sv.CompanyName = s.ServiceCompany ?? string.Empty; sv.CaptainName = s.ServiceCaptain ?? string.Empty; sv.Side = (Allegiance)s.ServiceSide; sv.WagePerDay = s.ServiceWage; sv.DaysServed = s.ServiceDays; sv.WagesOwed = s.ServiceOwed;
+                sv.BattlesFought = s.ServiceBattles; sv.Renown = s.ServiceRenown; sv.Infractions = s.ServiceInfractions; sv.Deserter = s.ServiceDeserter; sv.InCamp = s.ServiceInCamp; sv.WitnessedKills = s.ServiceKills; sv.LinesHeld = s.ServiceLines; sv.PatronId = s.ServicePatron ?? string.Empty; sv.PatronFavour = s.ServicePatronFavour;
+                rc.Companies.Clear();
+                foreach (var co in s.Companies ?? new CompanySnapshot[0]) rc.Companies.Add(new MercenaryCompany { Name = co.Name, Captain = co.Captain, Employer = (Allegiance)co.Employer, Size = co.Size, Reputation = co.Reputation, BasedAtId = co.BasedAtId, ContractDaysLeft = co.ContractDaysLeft });
+            }
             if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
             var cc = player.GetComponent<CharacterController>();

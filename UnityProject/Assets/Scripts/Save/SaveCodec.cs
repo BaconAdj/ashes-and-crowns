@@ -126,6 +126,14 @@ namespace AshesAndCrowns.Save
                 w.Write(s.ActiveJob != null); if (s.ActiveJob != null) WriteJob(w, s.ActiveJob);
                 w.Write(s.NextJobId); w.Write(s.HomeSettlementId ?? "");
             }
+            if (version >= 7)
+            {
+                w.Write(s.ServiceRole); w.Write(s.ServiceSide); w.Write(s.ServiceCompany ?? ""); w.Write(s.ServiceCaptain ?? ""); w.Write(s.ServicePatron ?? "");
+                w.Write(s.ServiceWage); w.Write(s.ServiceDays); w.Write(s.ServiceOwed); w.Write(s.ServiceBattles); w.Write(s.ServiceRenown); w.Write(s.ServiceKills); w.Write(s.ServiceLines);
+                w.Write(s.ServiceInfractions); w.Write(s.ServicePatronFavour); w.Write(s.ServiceDeserter); w.Write(s.ServiceInCamp);
+                var cos = s.Companies ?? new CompanySnapshot[0]; w.Write(cos.Length);
+                foreach (var c in cos) { w.Write(c.Name ?? ""); w.Write(c.Captain ?? ""); w.Write(c.BasedAtId ?? ""); w.Write(c.Employer); w.Write(c.Size); w.Write(c.ContractDaysLeft); w.Write(c.Reputation); }
+            }
         }
 
         private static void WriteJob(BinaryWriter w, JobSnapshot j)
@@ -239,6 +247,15 @@ namespace AshesAndCrowns.Save
                 s.Outlawed = r.ReadBoolean(); s.SanctuaryDaysLeft = r.ReadSingle(); s.SanctuaryExpired = r.ReadBoolean();
                 if (r.ReadBoolean()) s.ActiveJob = ReadJob(r);
                 s.NextJobId = r.ReadInt32(); s.HomeSettlementId = r.ReadString();
+            }
+            if (version >= 7)
+            {
+                s.ServiceRole = r.ReadByte(); s.ServiceSide = r.ReadByte(); s.ServiceCompany = r.ReadString(); s.ServiceCaptain = r.ReadString(); s.ServicePatron = r.ReadString();
+                s.ServiceWage = r.ReadInt32(); s.ServiceDays = r.ReadInt32(); s.ServiceOwed = r.ReadInt32(); s.ServiceBattles = r.ReadInt32(); s.ServiceRenown = r.ReadInt32(); s.ServiceKills = r.ReadInt32(); s.ServiceLines = r.ReadInt32();
+                s.ServiceInfractions = r.ReadSingle(); s.ServicePatronFavour = r.ReadSingle(); s.ServiceDeserter = r.ReadBoolean(); s.ServiceInCamp = r.ReadBoolean();
+                int nc = r.ReadInt32(); if (nc < 0 || nc > 1000) throw new SaveCorruptException("bad company count");
+                s.Companies = new CompanySnapshot[nc];
+                for (int i = 0; i < nc; i++) s.Companies[i] = new CompanySnapshot { Name = r.ReadString(), Captain = r.ReadString(), BasedAtId = r.ReadString(), Employer = r.ReadByte(), Size = r.ReadInt32(), ContractDaysLeft = r.ReadInt32(), Reputation = r.ReadSingle() };
             }
             return s;
         }

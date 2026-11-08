@@ -5,8 +5,6 @@ namespace AshesAndCrowns.Battle
 {
     public enum Side : byte { Player = 0, Enemy = 1 }
 
-    public enum OrderType : byte { Hold = 0, Move = 1, Charge = 2 }
-
     /// <summary>Special target indices used in SoldierTargets.</summary>
     public static class TargetIds
     {

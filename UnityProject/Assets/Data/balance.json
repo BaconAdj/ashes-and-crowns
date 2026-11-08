@@ -474,5 +474,31 @@
     "surrenderWhenSurroundedBelow": 0.3,
     "veteranBonus": 0.1,
     "runDownKillChancePerSecond": 0.25
+  },
+  "service": {
+    "levyDemandChancePerDay": 0.02,
+    "scutagePennies": 24,
+    "levyWagePerDay": 1,
+    "mercenaryWagePerDay": 3,
+    "householdWagePerDay": 2,
+    "latePayChance": 0.3,
+    "shortRationsChance": 0.25,
+    "lootPerEnemyDead": 0.4,
+    "formationSlack": 4,
+    "infractionPerSecondOutOfRanks": 1,
+    "floggingAbove": 20,
+    "hangingAbove": 90,
+    "deedKillWitnessRange": 25,
+    "renownPerWitnessedKill": 3,
+    "renownHeldTheLine": 6,
+    "renownFirstContact": 4,
+    "renownForStandingWhileOthersRan": 8,
+    "knighthoodRenown": 40,
+    "patronDispositionNeeded": 0.5,
+    "captureMercyChance": 0.4,
+    "ransomCommoner": 20,
+    "escapeChance": 0.1,
+    "companySizeMin": 40,
+    "companySizeMax": 120
   }
 }

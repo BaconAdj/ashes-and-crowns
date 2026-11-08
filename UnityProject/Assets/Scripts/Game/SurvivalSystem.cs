@@ -52,6 +52,10 @@ namespace AshesAndCrowns.Game
                 ctx.Standing.TickDay();
                 ctx.Outbreak = Mathf.Max(0f, ctx.Outbreak - _balance.disease.settlementOutbreakDecayPerDay);
                 ctx.Reputation?.TickDay();
+                InCamp = ctx.Service != null && ctx.Service.Active && ctx.Service.InCamp;
+                foreach (var co in ctx.Companies) if (co.ContractDaysLeft > 0) co.ContractDaysLeft--;
+                var homeS = ctx.Home;
+                if (ctx.PendingLevyAt == null && ctx.Service != null && !ctx.Service.Active && !ctx.Service.Deserter && ctx.Character.Rank <= Rank.Warrior && homeS != null && ctx.CurrentSettlementId == homeS.Id && rng.Chance(_balance.service.levyDemandChancePerDay)) ctx.PendingLevyAt = homeS;
                 foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
                 var here = ctx.Current;
                 if (ctx.Crime != null && here != null && village != null && PendingArrest == null && ctx.Crime.TickDay(here, village.InChurch, rng)) PendingArrest = here;

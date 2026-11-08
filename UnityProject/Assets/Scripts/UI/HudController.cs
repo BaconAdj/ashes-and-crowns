@@ -26,7 +26,7 @@ namespace AshesAndCrowns.UI
         private CommandController _command;
 
         private VisualElement _root, _bloodFill, _staminaFill, _hungerFill, _hitFlash, _death, _chronicle, _quit, _narration, _info, _dialogue, _market, _moment, _momentTrack, _momentMarker, _momentZone;
-        private Label _prompt, _standing, _toast, _dialogueTitle, _dialogueBody, _marketTitle, _marketMsg, _momentTitle, _momentHint;
+        private Label _orderBanner, _orderShout, _prompt, _standing, _toast, _dialogueTitle, _dialogueBody, _marketTitle, _marketMsg, _momentTitle, _momentHint;
         private VisualElement _dialogueButtons, _marketList, _mapOverlay, _mapImage;
         private Label _mapCaption;
         private float _toastUntil;
@@ -66,6 +66,8 @@ namespace AshesAndCrowns.UI
             ApplyModeText();
         }
 
+        public void SetMode(string modeName) { _modeName = modeName; ApplyModeText(); }
+
         private void ApplyModeText()
         {
             if (_mode == null) return;
@@ -78,6 +80,10 @@ namespace AshesAndCrowns.UI
                 case "Riding":
                     _mode.text = "RIDING";
                     _hint.text = "W/S speed, A/D steer, Shift gallop, E dismount. LMB swing, RMB block.";
+                    break;
+                case "Ranks":
+                    _mode.text = "IN THE RANKS";
+                    _hint.text = "You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nLMB swing, RMB block, Space dodge.";
                     break;
                 case "Dead":
                     _mode.text = "DEAD";
@@ -197,6 +203,14 @@ namespace AshesAndCrowns.UI
             _reportOpen = true;
         }
         private bool _reportOpen;
+
+        public void SetOrderBanner(string banner, string shout)
+        {
+            if (_orderBanner == null) return;
+            _orderBanner.text = banner; _orderShout.text = shout;
+            _orderBanner.style.display = string.IsNullOrEmpty(banner) && string.IsNullOrEmpty(shout) ? DisplayStyle.None : DisplayStyle.Flex;
+            _orderShout.style.display = _orderBanner.style.display;
+        }
 
         public void SetPrompt(string text) { if (_prompt != null && _prompt.text != text) _prompt.text = text; }
         public void SetHunger(float value01) { if (_hungerFill != null) _hungerFill.style.width = new Length(Mathf.Clamp01(value01) * 100f, LengthUnit.Percent); }
@@ -320,6 +334,9 @@ namespace AshesAndCrowns.UI
             var armyPanel = MakePanel(16, null, null, null, 420);
             armyPanel.style.left = new Length(50, LengthUnit.Percent); armyPanel.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
             armyPanel.style.alignItems = Align.Center;
+            _orderBanner = MakeLabel(string.Empty, 30, new Color(0.85f, 0.78f, 0.6f)); _orderBanner.style.unityFontStyleAndWeight = FontStyle.Bold; _orderBanner.style.display = DisplayStyle.None;
+            _orderShout = MakeLabel(string.Empty, 13, Parchment); _orderShout.style.unityFontStyleAndWeight = FontStyle.Italic; _orderShout.style.display = DisplayStyle.None;
+            armyPanel.Add(_orderBanner); armyPanel.Add(_orderShout);
             _armies = MakeLabel("Your men: --   Enemy: --", 14, Parchment);
             _commandSummary = MakeLabel(string.Empty, 12, Parchment); _commandSummary.style.whiteSpace = WhiteSpace.Normal;
             _threat = MakeLabel(string.Empty, 13, new Color(0.8f, 0.55f, 0.45f));

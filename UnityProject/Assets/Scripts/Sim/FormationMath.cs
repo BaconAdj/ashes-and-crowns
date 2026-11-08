@@ -4,6 +4,9 @@ namespace AshesAndCrowns.Sim
 {
     public enum FormationType : byte { Line = 0, Wedge = 1, Square = 2, Shieldwall = 3 }
 
+    /// <summary>What a unit has been told to do. Lives in Sim so the service rules can read the banner.</summary>
+    public enum OrderType : byte { Hold = 0, Move = 1, Charge = 2 }
+
     /// <summary>
     /// Pure functions giving each soldier an offset from the unit anchor, in unit-local space
     /// (x = right, z = forward). Deterministic, allocation-free, Burst-compatible.

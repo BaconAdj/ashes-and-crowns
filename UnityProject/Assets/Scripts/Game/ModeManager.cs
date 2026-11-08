@@ -25,6 +25,7 @@ namespace AshesAndCrowns.Game
         public Transform vantage;
         public HudController hud;
         public SaveManager saveManager;
+        public bool commandAllowed = true;   // false while serving in the ranks
 
         private Balance _balance;
         private GameInput _input;
@@ -56,7 +57,7 @@ namespace AshesAndCrowns.Game
             }
 
             Vector3 body = horse.Mounted ? horse.transform.position : player.transform.position;
-            bool inVantage = vantage != null && Vector3.Distance(body, vantage.position) <= _balance.command.vantageRadius;
+            bool inVantage = commandAllowed && vantage != null && Vector3.Distance(body, vantage.position) <= _balance.command.vantageRadius;
             GameMode wanted = inVantage ? GameMode.Command : (horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
             if (wanted != _mode || mountChanged) SetMode(wanted);
             _wasInVantage = inVantage;
@@ -80,7 +81,7 @@ namespace AshesAndCrowns.Game
             thirdPersonCamera.SetRiding(horse.Mounted);
             if (melee != null) melee.mounted = horse.Mounted;
             if (!commanding && mode != GameMode.Dead) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
-            hud.SetMode(mode);
+            if (commandAllowed || mode == GameMode.Dead) hud.SetMode(mode); else hud.SetMode("Ranks");
         }
 
         private void OnPlayerDied()

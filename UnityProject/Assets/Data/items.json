@@ -363,6 +363,17 @@
    "armour": 15,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "warhorse",
+   "name": "Warhorse",
+   "category": "tool",
+   "basePrice": 400,
+   "nutrition": 0,
+   "weight": 0,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

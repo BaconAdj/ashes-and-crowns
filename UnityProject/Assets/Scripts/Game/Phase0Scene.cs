@@ -25,6 +25,7 @@ namespace AshesAndCrowns.Game
         public HudController hud;
         public Light sun;
         public PerfProbe perf;
+        public GruntMode grunt;
 
         private void Start()
         {
@@ -39,6 +40,10 @@ namespace AshesAndCrowns.Game
             director.playerCharacter = player.transform;
             director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames());
             director.BattleEnded += OnBattleEnded;
+            var ctx = RunSession.Context;
+            bool asGrunt = (RunSession.PendingBattle != null && RunSession.PendingBattle.AsGrunt) || (ctx != null && ctx.Service.Active && ctx.Service.Role != ServiceRole.Commander);
+            if (asGrunt && grunt != null) { grunt.enabled = true; director.AiCommandsPlayerSide = true; }
+            else if (grunt != null) grunt.enabled = false;
             banners.Build();
             command.Init(balance);
 
@@ -53,12 +58,13 @@ namespace AshesAndCrowns.Game
             thirdPersonCamera.Init(balance, boot.Input);
             hud.Init(balance, vitals, melee, director, command);
             modes.Init(balance, boot.Input);
+            if (grunt != null && grunt.enabled) { grunt.Init(balance); RunSession.PendingBattle = null; }
             if (perf != null) perf.director = director;
         }
 
         private void OnBattleEnded(Sim.BattleReport report)
         {
-            hud.ShowBattleReport(report);
+            if (grunt == null || !grunt.enabled) hud.ShowBattleReport(report);
         }
 
         private void Place(Transform t, float x, float z, float lift)

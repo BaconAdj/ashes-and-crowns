@@ -153,3 +153,15 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 7 summary (what exists, what is stubbed)
 - Built: morale, rout, rally, surrender, run-down, prisoners, battle end and report with named dead, commander presence, 1,000-a-side default, scale smoke test, stance in the command summary and the save.
 - Stubbed: vertex-animation textures (capsules still), cavalry as a unit type (run-down is done by whoever reaches the router), flow fields (formation steering only), LOD meshes, profiler numbers (the user runs the scale test and reads the log), ransom values for prisoners (Phase 10).
+
+## 2026-11-08 — Phase 8 the soldier's war
+- Service (`ServiceRecord`, `ServiceRules`): levy demands arrive at your home village (a daily roll while you are a commoner and not already serving); comply, pay scutage, or run and become a deserter (a known crime). Mercenary companies appear in towns and cities with a captain, an employer and a contract; signing pays three pennies a day when the paymaster has silver. Camp days: late pay and short rations roll; camp fever through the disease model's camp multiplier.
+- Marching to battle loads the battlefield scene as a grunt: the sergeant AI commands your side, you are placed in the front rank of the first unit with a soft ring on your slot, the banner (HOLD, ADVANCE, CHARGE, RETREAT) comes from your unit's order and stance with a shouted line and a named audio stub. No command; ModeManager's vantage is disabled.
+- Discipline accrues while you are out of your slot and your unit still stands (doubled in contact). The provost afterwards: praise if the sergeant saw deeds, flogging above twenty points, the rope above ninety. Deeds: witnessed kills near your unit, holding the line thirty seconds in contact, standing while your unit ran. Renown counts toward knighthood.
+- If your side breaks you are captured when your unit surrendered or you were caught among enemies while routing: ransom for nobles or anyone with twenty pennies, mercy sometimes, the sword otherwise, escape rarely.
+- Knighthood needs all three: renown, a warhorse and mail, and a patron whose favour (from renown, reputation with his side and standing) is high enough; the audience at a castle or town dubs you and makes you a household knight on two pennies a day.
+- Return from the battlefield lands you at home with a chronicle of the day. The run context persists across scene loads; the save carries service and companies (format v7).
+
+## Phase 8 summary (what exists, what is stubbed)
+- Built: levy, enlistment, companies, camp days, desertion, grunt mode with banner, shouts, slot ring, discipline, deeds, provost, loot share, capture, knighthood audience, save v7. 7 new tests (127 under .NET).
+- Stubbed: horns and drums (audio stubs only), the player's unit chosen by role (always the first unit), travel to the battle (instant scene change), archers and "LOOSE", purchased titles (Phase 10), warhorse purchase only through the market when a city stocks it.

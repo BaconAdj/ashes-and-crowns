@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -60,7 +60,14 @@ namespace AshesAndCrowns.Save
         public CrimeSnapshot[] Crimes = new CrimeSnapshot[0]; public bool Outlawed; public float SanctuaryDaysLeft; public bool SanctuaryExpired;
         public JobSnapshot ActiveJob; public int NextJobId;
         public string HomeSettlementId = string.Empty;
+
+        // Version 7: service
+        public byte ServiceRole, ServiceSide; public string ServiceCompany = "", ServiceCaptain = "", ServicePatron = ""; public int ServiceWage, ServiceDays, ServiceOwed, ServiceBattles, ServiceRenown, ServiceKills, ServiceLines;
+        public float ServiceInfractions, ServicePatronFavour; public bool ServiceDeserter, ServiceInCamp;
+        public CompanySnapshot[] Companies = new CompanySnapshot[0];
     }
+
+    public sealed class CompanySnapshot { public string Name = "", Captain = "", BasedAtId = ""; public byte Employer; public int Size, ContractDaysLeft; public float Reputation; }
 
     public sealed class SettlementSnapshot
     {

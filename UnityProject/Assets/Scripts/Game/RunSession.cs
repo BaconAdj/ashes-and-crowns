@@ -13,11 +13,23 @@ namespace AshesAndCrowns.Game
         public static long NextSeed;
         /// <summary>True once this process has already resolved the on-launch resume, so scene reloads don't redo it.</summary>
         public static bool LaunchHandled;
+        /// <summary>Set when the England scene sends the player to the battlefield; read by the battlefield scene.</summary>
+        public static BattleLaunch PendingBattle;
+        /// <summary>Set by the battlefield when the player returns; the England scene shows it once.</summary>
+        public static List<string> ReturnChronicle;
         /// <summary>The living run: character, family, baronage. Null until a character exists.</summary>
         public static RunContext Context;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; }
+        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; PendingBattle = null; ReturnChronicle = null; }
+    }
+
+    public sealed class BattleLaunch
+    {
+        public bool AsGrunt;
+        public Allegiance Side;
+        public string CompanyName = string.Empty;
+        public int CompanySize = 60;
     }
 
     public sealed class RunContext
@@ -51,6 +63,12 @@ namespace AshesAndCrowns.Game
         public string CurrentSettlementId = string.Empty;   // where the player stands, or empty
         public NamesData Names;
         public float MapSideKm = 673f;
+
+        // Phase 8: service
+        public ServiceRecord Service = new ServiceRecord();
+        public List<MercenaryCompany> Companies = new List<MercenaryCompany>();
+        public Settlement PendingLevyAt;
+        public MercenaryCompany CompanyAt(string settlementId) { foreach (var c in Companies) if (c.BasedAtId == settlementId && c.ContractDaysLeft > 0) return c; return null; }
 
         public Settlement FindSettlement(string id) { foreach (var s in Settlements) if (s.Id == id) return s; return null; }
         public Settlement Current => string.IsNullOrEmpty(CurrentSettlementId) ? null : FindSettlement(CurrentSettlementId);

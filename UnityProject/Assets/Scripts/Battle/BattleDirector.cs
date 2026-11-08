@@ -31,6 +31,8 @@ namespace AshesAndCrowns.Battle
         public int PlayerAlive, EnemyAlive;
         public int PlayerLosses, EnemyLosses;
         public bool BattleStarted;
+        [Tooltip("When the player serves in the ranks, the sergeant AI also commands the player's side.")]
+        public bool AiCommandsPlayerSide;
 
         // Soldier SoA
         private NativeArray<float3> _positions, _positionsSnapshot;
@@ -420,8 +422,9 @@ namespace AshesAndCrowns.Battle
             for (int u = 0; u < UnitCount; u++)
             {
                 UnitState unit = _units[u];
-                if (unit.Side != (byte)Side.Enemy || unit.Alive == 0 || _unitStance[u] >= (byte)UnitStance.Routing) continue;
-                int nearest = NearestLivingUnit(Side.Player, _centroids[u]);
+                bool aiSide = unit.Side == (byte)Side.Enemy || (AiCommandsPlayerSide && unit.Side == (byte)Side.Player);
+                if (!aiSide || unit.Alive == 0 || _unitStance[u] >= (byte)UnitStance.Routing) continue;
+                int nearest = NearestLivingUnit(unit.Side == (byte)Side.Enemy ? Side.Player : Side.Enemy, _centroids[u]);
                 if (nearest < 0) { unit.Order = (byte)OrderType.Hold; _units[u] = unit; continue; }
                 float3 goal = _centroids[nearest];
                 float dist = math.distance(goal, _centroids[u]);
@@ -533,6 +536,19 @@ namespace AshesAndCrowns.Battle
         }
 
         public float GroundHeight(float x, float z) => _ground.Sample(x, z);
+
+        /// <summary>Where soldier slot 'slot' of a unit should stand right now.</summary>
+        public Vector3 SlotWorldPosition(int unit, int slot)
+        {
+            UnitState u = _units[unit];
+            FormationMath.SlotOffset(u.FormationType, slot, u.SoldierCount, _params.FormationSpacing, _params.ShieldwallSpacing, out float ox, out float oz);
+            float s = math.sin(u.Yaw), c = math.cos(u.Yaw);
+            float3 p = u.Anchor + new float3(ox * c + oz * s, 0f, -ox * s + oz * c);
+            p.y = _ground.Sample(p.x, p.z);
+            return p;
+        }
+        public OrderType OrderOf(int unit) => (OrderType)_units[unit].Order;
+        public bool UnitInContact(int unit) { float3 c = _centroids[unit]; return CountWithin(c, 20f, _units[unit].Side == (byte)Side.Player ? Side.Enemy : Side.Player) > 0; }
 
         // ------------------------------------------------------------------ melee API (used by Combat)
 
