@@ -77,6 +77,7 @@ namespace AshesAndCrowns.Game
             horse.enabled = mode != GameMode.Dead;
             thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
             thirdPersonCamera.SetRiding(horse.Mounted);
+            if (melee != null) melee.mounted = horse.Mounted;
             if (!commanding && mode != GameMode.Dead) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
             hud.SetMode(mode);
         }

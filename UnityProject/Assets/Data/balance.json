@@ -426,5 +426,31 @@
     "hangingThresholdTheftPennies": 12,
     "noblePardonChance": 0.35,
     "standingSavesChance": 0.25
+  },
+  "duel": {
+    "windupSeconds": 0.32,
+    "strikeSeconds": 0.12,
+    "recoverSeconds": 0.45,
+    "parryWindowSeconds": 0.14,
+    "blockStaminaCost": 10,
+    "swingStaminaCost": 12,
+    "dodgeStaminaCost": 16,
+    "parryStaggerSeconds": 0.9,
+    "hitStaggerSeconds": 0.35,
+    "dodgeSeconds": 0.4,
+    "dodgeInvulnerableSeconds": 0.25,
+    "staminaRegenPerSecond": 9,
+    "staminaRegenBlocking": 3,
+    "exhaustedThreshold": 8,
+    "yieldBloodBelow": 0.3,
+    "yieldChancePerHit": 0.5,
+    "unarmedDamage": 6,
+    "unarmedReach": 1.1,
+    "spearReachBonus": 0.9,
+    "headMultiplier": 1.6,
+    "limbMultiplier": 0.7,
+    "armourPerPoint": 0.01,
+    "skillDamageWeight": 0.006,
+    "skillParryWindowWeight": 0.0012
   }
 }

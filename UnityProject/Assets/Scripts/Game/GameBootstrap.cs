@@ -35,6 +35,12 @@ namespace AshesAndCrowns.Game
             Seed = seed;
             Rng = new DeterministicRng((ulong)seed);
             Input = new GameInput();
+            Combat.MeleeController.ContextProvider = () =>
+            {
+                var c = RunSession.Context;
+                if (c == null || c.Inventory == null || c.Items == null || c.Character == null) return null;
+                return (c.Inventory, c.Items, c.Character.Get(Skill.OneHanded));
+            };
             Debug.Log($"[Ashes and Crowns] run seed {seed}");
         }
 

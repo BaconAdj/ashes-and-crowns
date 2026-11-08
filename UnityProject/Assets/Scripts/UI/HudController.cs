@@ -446,9 +446,22 @@ namespace AshesAndCrowns.UI
             else
             {
                 _fps.text = $"{_fpsValue:F0} fps";
-                _armies.text = string.Empty; _commandSummary.text = string.Empty; _threat.text = string.Empty;
+                _armies.text = string.Empty; _commandSummary.text = FightLine(); _threat.text = _melee != null ? _melee.LastEvent : string.Empty;
             }
             _wounds.text = WoundsText();
+        }
+
+        private string FightLine()
+        {
+            if (_melee == null || _melee.Duelists.Count == 0) return string.Empty;
+            var sb = new System.Text.StringBuilder(96);
+            foreach (var d in _melee.Duelists)
+            {
+                if (d == null) continue;
+                sb.Append(d.displayName).Append(d.Dead ? " (dead)" : d.Yielded ? " (yields)" : $"  blood {Mathf.RoundToInt(d.Body.Blood * 100)}%").Append("   ");
+            }
+            if (_melee.IsBlocking) sb.Append("\nGuard: ").Append(_melee.Fighter.Dir);
+            return sb.ToString();
         }
 
         private string WoundsText()

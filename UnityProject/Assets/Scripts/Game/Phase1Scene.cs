@@ -24,6 +24,7 @@ namespace AshesAndCrowns.Game
         public Transform horseSpawnPoint;
         public SaveManager saveManager;
         public VillageLife villageLife;
+        public MeleeController melee;
 
         private float _nextClockText;
 
@@ -42,7 +43,8 @@ namespace AshesAndCrowns.Game
             player.Init(balance, boot.Input);
             horse.Init(balance, boot.Input);
             thirdPersonCamera.Init(balance, boot.Input);
-            hud.Init(balance, vitals, null, null, null);
+            if (melee != null) melee.Init(balance, boot.Rng);
+            hud.Init(balance, vitals, melee, null, null);
             bells.hud = hud;
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
             hud.SetMode(GameMode.OnFoot);
@@ -54,6 +56,7 @@ namespace AshesAndCrowns.Game
             player.enabled = !horse.Mounted;
             thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
             thirdPersonCamera.SetRiding(horse.Mounted);
+            if (melee != null) melee.mounted = horse.Mounted;
             hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
         }
 
@@ -70,6 +73,7 @@ namespace AshesAndCrowns.Game
                 { horse.Mount(player.transform); player.enabled = false; }
                 thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
                 thirdPersonCamera.SetRiding(horse.Mounted);
+                if (melee != null) melee.mounted = horse.Mounted;
                 hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
             }
             // Debug: ] skips an hour, [ skips a day, so day/night and weather can be checked quickly.

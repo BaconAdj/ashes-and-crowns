@@ -41,6 +41,15 @@ namespace AshesAndCrowns.Combat
 
         public void DrainStamina(float perSecond) => Stamina = Mathf.Max(0f, Stamina - perSecond * Time.deltaTime);
 
+        /// <summary>A blow has landed on a known part.</summary>
+        public void TakeHitAt(BodyPart part, float severity, string source)
+        {
+            if (Body == null || Body.IsDead) return;
+            Body.ApplyHit(part, severity, source);
+            Wounded?.Invoke(part, severity);
+            if (Body.IsDead) NotifyDeadFromBody();
+        }
+
         /// <summary>A blow has landed. Severity 0..1; location rolled from balance weights.</summary>
         public void TakeHit(float severity, string source)
         {

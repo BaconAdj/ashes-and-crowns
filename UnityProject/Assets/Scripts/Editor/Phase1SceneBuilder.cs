@@ -62,7 +62,6 @@ namespace AshesAndCrowns.EditorTools
 
             GameObject playerGo = SceneKit.BuildPlayer(balance, leather, steel, out PlayerVitals vitals, out PlayerController pc, out MeleeController melee);
             GameObject horseGo = SceneKit.BuildHorse(balance, bay, leather, out HorseController horse);
-            Object.DestroyImmediate(melee); // no battle in this scene yet
             pc.cameraRig = tpc; tpc.target = playerGo.transform;
 
             var spawn = new GameObject("PlayerSpawn").transform; spawn.position = centre + new Vector3(-6f, 0f, -8f);
@@ -103,8 +102,8 @@ namespace AshesAndCrowns.EditorTools
             var perf = sceneGo.AddComponent<PerfProbe>();
             var narration = sceneGo.AddComponent<OpeningNarration>(); narration.hud = hud; narration.gameplayCamera = cam;
             var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
-            var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse;
-            driver.terrain = terrain; driver.clock = clock; driver.dayNight = dayNight; driver.weather = weather; driver.bells = bells;
+            var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse; growth.melee = melee;
+            driver.terrain = terrain; driver.melee = melee; driver.clock = clock; driver.dayNight = dayNight; driver.weather = weather; driver.bells = bells;
             driver.rainMaterial = rainMat; driver.snowMaterial = snowMat; driver.player = pc; driver.horse = horse; driver.vitals = vitals;
             driver.thirdPersonCamera = tpc; driver.hud = hud; driver.perf = perf; driver.spawnPoint = spawn; driver.horseSpawnPoint = horseSpawn;
 
@@ -126,6 +125,11 @@ namespace AshesAndCrowns.EditorTools
             var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
             save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life; save.villageLife = life; life.narration = narration;
             var map = sceneGo.AddComponent<MapScreen>(); map.hud = hud; map.saveManager = save; map.player = playerGo.transform; map.terrainSize = size;
+            var enc = sceneGo.AddComponent<EncounterDirector>();
+            enc.melee = melee; enc.vitals = vitals; enc.clock = clock; enc.hud = hud; enc.village = life; enc.saveManager = save; enc.player = playerGo.transform;
+            enc.banditMaterial = SceneKit.Mat("Bandit", SceneKit.LitShader, new Color(0.22f, 0.2f, 0.17f), 0f, 0.9f); enc.steelMaterial = steel;
+            life.encounter = enc; life.melee = melee;
+            save.melee = melee;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

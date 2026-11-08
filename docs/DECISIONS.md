@@ -123,3 +123,15 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 5 summary (what exists, what is stubbed)
 - Built: settlement generation, regional markets and trade opportunities, travel maths, job board and contracts, global reputation, crime/arrest/trial/execution, runtime village spawner, settlement sites with arrival toasts, map screen, info panel additions, save v5. 9 new tests (105 under .NET).
 - Stubbed: roads and trade routes as visible paths, caravans and escorts as travelling NPCs (guard and escort jobs pay on arrival with no fight yet), bounties without a target (Phase 6), town interiors and markets as places (a site marker stands in), outlaw hunters, bailiffs as NPCs.
+
+## 2026-11-08 — Phase 6 personal melee
+- One fight model for everyone (`FighterState`): windup, strike, recover, guard with a parry window at its start, dodge with invulnerable frames, stagger, yield, down. Stamina gates swings, guards and dodges; an empty guard breaks. Timings and costs in `balance.duel`.
+- Direction: four lines (high, left, right, low) chosen by the mouse's motion as you press. A guard in the same line blocks; a shield also covers the other side. High blows find the head more often, low blows the legs; armour per region from the items carried (mail, gambeson, helm, shield).
+- Damage = weapon × (1 + skill × 0.006) × part multiplier, reduced by armour; 40 raw is a killing blow to the head. Spears reach further.
+- Opponents (`FighterBrain`) read your windup with a skill-based chance and guard the right line, dodge sometimes, attack in reach, and may yield below 30% blood. Striking a man who has yielded kills him and costs reputation with the Church and the Commons and standing.
+- Encounters: ambushes on dangerous jobs (roll every six hours on the road), hunters after outlaws, the bounty's quarry when you reach the destination, the festival melee at the alehouse on fair days (three bouts, prize twelve times the stake). Bandits may rob and leave you when you are nearly down. Loot from the dead.
+- No Animator or root motion yet: the placeholder weapon pivot poses per phase. Hit detection is rule-based on reach and arc, not weapon colliders; both move to the animation pass once real models exist.
+
+## Phase 6 summary (what exists, what is stubbed)
+- Built: directional melee with parry, block, dodge, stamina and armour by region; NPC duellists; four encounter kinds; yield and mercy; weapon skill growth per kill; HUD fight line. 7 new tests (114 under .NET).
+- Stubbed: animations and weapon colliders, duels of honour by challenge, assassinations, mounted combat (no dodge in the saddle, no lance), ambush terrain and bandit camps, loot beyond coins.

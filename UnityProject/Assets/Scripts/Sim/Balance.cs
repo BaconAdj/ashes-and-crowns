@@ -167,6 +167,7 @@ namespace AshesAndCrowns.Sim
         public JobBalance jobs = new JobBalance();
         public ReputationBalance reputation = new ReputationBalance();
         public CrimeBalance crime = new CrimeBalance();
+        public MeleeRulesBalance duel = new MeleeRulesBalance();
         public AbsenceBalance absence = new AbsenceBalance();
     }
 
@@ -218,6 +219,7 @@ namespace AshesAndCrowns.Sim
             if (b.economy != null && (b.economy.sellSpread <= 0f || b.economy.sellSpread > 1f)) errors.Add("economy.sellSpread must be within 0..1");
             if (b.settlements == null || b.settlements.walkKmPerDay <= 0f || b.settlements.rideKmPerDay <= b.settlements.walkKmPerDay) errors.Add("settlements: rideKmPerDay must exceed walkKmPerDay > 0");
             if (b.crime == null || b.crime.arrestChancePerDayAtFullWanted < 0f || b.crime.arrestChancePerDayAtFullWanted > 1f) errors.Add("crime.arrestChancePerDayAtFullWanted must be 0..1");
+            if (b.duel == null || b.duel.windupSeconds <= 0f || b.duel.parryWindowSeconds <= 0f) errors.Add("duel timings must be positive");
             if (b.baronage == null || b.baronage.minorLordCount <= 0) errors.Add("baronage.minorLordCount must be positive");
             if (b.baronage != null && b.baronage.knightsMax < b.baronage.knightsMin) errors.Add("baronage.knightsMax must be >= knightsMin");
             if (b.weather == null) errors.Add("weather missing");

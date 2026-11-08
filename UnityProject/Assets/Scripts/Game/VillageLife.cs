@@ -25,6 +25,8 @@ namespace AshesAndCrowns.Game
         public Transform mastersRoot;       // children named "Master_<trade>"
         public SettlementSpawner spawner;   // every settlement site, home included
         public OpeningNarration narration;  // optional: no village keys while it plays
+        public EncounterDirector encounter; // optional: melees and bounties
+        public MeleeController melee;       // optional: loadout refresh after trading
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -109,7 +111,10 @@ namespace AshesAndCrowns.Game
                 if (s != null)
                 {
                     hud.Toast("You come to " + s.Name + (s.Allegiance == Allegiance.Neutral ? "." : ", which holds for " + s.Allegiance + "."));
-                    if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.ToId == s.Id && ctx.ActiveJob.DaysRequired == 0) DeliverJob(s);
+                    if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.ToId == s.Id && ctx.ActiveJob.DaysRequired == 0)
+                    {
+                        if (ctx.ActiveJob.Kind == JobKind.Bounty && encounter != null) encounter.BountyTarget(ctx.ActiveJob); else DeliverJob(s);
+                    }
                     LawCheck(s);
                 }
             }
@@ -223,6 +228,7 @@ namespace AshesAndCrowns.Game
             var opts = new List<(string, System.Action)>(6) { ("Buy and sell", () => OpenMarket(true)), ("Ask for work", AskForWork) };
             if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.DaysRequired > 0 && s != null && ctx.ActiveJob.ToId == s.Id) opts.Add(($"Serve a day ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})", ServeDay));
             opts.Add(("A gallon of ale and the rumour of the day (1 penny)", () => { if (ctx.Character.Coins >= 1) { ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }));
+            if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) opts.Add(("Enter the festival melee (stake 1 penny)", () => encounter.FestivalMelee(1)));
             opts.Add(("Lift a purse while nobody looks", Steal));
             opts.Add(("Leave", null));
             Dialogue(title, "Smoke, wet wool and talk. The alewife sells what the place has to spare.", opts.ToArray());
@@ -466,7 +472,7 @@ namespace AshesAndCrowns.Game
                 {
                     return ctx.Market.Sell(id, 1, month, standing, ctx.Character, ctx.Inventory, out int earned) ? "Sold for " + earned + "." : "You have none to sell.";
                 },
-                onClose: () => { _busy = false; _openKind = Open.None; saveManager?.SaveNow(AffairsChoice.None); });
+                onClose: () => { _busy = false; _openKind = Open.None; melee?.RefreshLoadout(); saveManager?.SaveNow(AffairsChoice.None); });
         }
 
         // ------------------------------------------------------------------ dialogue
