@@ -5,7 +5,8 @@
         "AshesAndCrowns.Sim",
         "AshesAndCrowns.Battle",
         "AshesAndCrowns.Combat",
-        "AshesAndCrowns.Save"
+        "AshesAndCrowns.Save",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

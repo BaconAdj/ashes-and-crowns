@@ -24,7 +24,7 @@ namespace AshesAndCrowns.Tests.PlayMode
             director.playerSoldierMaterial = new Material(shader) { enableInstancing = true };
             director.enemySoldierMaterial = new Material(shader) { enableInstancing = true };
 
-            var balance = new Balance();
+            var balance = new Balance(); balance.battle.soldiersPerSide = 50; balance.battle.unitSize = 50;
             balance.battle.enemyAdvanceDelaySeconds = 0f;
             director.Setup(balance, new DeterministicRng(1), terrainGo.GetComponent<Terrain>(), new Vector3(100f, 0f, 80f), new Vector3(100f, 0f, 120f));
             Assert.AreEqual(100, director.SoldierCount);
