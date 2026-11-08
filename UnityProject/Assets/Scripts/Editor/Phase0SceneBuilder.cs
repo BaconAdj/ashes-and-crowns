@@ -169,7 +169,7 @@ namespace AshesAndCrowns.EditorTools
             var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
             save.appearance = appearance;
             var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse; growth.melee = melee;
-            var info = sceneGo.AddComponent<InfoPanels>(); info.hud = hud; info.saveManager = save;
+            var info = sceneGo.AddComponent<InfoPanels>(); info.hud = hud; info.saveManager = save; info.modes = modes;
 
             // ---- wiring
             tpc.target = playerGo.transform;

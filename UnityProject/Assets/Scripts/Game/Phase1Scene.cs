@@ -23,6 +23,7 @@ namespace AshesAndCrowns.Game
         public Transform spawnPoint;
         public Transform horseSpawnPoint;
         public SaveManager saveManager;
+        public VillageLife villageLife;
 
         private float _nextClockText;
 
@@ -61,7 +62,8 @@ namespace AshesAndCrowns.Game
             var input = GameBootstrap.Instance.Input;
             if (vitals.IsDead) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
-            if (input.Mount.WasPressedThisFrame())
+            if (villageLife != null && villageLife.IsBusy) return;
+            if (input.Mount.WasPressedThisFrame() && !(villageLife != null && villageLife.HasPlaceInReach))
             {
                 if (horse.Mounted) { horse.Dismount(player.transform); player.enabled = true; }
                 else if (Vector3.Distance(player.transform.position, horse.transform.position) <= GameBootstrap.Instance.Balance.player.mountRadius)

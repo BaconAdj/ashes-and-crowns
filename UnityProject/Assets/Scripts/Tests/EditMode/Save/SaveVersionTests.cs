@@ -17,7 +17,7 @@ namespace AshesAndCrowns.Tests.Save
             s.Baronage = new[] { new MinorLord { Id = 1, GivenName = "Hugh", House = "de Lacy", Epithet = "the Red", Age = 40, Declared = Allegiance.Stephen, Secret = Allegiance.Matilda, Loyalty = 0.4f, Knights = 12, SeatName = "Ashford", NearLocationId = "oxford", Nx = 0.5f, Nz = 0.3f, FeudWith = 2 } };
             s.SpawnLocationId = "ashby_village"; s.OpeningSeen = true;
             var b = SaveCodec.Decode(SaveCodec.Encode(s));
-            Assert.AreEqual(2, b.Version);
+            Assert.AreEqual(RunState.CurrentVersion, b.Version);
             Assert.IsTrue(b.HasCharacter); Assert.AreEqual("Wat of Ashby", b.Character.Name); Assert.AreEqual(7, b.Character.Attributes[0]); Assert.AreEqual(35f, b.Character.Get(Skill.Farming)); Assert.AreEqual(12.5f, b.Character.Get(Skill.Riding));
             Assert.AreEqual(1, b.Family.Length); Assert.AreEqual(Relation.Father, b.Family[0].Relation); Assert.AreEqual("greedy", b.Family[0].TraitB);
             Assert.AreEqual(1, b.Baronage.Length); Assert.AreEqual("Hugh de Lacy the Red", b.Baronage[0].FullName); Assert.IsTrue(b.Baronage[0].DoubleDealer); Assert.AreEqual(2, b.Baronage[0].FeudWith);

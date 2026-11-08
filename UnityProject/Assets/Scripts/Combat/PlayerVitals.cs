@@ -14,7 +14,8 @@ namespace AshesAndCrowns.Combat
         public float StaminaMax => _balance != null ? _balance.player.staminaMax : 100f;
         public bool IsDead => Body != null && Body.IsDead;
         public string CauseOfDeath => Body?.CauseOfDeath;
-        public float HungerPlaceholder => 0.8f; // Phase 4
+        /// <summary>Hunger and sickness slow stamina recovery (set by the village systems).</summary>
+        public float StaminaRegenScale = 1f;
 
         public event Action Died;
         public event Action<BodyPart, float> Wounded;
@@ -32,6 +33,10 @@ namespace AshesAndCrowns.Combat
             Stamina -= amount; return true;
         }
 
+        /// <summary>The body died through a path other than TakeHit (hunger, sickness, sepsis).</summary>
+        public void NotifyDeadFromBody() { if (Body != null && Body.IsDead && !_diedRaised) { _diedRaised = true; Died?.Invoke(); } }
+        private bool _diedRaised;
+
         public void SetStamina(float value) => Stamina = Mathf.Clamp(value, 0f, StaminaMax);
 
         public void DrainStamina(float perSecond) => Stamina = Mathf.Max(0f, Stamina - perSecond * Time.deltaTime);
@@ -43,7 +48,7 @@ namespace AshesAndCrowns.Combat
             BodyPart part = BodyState.RollHitLocation(_rng, _balance.wounds);
             Body.ApplyHit(part, severity, source);
             Wounded?.Invoke(part, severity);
-            if (Body.IsDead) Died?.Invoke();
+            if (Body.IsDead) NotifyDeadFromBody();
         }
 
         private void Update()
@@ -51,8 +56,8 @@ namespace AshesAndCrowns.Combat
             if (Body == null) return;
             bool wasDead = Body.IsDead;
             Body.Tick(Time.deltaTime);
-            if (!wasDead && Body.IsDead) Died?.Invoke();
-            if (!Body.IsDead) Stamina = Mathf.Min(StaminaMax, Stamina + _balance.player.staminaRegenPerSecond * Time.deltaTime);
+            if (!wasDead && Body.IsDead) NotifyDeadFromBody();
+            if (!Body.IsDead) Stamina = Mathf.Min(StaminaMax, Stamina + _balance.player.staminaRegenPerSecond * StaminaRegenScale * Time.deltaTime);
         }
     }
 }

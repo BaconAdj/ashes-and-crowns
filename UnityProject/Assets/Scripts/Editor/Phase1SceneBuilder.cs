@@ -110,6 +110,11 @@ namespace AshesAndCrowns.EditorTools
             save.creation = creation; save.narration = narration; save.appearance = appearance; save.spawnPoints = spawnRoot;
             driver.saveManager = save;
             var info = sceneGo.AddComponent<InfoPanels>(); info.hud = hud; info.saveManager = save;
+            var survival = sceneGo.AddComponent<SurvivalSystem>(); survival.clock = clock; survival.vitals = vitals; survival.home = vill.Root;
+            var life = sceneGo.AddComponent<VillageLife>();
+            life.clock = clock; life.vitals = vitals; life.player = pc; life.horse = horse; life.hud = hud; life.saveManager = save; life.survival = survival;
+            life.church = vill.Church; life.alehouse = vill.Alehouse; life.home = vill.Home; life.workplace = vill.Workplace; life.mastersRoot = vill.Masters;
+            driver.villageLife = life;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

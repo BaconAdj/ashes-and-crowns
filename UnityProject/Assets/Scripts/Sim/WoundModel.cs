@@ -28,6 +28,8 @@ namespace AshesAndCrowns.Sim
         public float Severity;   // 0..1 at infliction; drives bleeding and maiming
         public float Bleeding;   // current bleed rate contribution (severity that has not clotted)
         public float AgeSeconds;
+        public bool Infected;
+        public bool Treated;
     }
 
     public sealed class BodySnapshot
@@ -122,6 +124,48 @@ namespace AshesAndCrowns.Sim
                 if (IsDead && CauseOfDeath == null) CauseOfDeath = "bled out";
             }
         }
+
+        /// <summary>Lose blood to something that is not a wound: starvation, sickness, infection.</summary>
+        public void Drain(float amount, string cause)
+        {
+            if (IsDead || amount <= 0f) return;
+            Blood = Math.Max(0f, Blood - amount);
+            if (IsDead && CauseOfDeath == null) CauseOfDeath = cause;
+        }
+
+        /// <summary>Once a game day: open wounds may turn septic; septic wounds drain blood and may clear. Deterministic.</summary>
+        public void TickDay(DeterministicRng rng)
+        {
+            if (IsDead) return;
+            for (int w = 0; w < _wounds.Count; w++)
+            {
+                Wound wound = _wounds[w];
+                float ageDays = wound.AgeSeconds / 86400f;
+                if (wound.Infected)
+                {
+                    Drain(_balance.infectionBloodLossPerDay * Math.Max(0.3f, wound.Severity), "wound fever");
+                    if (rng.Chance(_balance.infectionClearChancePerDay * (wound.Treated ? 2f : 1f))) { wound.Infected = false; wound.Severity *= 0.8f; }
+                }
+                else if (ageDays <= _balance.infectionWindowDays && wound.Severity >= 0.1f)
+                {
+                    float chance = _balance.infectionChancePerDayPerSeverity * wound.Severity * (wound.Treated ? _balance.treatedInfectionMultiplier : 1f);
+                    if (rng.Chance(chance)) wound.Infected = true;
+                }
+                wound.AgeSeconds += 86400f;
+                _wounds[w] = wound;
+                if (IsDead) return;
+            }
+        }
+
+        /// <summary>Clean and bind every wound. Treated wounds rarely infect.</summary>
+        public int TreatAll()
+        {
+            int n = 0;
+            for (int w = 0; w < _wounds.Count; w++) { Wound wound = _wounds[w]; if (!wound.Treated) { wound.Treated = true; wound.Bleeding *= 0.5f; n++; } _wounds[w] = wound; }
+            return n;
+        }
+
+        public bool HasInfection { get { foreach (Wound w in _wounds) if (w.Infected) return true; return false; } }
 
         /// <summary>Slow recovery while resting, in game hours. Maimed parts never recover past the maim line.</summary>
         public void Rest(float gameHours)

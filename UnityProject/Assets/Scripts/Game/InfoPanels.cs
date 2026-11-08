@@ -6,11 +6,12 @@ using UnityEngine.InputSystem;
 
 namespace AshesAndCrowns.Game
 {
-    /// <summary>C: character and skills. F: family. B: the baronage and the great figures. Esc or the same key closes.</summary>
+    /// <summary>C: character and skills. F: family. B: the baronage and the great figures. The same key closes; opening the quit screen closes them too.</summary>
     public sealed class InfoPanels : MonoBehaviour
     {
         public HudController hud;
         public SaveManager saveManager;
+        public ModeManager modes;            // optional: no panels while commanding (C is charge there)
         private int _open = -1;
         private readonly StringBuilder _sb = new StringBuilder(2048);
 
@@ -20,7 +21,8 @@ namespace AshesAndCrowns.Game
         {
             var kb = Keyboard.current;
             if (kb == null || RunSession.Context == null) return;
-            if (saveManager != null && saveManager.IsQuitScreenOpen && !IsOpen) return;
+            if (saveManager != null && saveManager.IsQuitScreenOpen) { if (IsOpen) { _open = -1; hud.HideInfoPanel(); } return; }
+            if (modes != null && modes.Mode == GameMode.Command) return;
             if (kb.cKey.wasPressedThisFrame) Toggle(0);
             else if (kb.fKey.wasPressedThisFrame) Toggle(1);
             else if (kb.bKey.wasPressedThisFrame) Toggle(2);

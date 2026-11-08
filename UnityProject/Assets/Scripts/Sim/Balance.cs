@@ -79,6 +79,11 @@ namespace AshesAndCrowns.Sim
         public float clotSecondsPerSeverity = 25f;
         public float restHealPerHour = 0.02f;
         public float maimThreshold = 0.85f;
+        public float infectionChancePerDayPerSeverity = 0.18f; // an untreated 0.5 wound: 9% a day
+        public float treatedInfectionMultiplier = 0.25f;
+        public float infectionBloodLossPerDay = 0.1f;
+        public float infectionClearChancePerDay = 0.09f;
+        public float infectionWindowDays = 6f;           // wounds older than this no longer infect
     }
 
     [Serializable] public sealed class LookBalance
@@ -154,6 +159,10 @@ namespace AshesAndCrowns.Sim
         public SaveBalance save = new SaveBalance();
         public CharacterBalance character = new CharacterBalance();
         public BaronageBalance baronage = new BaronageBalance();
+        public SurvivalBalance survival = new SurvivalBalance();
+        public DiseaseBalance disease = new DiseaseBalance();
+        public EconomyBalance economy = new EconomyBalance();
+        public StandingBalance standing = new StandingBalance();
         public AbsenceBalance absence = new AbsenceBalance();
     }
 
@@ -200,6 +209,9 @@ namespace AshesAndCrowns.Sim
             }
             if (b.simulation.maxCatchUpGameDays <= 0) errors.Add("simulation.maxCatchUpGameDays must be positive");
             if (b.character == null || b.character.skillCap <= 0f) errors.Add("character.skillCap must be positive");
+            if (b.survival == null || b.survival.hungerPerGameHour <= 0f) errors.Add("survival.hungerPerGameHour must be positive");
+            if (b.economy == null || b.economy.foodSeasonByMonth == null || b.economy.foodSeasonByMonth.Length != 12) errors.Add("economy.foodSeasonByMonth must have 12 entries");
+            if (b.economy != null && (b.economy.sellSpread <= 0f || b.economy.sellSpread > 1f)) errors.Add("economy.sellSpread must be within 0..1");
             if (b.baronage == null || b.baronage.minorLordCount <= 0) errors.Add("baronage.minorLordCount must be positive");
             if (b.baronage != null && b.baronage.knightsMax < b.baronage.knightsMin) errors.Add("baronage.knightsMax must be >= knightsMin");
             if (b.weather == null) errors.Add("weather missing");

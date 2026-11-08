@@ -19,6 +19,10 @@ namespace AshesAndCrowns.Game
         public bool IsReady => Calendar != null;
 
         public event Action<int, string> BellRang; // index, name
+        /// <summary>Fired once per calendar day crossed, with the number of days.</summary>
+        public event Action<int> DaysPassed;
+        /// <summary>Game hours advanced this tick (also fired by SkipHours).</summary>
+        public event Action<float> HoursPassed;
 
         private Balance _balance;
 
@@ -50,16 +54,24 @@ namespace AshesAndCrowns.Game
         {
             if (realSeconds <= 0f) return;
             float hours = realSeconds / _balance.time.realSecondsPerGameHour;
+            long dayBefore = Calendar.JulianDayNumber(Calendar.Year, Calendar.Month, Calendar.Day);
             int rung = Calendar.AdvanceHours(hours);
             Weather.AdvanceHours(hours, Calendar.Month);
+            HoursPassed?.Invoke(hours);
+            long days = Calendar.JulianDayNumber(Calendar.Year, Calendar.Month, Calendar.Day) - dayBefore;
+            if (days > 0) DaysPassed?.Invoke((int)days);
             if (rung > 0) BellRang?.Invoke(Calendar.LastBellRung, Calendar.LastBellRungName);
         }
 
         /// <summary>Jump the clock, for debugging and for the Phase 2 catch-up. Rings no bells.</summary>
         public void SkipHours(float hours)
         {
+            long dayBefore = Calendar.JulianDayNumber(Calendar.Year, Calendar.Month, Calendar.Day);
             Calendar.AdvanceHours(hours);
             Weather.AdvanceHours(hours, Calendar.Month);
+            HoursPassed?.Invoke(hours);
+            long days = Calendar.JulianDayNumber(Calendar.Year, Calendar.Month, Calendar.Day) - dayBefore;
+            if (days > 0) DaysPassed?.Invoke((int)days);
         }
     }
 }

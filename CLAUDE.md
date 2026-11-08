@@ -61,5 +61,6 @@ Sim must never reference UnityEngine. Battle must never reference Game.
 - Phase 0 (vertical slice): verified on the user's Mac (Unity 6000.6.8f1, about 100 fps with 100 soldiers).
 - Phase 1 (world foundation): code complete, awaiting the user's first open. Scenes: `Phase1_England.unity` (default) and `Phase0_Battlefield.unity`. Menus under `Ashes and Crowns`.
 - Phase 2 (ironman save, living world): code complete, awaiting the user's first open.
-- Phase 3 (run start): code complete. Data: `backgrounds.json` (parallel key/value arrays), `names.json`, `figures.json`. `RunSession.Context` holds the living character, family and baronage; the SaveManager owns character creation and the opening. Save files: `persistentDataPath/saves/run.{sav,bak,tmp}`. Delete them to start fresh while testing.
+- Phase 3 (run start): code complete.
+- Phase 4 (survival, peasant core): code complete. `SurvivalSystem` runs hourly/daily ticks off `WorldClock` events; `VillageLife` owns E-interactions, dialogue, market, work and mass. Data: `items.json`, `trades.json`. Data: `backgrounds.json` (parallel key/value arrays), `names.json`, `figures.json`. `RunSession.Context` holds the living character, family and baronage; the SaveManager owns character creation and the opening. Save files: `persistentDataPath/saves/run.{sav,bak,tmp}`. Delete them to start fresh while testing.
 - The editor in use is 6000.6.x; the manifest pins 6000.0-era package versions and Unity upgrades them on open.

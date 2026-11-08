@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Vector3 Green; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -40,8 +40,9 @@ namespace AshesAndCrowns.EditorTools
             // Church: north of the green, chancel (its +Z) pointing east, so the tower stands west.
             Vector3 churchPos = centre + new Vector3(0f, 0f, green + 14f);
             Transform church = Place(root, "Church", churchMesh, new[] { stone, slate }, terrain, churchPos, Quaternion.Euler(0f, 90f, 0f));
+            Transform home = null;
             // Alehouse: east, door toward the green.
-            Place(root, "Alehouse", aleMesh, new[] { wattle, thatch }, terrain, centre + new Vector3(green + 9f, 0f, -4f), Quaternion.Euler(0f, 90f, 0f));
+            Transform alehouse = Place(root, "Alehouse", aleMesh, new[] { wattle, thatch }, terrain, centre + new Vector3(green + 9f, 0f, -4f), Quaternion.Euler(0f, 90f, 0f));
             // Huts in a loose ring, skipping the church (north) and alehouse (east) sectors.
             int placed = 0, attempts = 0;
             while (placed < v.hutCount && attempts < v.hutCount * 6)
@@ -56,7 +57,8 @@ namespace AshesAndCrowns.EditorTools
                 if (tooClose) continue;
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
                 Quaternion face = Quaternion.LookRotation(toGreen.normalized, Vector3.up) * Quaternion.Euler(0f, rng.Range(-12f, 12f), 0f);
-                Place(root, "Hut_" + placed, hutMesh, new[] { wattle, thatch }, terrain, pos, face);
+                Transform hut = Place(root, "Hut_" + placed, hutMesh, new[] { wattle, thatch }, terrain, pos, face);
+                if (home == null) home = hut;
                 placed++;
             }
             // Well on the green
@@ -64,7 +66,30 @@ namespace AshesAndCrowns.EditorTools
             well.transform.position = new Vector3(centre.x, SceneKit.GroundY(terrain, centre) + 0.5f, centre.z);
             var post = SceneKit.Primitive(PrimitiveType.Cube, "WellBeam", root, Vector3.zero, new Vector3(0.12f, 2.2f, 0.12f), darkWood);
             post.transform.position = well.transform.position + new Vector3(0.7f, 1.3f, 0f);
-            return new Result { Root = root, Church = church, Green = centre };
+            // Village masters: one placeholder villager per trade, standing by the green, named from the name lists.
+            var masters = new GameObject("Masters").transform; masters.SetParent(root, true);
+            var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
+            string[] trades = { "farmer", "blacksmith", "miller", "hunter", "brewer", "carpenter", "shepherd", "fisherman" };
+            Material villagerMat = SceneKit.Mat("Villager", SceneKit.LitShader, new Color(0.3f, 0.26f, 0.2f), 0f, 0.9f);
+            int k = 0;
+            foreach (string trade in trades)
+            {
+                float a = (k / (float)trades.Length) * Mathf.PI * 2f + 0.3f;
+                Vector3 pos = centre + new Vector3(Mathf.Cos(a) * (green + 3f), 0f, Mathf.Sin(a) * (green + 3f));
+                pos.y = SceneKit.GroundY(terrain, pos);
+                var m = new GameObject("Master_" + trade); m.transform.SetParent(masters, true); m.transform.position = pos;
+                m.transform.rotation = Quaternion.LookRotation(new Vector3(centre.x - pos.x, 0f, centre.z - pos.z));
+                SceneKit.Primitive(PrimitiveType.Capsule, "Body", m.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.5f, 0.72f, 0.5f), villagerMat, keepCollider: true);
+                SceneKit.Primitive(PrimitiveType.Sphere, "Head", m.transform, new Vector3(0f, 1.75f, 0f), new Vector3(0.28f, 0.3f, 0.28f), villagerMat);
+                var tag = m.AddComponent<VillagerTag>(); tag.npcId = 100 + k; tag.trade = trade; tag.displayName = nameGen.Given(k % 3 == 2, false); tag.disposition = rng.Range(-0.2f, 0.5f);
+                k++;
+            }
+            // Workplace: a bench behind the player's hut; one spot stands in for field, forge, mill and weir in Phase 4.
+            var work = new GameObject("Workplace").transform; work.SetParent(root, true);
+            work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
+            var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
+            workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre };
         }
 
         private static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)

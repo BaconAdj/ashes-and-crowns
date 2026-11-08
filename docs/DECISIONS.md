@@ -89,3 +89,20 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 3 summary (what exists, what is stubbed)
 - Built: creation screen (name, sex, rank, background, attributes, presets and sliders), run factory, appearance applied to the placeholder body, narrated opening, info panels (C character, F family, B baronage), skill growth hooks, castle stubs and spawn points, save v2, 10 new tests (81 under .NET) plus an editor test that validates every committed JSON file through JsonUtility.
 - Stubbed: real character model, NPC bodies for family and lords (they are records only), castle interiors, monarch court, coins as a usable wallet.
+
+## 2026-11-08 — Phase 3 static review applied
+- No compile errors. Applied: info panels stay closed in command mode (C is charge there) and close when the quit screen opens; quitting during character creation no longer writes a characterless save; a failed character creation re-opens the screen; the placeholder body scales from `player.height` in balance.
+
+## 2026-11-08 — Phase 4 survival and the peasant core
+- Hunger (`Needs`) drains per game hour and starvation drains blood; eating is any food item (G eats the best you carry). Rest is tracked for work output; sleeping at home until Prime restores it and lets wounds heal.
+- Wounds can turn septic for six days after they are taken; septic wounds drain blood daily and may clear; binding wounds at home (medicine skill grows) cuts the risk to a quarter. Tuned so an untreated bad wound kills a few men in a hundred within a month.
+- Disease (`DiseaseState`): flux and fever are rare in a village and three times likelier in a camp; plague follows the settlement's outbreak level. Recovery is better resting at home.
+- Festivals (`Festivals`): Sundays, fixed feasts and Easter and Whitsun from the Julian computus (Easter 1136 is 22 March). Mass is sung between Terce and Sext; attending raises standing, a missed Sunday lowers it; working on a holy day costs standing.
+- Market (`Market`): price = base × (demand × baseline / stock)^0.6 × food season × war shock × standing; merchants buy at 70%. War shocks: foraging triples grain and empties food stock; refugees make food dear and goods cheap; shocks decay daily. Haggling is a probability from skill, standing and greed. The village market is seeded from `items.json` categories.
+- Trades (`trades.json`, `TradeWork`): output = base × skill × tool × season × hands-on moment × rest × hunger × weather; inputs consumed (iron, grain, malt, timber); skill grows per day; small injury chance. Apprenticeship: convince a master (charisma, their disposition, your standing), then two seasons at half output.
+- Village masters are placeholder capsules by the green, one per trade, with names and dispositions; the workplace is one bench behind the player's hut for now.
+- Save format v4 adds needs, sickness, inventory, standing, apprenticeship, market stocks and shock, outbreak and the last mass day. Older files load with defaults.
+
+## Phase 4 summary (what exists, what is stubbed)
+- Built: hunger, rest, starvation, sepsis and treatment, three diseases, church year and mass, items and inventory, village market with seasonal prices, shocks and haggling, eight trades with a daily routine and a timing-based hands-on moment, apprenticeship, village standing, starting kits per rank, HUD belly bar, standing line, prompts, dialogue, market and moment overlays, inventory (I), eat (G). 17 new Sim tests (98 under .NET).
+- Stubbed: distinct hands-on activities per trade (one timing mini-game stands in for stalking, hammering and netting), per-trade workplaces, village events (war comes to the village: Phase 11), coins as physical loot, selling to other settlements (Phase 5).

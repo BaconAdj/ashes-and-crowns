@@ -155,6 +155,18 @@ namespace AshesAndCrowns.Game
                 s.HasCharacter = true; s.Character = ctx.Character; s.PlayerName = ctx.Character.Name;
                 s.Family = ctx.Family.ToArray(); s.Baronage = ctx.Baronage.ToArray(); s.SpawnLocationId = ctx.SpawnLocationId; s.OpeningSeen = ctx.OpeningSeen;
                 if (ctx.Character.Coins > _peakWealth) { _peakWealth = ctx.Character.Coins; s.PeakWealth = _peakWealth; }
+                if (ctx.Needs != null)
+                {
+                    s.Hunger = ctx.Needs.Hunger; s.Rest = ctx.Needs.Rest; s.SicknessKind = (byte)ctx.Disease.Current; s.SickDays = ctx.Disease.DaysSick;
+                    int n = ctx.Inventory.DistinctCount; s.InventoryIds = new string[n]; s.InventoryCounts = new int[n];
+                    for (int i = 0; i < n; i++) { s.InventoryIds[i] = ctx.Inventory.IdAt(i); s.InventoryCounts[i] = ctx.Inventory.CountAt(i); }
+                    s.StandingValue = ctx.Standing.Value; s.MassesAttended = ctx.Standing.MassesAttended; s.MassesMissed = ctx.Standing.MassesMissed;
+                    s.ApprenticeTrade = ctx.Apprenticeship.Trade; s.ApprenticeMaster = ctx.Apprenticeship.MasterNpcId; s.ApprenticeSeasons = ctx.Apprenticeship.SeasonsRemaining; s.ApprenticeCompetence = ctx.Apprenticeship.Competence;
+                    int g = ctx.Market.Goods.Count; s.MarketIds = new string[g]; s.MarketStocks = new float[g];
+                    for (int i = 0; i < g; i++) { s.MarketIds[i] = ctx.Market.Goods[i].Id; s.MarketStocks[i] = ctx.Market.Goods[i].Stock; }
+                    s.MarketShock = (byte)ctx.Market.Shock; s.MarketShockStrength = ctx.Market.ShockStrength; s.MarketWealth = ctx.Market.Wealth;
+                    s.Outbreak = ctx.Outbreak; s.LastMassDay = ctx.LastMassDay;
+                }
             }
             if (clock != null && clock.IsReady)
             {
@@ -189,6 +201,18 @@ namespace AshesAndCrowns.Game
                 RunSession.Context = RunFactory.CreateDefault(null);
                 RunSession.Context.OpeningSeen = true;
             }
+            RunContext rc = RunSession.Context;
+            rc.EnsureSurvival(_balance, DataFiles.LoadItems(), DataFiles.LoadTrades());
+            if (s.Version >= 4)
+            {
+                rc.Needs.Set(s.Hunger, s.Rest); rc.Disease.Set((Sickness)s.SicknessKind, s.SickDays);
+                rc.Inventory.Clear(); for (int i = 0; i < s.InventoryIds.Length && i < s.InventoryCounts.Length; i++) rc.Inventory.Add(s.InventoryIds[i], s.InventoryCounts[i]);
+                rc.Standing.Set(s.StandingValue, s.MassesAttended, s.MassesMissed);
+                rc.Apprenticeship.Trade = s.ApprenticeTrade ?? string.Empty; rc.Apprenticeship.MasterNpcId = s.ApprenticeMaster; rc.Apprenticeship.SeasonsRemaining = s.ApprenticeSeasons; rc.Apprenticeship.Competence = s.ApprenticeCompetence;
+                for (int i = 0; i < s.MarketIds.Length && i < s.MarketStocks.Length; i++) { var good = rc.Market.Find(s.MarketIds[i]); if (good != null) good.Stock = s.MarketStocks[i]; }
+                rc.Market.RestoreShock((WarShock)s.MarketShock, s.MarketShockStrength);
+                rc.Market.Wealth = s.MarketWealth; rc.Outbreak = s.Outbreak; rc.LastMassDay = s.LastMassDay;
+            }
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
             var cc = player.GetComponent<CharacterController>();
             if (horse.Mounted && !s.Mounted) horse.Dismount(player.transform);
@@ -214,6 +238,15 @@ namespace AshesAndCrowns.Game
                 var calendar = clock != null && clock.IsReady ? clock.Calendar : new Calendar(_balance.time);
                 var input = new AbsenceInput { ElapsedRealSeconds = elapsed, Choice = s.Affairs, Hostility = s.Hostility, InBattle = s.InBattle, EnemiesNearby = s.EnemiesNearby };
                 AbsenceReport report = AbsenceResolver.Resolve(input, _balance, vitals.Body, calendar, boot.Rng.Fork(99));
+                if (rc.Needs != null && report.GameHoursElapsed > 0f)
+                {
+                    // Away from the table: hunger runs on, slower while sleeping at home where there is bread.
+                    float hungerHours = AbsenceResolver.IsResting(s.Affairs) ? report.GameHoursElapsed * 0.25f : report.GameHoursElapsed;
+                    rc.Needs.Tick(Mathf.Min(hungerHours, 24f), vitals.Body);
+                    rc.Needs.Sleep(report.GameHoursElapsed * 0.3f);
+                    int days = Mathf.FloorToInt(report.GameHoursElapsed / 24f);
+                    for (int d = 0; d < days; d++) { rc.Market.TickDay(); rc.Standing.TickDay(); }
+                }
                 if (clock != null && clock.IsReady && report.GameHoursElapsed > 0f) clock.Weather.AdvanceHours(report.GameHoursElapsed, clock.Calendar.Month);
                 Debug.Log($"[save] resumed after {elapsed / 3600.0:F1} real hours = {report.GameHoursElapsed:F1} game hours ({s.Affairs}); died={report.Died}");
                 if (report.Died || vitals.Body.IsDead)
@@ -256,7 +289,7 @@ namespace AshesAndCrowns.Game
         {
             RunContext ctx;
             try { ctx = RunFactory.Create(choice, vitals); }
-            catch (Exception e) { Debug.LogError("[run] could not create the character: " + e.Message); _creationOpen = false; SetBodyControl(true); return; }
+            catch (Exception e) { Debug.LogError("[run] could not create the character: " + e.Message); creation.Show(DataFiles.LoadBackgrounds(), OnCharacterChosen); return; }
             RunSession.Context = ctx;
             if (appearance != null) appearance.Apply(ctx.Character);
             Transform spawn = FindSpawn(ctx.SpawnLocationId);
@@ -342,12 +375,12 @@ namespace AshesAndCrowns.Game
 
         private void OnApplicationQuit()
         {
-            if (_dead || _quitting) return;
+            if (_dead || _quitting || _creationOpen) return;
             // Closed the window without choosing: careless. Mid-battle counts as standing still.
             SaveNow(InBattle() ? AffairsChoice.StandInBattle : AffairsChoice.None);
         }
 
-        private void OnApplicationPause(bool paused) { if (paused && !_dead) SaveNow(AffairsChoice.None); }
+        private void OnApplicationPause(bool paused) { if (paused && !_dead && !_creationOpen) SaveNow(AffairsChoice.None); }
 
         // ------------------------------------------------------------------ quit screen
 

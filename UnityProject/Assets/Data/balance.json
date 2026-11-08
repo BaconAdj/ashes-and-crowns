@@ -125,7 +125,12 @@
     "bleedPerSecondPerSeverity": 0.004,
     "clotSecondsPerSeverity": 25.0,
     "restHealPerHour": 0.02,
-    "maimThreshold": 0.85
+    "maimThreshold": 0.85,
+    "infectionChancePerDayPerSeverity": 0.18,
+    "treatedInfectionMultiplier": 0.25,
+    "infectionBloodLossPerDay": 0.1,
+    "infectionClearChancePerDay": 0.09,
+    "infectionWindowDays": 6
   },
   "look": {
     "fogDensity": 0.008,
@@ -314,5 +319,68 @@
     "knightsMin": 5,
     "knightsMax": 40,
     "seatScatterKm": 18
+  },
+  "survival": {
+    "hungerPerGameHour": 0.03,
+    "starvationBloodLossPerHour": 0.012,
+    "hungerStaminaPenaltyBelow": 0.25,
+    "sleepHoursPerNight": 7,
+    "fatiguePerWorkHour": 0.08,
+    "fatigueRecoveryPerSleepHour": 0.16
+  },
+  "disease": {
+    "fluxDailyChance": 0.004,
+    "feverDailyChance": 0.003,
+    "plagueDailyChanceAtFullOutbreak": 0.08,
+    "campMultiplier": 3,
+    "fluxBloodLossPerDay": 0.03,
+    "feverBloodLossPerDay": 0.05,
+    "plagueBloodLossPerDay": 0.12,
+    "fluxRecoverChance": 0.25,
+    "feverRecoverChance": 0.18,
+    "plagueRecoverChance": 0.08,
+    "restRecoveryBonus": 1.6,
+    "settlementOutbreakDecayPerDay": 0.04,
+    "settlementOutbreakSpreadPerTraveller": 0.15
+  },
+  "economy": {
+    "elasticity": 0.6,
+    "restockPerDay": 0.15,
+    "minPriceMultiplier": 0.3,
+    "maxPriceMultiplier": 6,
+    "sellSpread": 0.7,
+    "foodSeasonByMonth": [
+      1.35,
+      1.45,
+      1.5,
+      1.4,
+      1.2,
+      1.1,
+      1.0,
+      0.75,
+      0.7,
+      0.8,
+      1.0,
+      1.2
+    ],
+    "shockDecayPerDay": 0.08,
+    "haggleBaseAccept": 0.5,
+    "haggleSkillWeight": 0.006,
+    "haggleGreedPenalty": 2.2,
+    "haggleStandingWeight": 0.3
+  },
+  "standing": {
+    "massAttended": 0.03,
+    "massMissed": -0.04,
+    "debtHonoured": 0.05,
+    "debtDefaulted": -0.12,
+    "fightWon": 0.01,
+    "fightLost": -0.02,
+    "brawlStarted": -0.06,
+    "generosity": 0.04,
+    "theftSeen": -0.25,
+    "decayTowardNeutralPerDay": 0.004,
+    "respectedAbove": 0.7,
+    "despisedBelow": 0.3
   }
 }

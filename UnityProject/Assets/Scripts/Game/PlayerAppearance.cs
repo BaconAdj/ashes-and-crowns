@@ -19,7 +19,8 @@ namespace AshesAndCrowns.Game
             if (body != null) { body.localScale = new Vector3(0.55f * w, 0.75f * h, 0.55f * w); body.localPosition = new Vector3(0f, 0.95f * h, 0f); }
             if (head != null) head.localPosition = new Vector3(0f, 1.78f * h, 0f);
             var cc = GetComponent<CharacterController>();
-            if (cc != null) { cc.height = 1.8f * h; cc.center = new Vector3(0f, 0.9f * h, 0f); }
+            float baseHeight = GameBootstrap.Instance != null ? GameBootstrap.Instance.Balance.player.height : 1.8f;
+            if (cc != null) { cc.height = baseHeight * h; cc.center = new Vector3(0f, baseHeight * 0.5f * h, 0f); }
             _block = _block ?? new MaterialPropertyBlock();
             Color skin = Color.Lerp(new Color(0.78f, 0.66f, 0.55f), new Color(0.35f, 0.25f, 0.18f), Mathf.Clamp01(c.SkinTone)) * 0.9f;
             Color hair = Color.Lerp(new Color(0.75f, 0.62f, 0.4f), new Color(0.12f, 0.1f, 0.08f), Mathf.Clamp01(c.HairTone));

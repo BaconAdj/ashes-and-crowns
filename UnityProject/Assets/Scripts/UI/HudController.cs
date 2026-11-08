@@ -25,7 +25,11 @@ namespace AshesAndCrowns.UI
         private BattleDirector _director;
         private CommandController _command;
 
-        private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death, _chronicle, _quit, _narration, _info;
+        private VisualElement _root, _bloodFill, _staminaFill, _hungerFill, _hitFlash, _death, _chronicle, _quit, _narration, _info, _dialogue, _market, _moment, _momentTrack, _momentMarker, _momentZone;
+        private Label _prompt, _standing, _toast, _dialogueTitle, _dialogueBody, _marketTitle, _marketMsg, _momentTitle, _momentHint;
+        private VisualElement _dialogueButtons, _marketList;
+        private float _toastUntil;
+        private System.Action<float> _momentDone; private float _momentT, _momentSpeed, _momentZoneWidth; private int _momentBeats; private float _momentQuality;
         private Label _narrationText, _infoTitle, _infoBody;
         private Label _chronicleTitle, _chronicleBody, _quitTitle;
         private VisualElement _quitButtons;
@@ -149,6 +153,91 @@ namespace AshesAndCrowns.UI
 
         public void HideInfoPanel() { if (_info != null) _info.style.display = DisplayStyle.None; }
 
+        public void SetPrompt(string text) { if (_prompt != null && _prompt.text != text) _prompt.text = text; }
+        public void SetHunger(float value01) { if (_hungerFill != null) _hungerFill.style.width = new Length(Mathf.Clamp01(value01) * 100f, LengthUnit.Percent); }
+        public void SetStandingLine(string text) { if (_standing != null) _standing.text = text; }
+        public void Toast(string text) { if (_toast == null) return; _toast.text = text; _toast.style.display = DisplayStyle.Flex; _toastUntil = Time.unscaledTime + 4f; }
+
+        public void ShowDialogue(string title, string body, (string label, System.Action act)[] options, System.Action<int> onPick)
+        {
+            if (_dialogue == null) return;
+            _dialogueTitle.text = title; _dialogueBody.text = body; _dialogueButtons.Clear();
+            for (int i = 0; i < options.Length; i++) { int idx = i; var b = MakeButton($"{i + 1}.  {options[i].label}"); b.clicked += () => onPick(idx); _dialogueButtons.Add(b); }
+            _dialogue.style.display = DisplayStyle.Flex;
+            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+        }
+
+        public void HideDialogue()
+        {
+            if (_dialogue == null) return;
+            _dialogue.style.display = DisplayStyle.None;
+            if (_market.style.display != DisplayStyle.Flex) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+        }
+
+        public void ShowMarket(Market market, ItemsData items, Inventory inventory, int month, float standing, System.Func<string, bool, string> onBuy, System.Func<string, string> onSell, System.Action onClose)
+        {
+            if (_market == null) return;
+            _marketTitle.text = "The market";
+            _marketMsg.text = market.Shock != WarShock.None ? "Prices are strange: " + market.Shock + "." : "Prices are the usual, for the season.";
+            void Rebuild()
+            {
+                _marketList.Clear();
+                foreach (var g in market.Goods)
+                {
+                    var def = items.Find(g.Id); if (def == null) continue;
+                    string id = g.Id;
+                    var row = new VisualElement(); row.style.flexDirection = FlexDirection.Row; row.style.alignItems = Align.Center; row.style.marginBottom = 2;
+                    var name = MakeLabel($"{def.name}  (have {inventory.Count(id)}, stall {Mathf.RoundToInt(g.Stock)})", 13, Parchment); name.style.width = 330; row.Add(name);
+                    int buy = market.BuyPrice(id, month, standing), sell = market.SellPrice(id, month, standing);
+                    var bb = MakeButton($"Buy {buy}d"); bb.style.width = 100; bb.style.marginBottom = 0; bb.clicked += () => { _marketMsg.text = onBuy(id, false); Rebuild(); }; row.Add(bb);
+                    var hb = MakeButton("Haggle"); hb.style.width = 90; hb.style.marginBottom = 0; hb.clicked += () => { _marketMsg.text = onBuy(id, true); Rebuild(); }; row.Add(hb);
+                    var sb = MakeButton($"Sell {sell}d"); sb.style.width = 100; sb.style.marginBottom = 0; sb.clicked += () => { _marketMsg.text = onSell(id); Rebuild(); }; row.Add(sb);
+                    _marketList.Add(row);
+                }
+                var close = MakeButton("Leave the market"); close.clicked += () => { _market.style.display = DisplayStyle.None; Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; onClose(); };
+                _marketList.Add(close);
+            }
+            Rebuild();
+            _market.style.display = DisplayStyle.Flex;
+            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+        }
+
+        /// <summary>The hands-on moment: a marker sweeps a track; press Space inside the zone. Three beats. Quality 0..1.</summary>
+        public void ShowMoment(string kind, string tradeId, System.Action<float> onDone)
+        {
+            if (_moment == null) { onDone(0.5f); return; }
+            _momentDone = onDone; _momentBeats = 0; _momentQuality = 0f; _momentT = 0f;
+            _momentSpeed = kind == "stalk" ? 0.45f : kind == "timing" ? 0.7f : 1.0f;
+            _momentTitle.text = kind == "stalk" ? "Stalk the deer" : kind == "timing" ? "Judge the moment" : "Keep the rhythm";
+            _momentHint.text = kind == "stalk" ? "Press Space when the marker is in the still patch. Three times." : "Press Space when the marker crosses the band. Three beats.";
+            _momentZoneWidth = kind == "stalk" ? 0.14f : 0.18f;
+            _momentZone.style.width = new Length(_momentZoneWidth * 100f, LengthUnit.Percent); _momentZone.style.left = new Length((0.5f - _momentZoneWidth / 2f) * 100f, LengthUnit.Percent);
+            _moment.style.display = DisplayStyle.Flex;
+        }
+
+        private void UpdateMoment()
+        {
+            if (_moment == null || _momentDone == null) return;
+            _momentT += Time.unscaledDeltaTime * _momentSpeed;
+            float pos = Mathf.PingPong(_momentT, 1f);
+            _momentMarker.style.left = new Length(pos * 100f, LengthUnit.Percent);
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.spaceKey.wasPressedThisFrame)
+            {
+                float d = Mathf.Abs(pos - 0.5f);
+                float half = _momentZoneWidth / 2f;
+                float beat = d <= half ? 1f - d / half * 0.5f : Mathf.Max(0f, 0.3f - d);
+                _momentQuality += beat; _momentBeats++;
+                _momentHint.text = beat > 0.6f ? "Good." : beat > 0.2f ? "Nearly." : "Clumsy.";
+                if (_momentBeats >= 3)
+                {
+                    _moment.style.display = DisplayStyle.None;
+                    var done = _momentDone; _momentDone = null;
+                    done?.Invoke(Mathf.Clamp01(_momentQuality / 3f));
+                }
+            }
+        }
+
         public void HideQuitScreen() { if (_quit != null) _quit.style.display = DisplayStyle.None; }
 
         private void Build()
@@ -245,6 +334,44 @@ namespace AshesAndCrowns.UI
             _info.Add(_infoTitle); _info.Add(scroll);
             _root.Add(_info);
 
+            // Hunger bar under stamina, standing line, prompt, toast
+            vitalsPanel.Add(MakeLabel("BELLY", 11, Parchment));
+            _hungerFill = MakeBar(vitalsPanel, new Color(0.45f, 0.38f, 0.2f));
+            _standing = MakeLabel(string.Empty, 12, new Color(0.7f, 0.66f, 0.58f)); _standing.style.whiteSpace = WhiteSpace.Normal; vitalsPanel.Add(_standing);
+            var promptPanel = MakePanel(null, null, null, 70, 520); promptPanel.style.left = new Length(50, LengthUnit.Percent); promptPanel.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0); promptPanel.style.alignItems = Align.Center;
+            _prompt = MakeLabel(string.Empty, 15, Parchment); promptPanel.Add(_prompt);
+            _toast = MakeLabel(string.Empty, 14, new Color(0.8f, 0.72f, 0.5f)); _toast.style.display = DisplayStyle.None; promptPanel.Add(_toast);
+            _root.Add(promptPanel);
+
+            // Dialogue
+            _dialogue = MakeOverlay(0.55f); _dialogue.pickingMode = PickingMode.Position;
+            var dbox = new VisualElement(); dbox.style.width = 700; dbox.style.backgroundColor = Panel; dbox.style.paddingTop = dbox.style.paddingBottom = 16; dbox.style.paddingLeft = dbox.style.paddingRight = 20;
+            _dialogueTitle = MakeLabel(string.Empty, 20, Parchment); _dialogueTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _dialogueBody = MakeLabel(string.Empty, 14, Parchment); _dialogueBody.style.whiteSpace = WhiteSpace.Normal; _dialogueBody.style.marginBottom = 12;
+            _dialogueButtons = new VisualElement();
+            dbox.Add(_dialogueTitle); dbox.Add(_dialogueBody); dbox.Add(_dialogueButtons); _dialogue.Add(dbox);
+            _root.Add(_dialogue);
+
+            // Market
+            _market = MakeOverlay(0.7f); _market.pickingMode = PickingMode.Position;
+            var mbox = new VisualElement(); mbox.style.width = 720; mbox.style.backgroundColor = Panel; mbox.style.paddingTop = mbox.style.paddingBottom = 16; mbox.style.paddingLeft = mbox.style.paddingRight = 20;
+            _marketTitle = MakeLabel(string.Empty, 20, Parchment); _marketTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _marketMsg = MakeLabel(string.Empty, 13, new Color(0.8f, 0.72f, 0.5f)); _marketMsg.style.marginBottom = 8;
+            var mscroll = new ScrollView(); mscroll.style.maxHeight = 520; _marketList = new VisualElement(); mscroll.Add(_marketList);
+            mbox.Add(_marketTitle); mbox.Add(_marketMsg); mbox.Add(mscroll); _market.Add(mbox);
+            _root.Add(_market);
+
+            // Hands-on moment
+            _moment = MakeOverlay(0.35f);
+            _momentTitle = MakeLabel(string.Empty, 22, Parchment); _momentTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _momentHint = MakeLabel(string.Empty, 14, Parchment); _momentHint.style.marginBottom = 14;
+            _momentTrack = new VisualElement(); _momentTrack.style.width = 600; _momentTrack.style.height = 26; _momentTrack.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            _momentZone = new VisualElement(); _momentZone.style.position = Position.Absolute; _momentZone.style.top = 0; _momentZone.style.bottom = 0; _momentZone.style.backgroundColor = new Color(0.45f, 0.38f, 0.2f, 0.9f);
+            _momentMarker = new VisualElement(); _momentMarker.style.position = Position.Absolute; _momentMarker.style.top = -4; _momentMarker.style.width = 6; _momentMarker.style.height = 34; _momentMarker.style.backgroundColor = Parchment;
+            _momentTrack.Add(_momentZone); _momentTrack.Add(_momentMarker);
+            _moment.Add(_momentTitle); _moment.Add(_momentHint); _moment.Add(_momentTrack);
+            _root.Add(_moment);
+
             ApplyModeText();
             _vitals.Wounded += (_, severity) => _hitFlash.style.backgroundColor = new Color(0.5f, 0f, 0f, Mathf.Clamp01(0.25f + severity * 2f));
         }
@@ -259,6 +386,8 @@ namespace AshesAndCrowns.UI
             if (flash.a > 0f) { flash.a = Mathf.Max(0f, flash.a - Time.deltaTime * 1.5f); _hitFlash.style.backgroundColor = flash; }
 
             _fpsAccum += Time.unscaledDeltaTime; _fpsFrames++;
+            UpdateMoment();
+            if (_toast != null && _toast.style.display == DisplayStyle.Flex && Time.unscaledTime > _toastUntil) _toast.style.display = DisplayStyle.None;
             if (Time.unscaledTime < _nextTextUpdate) return;
             _nextTextUpdate = Time.unscaledTime + 0.125f;
             if (_fpsAccum > 0f) _fpsValue = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;

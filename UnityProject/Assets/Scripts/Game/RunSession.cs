@@ -28,5 +28,34 @@ namespace AshesAndCrowns.Game
         public FiguresData Figures;
         public string SpawnLocationId = string.Empty;
         public bool OpeningSeen;
+
+        // Phase 4: survival and the village
+        public Needs Needs;
+        public DiseaseState Disease;
+        public Inventory Inventory = new Inventory();
+        public VillageStanding Standing;
+        public Apprenticeship Apprenticeship = new Apprenticeship();
+        public Market Market;               // the home village's market
+        public float Outbreak;              // local plague level 0..1
+        public long LastMassDay = -1;       // Julian day number of the last mass attended
+        public ItemsData Items;
+        public TradesData Trades;
+
+        public void EnsureSurvival(Balance b, ItemsData items, TradesData trades)
+        {
+            Items = items; Trades = trades;
+            if (Needs == null) Needs = new Needs(b.survival);
+            if (Disease == null) Disease = new DiseaseState(b.disease);
+            if (Standing == null) Standing = new VillageStanding(b.standing);
+            if (Market == null)
+            {
+                Market = new Market(b.economy, items);
+                foreach (var def in items.items)
+                {
+                    float baseline = def.category == "food" ? 40f : def.category == "raw" ? 20f : def.category == "good" ? 6f : def.category == "tool" ? 2f : def.id == "mail" ? 0f : 1.5f;
+                    if (baseline > 0f) Market.Stock(def.id, baseline);
+                }
+            }
+        }
     }
 }

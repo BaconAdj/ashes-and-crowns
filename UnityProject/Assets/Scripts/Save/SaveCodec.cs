@@ -77,7 +77,7 @@ namespace AshesAndCrowns.Save
             BodySnapshot b = s.Body ?? new BodySnapshot();
             w.Write(b.Blood);
             w.Write(BodyParts.Count); for (int i = 0; i < BodyParts.Count; i++) w.Write(i < b.PartIntegrity.Length ? b.PartIntegrity[i] : 1f);
-            w.Write(b.Wounds.Length); foreach (Wound wd in b.Wounds) { w.Write((byte)wd.Part); w.Write(wd.Severity); w.Write(wd.Bleeding); w.Write(wd.AgeSeconds); }
+            w.Write(b.Wounds.Length); foreach (Wound wd in b.Wounds) { w.Write((byte)wd.Part); w.Write(wd.Severity); w.Write(wd.Bleeding); w.Write(wd.AgeSeconds); if (version >= 3) { w.Write(wd.Infected); w.Write(wd.Treated); } }
             w.Write(b.CauseOfDeath ?? string.Empty);
             w.Write(s.Stamina);
             w.Write(s.HoursSurvived); w.Write(s.Kills); w.Write(s.MenLost); w.Write(s.Battles); w.Write(s.PeakWealth);
@@ -100,7 +100,19 @@ namespace AshesAndCrowns.Save
                 }
                 w.Write(s.SpawnLocationId ?? ""); w.Write(s.OpeningSeen);
             }
+            if (version >= 4)
+            {
+                w.Write(s.Hunger); w.Write(s.Rest); w.Write(s.SicknessKind); w.Write(s.SickDays);
+                Strings(w, s.InventoryIds); Ints(w, s.InventoryCounts);
+                w.Write(s.StandingValue); w.Write(s.MassesAttended); w.Write(s.MassesMissed);
+                w.Write(s.ApprenticeTrade ?? ""); w.Write(s.ApprenticeMaster); w.Write(s.ApprenticeSeasons); w.Write(s.ApprenticeCompetence);
+                Strings(w, s.MarketIds); Floats(w, s.MarketStocks); w.Write(s.MarketShock); w.Write(s.MarketShockStrength); w.Write(s.MarketWealth);
+                w.Write(s.Outbreak); w.Write(s.LastMassDay);
+            }
         }
+
+        private static void Strings(BinaryWriter w, string[] a) { a = a ?? new string[0]; w.Write(a.Length); foreach (string x in a) w.Write(x ?? ""); }
+        private static string[] Strings(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > 100000) throw new SaveCorruptException("bad string array"); var a = new string[n]; for (int i = 0; i < n; i++) a[i] = r.ReadString(); return a; }
 
         private static void WriteCharacter(BinaryWriter w, CharacterSheet c)
         {
@@ -143,7 +155,7 @@ namespace AshesAndCrowns.Save
             for (int i = 0; i < parts; i++) { float v = r.ReadSingle(); if (i < BodyParts.Count) b.PartIntegrity[i] = v; }
             int wounds = r.ReadInt32(); if (wounds < 0 || wounds > 1024) throw new SaveCorruptException("bad wound count");
             b.Wounds = new Wound[wounds];
-            for (int i = 0; i < wounds; i++) b.Wounds[i] = new Wound { Part = (BodyPart)r.ReadByte(), Severity = r.ReadSingle(), Bleeding = r.ReadSingle(), AgeSeconds = r.ReadSingle() };
+            for (int i = 0; i < wounds; i++) { var wd = new Wound { Part = (BodyPart)r.ReadByte(), Severity = r.ReadSingle(), Bleeding = r.ReadSingle(), AgeSeconds = r.ReadSingle() }; if (version >= 3) { wd.Infected = r.ReadBoolean(); wd.Treated = r.ReadBoolean(); } b.Wounds[i] = wd; }
             b.CauseOfDeath = r.ReadString(); if (b.CauseOfDeath.Length == 0) b.CauseOfDeath = null;
             s.Body = b;
             s.Stamina = r.ReadSingle();
@@ -167,6 +179,15 @@ namespace AshesAndCrowns.Save
                         Nx = r.ReadSingle(), Nz = r.ReadSingle(), FeudWith = r.ReadInt32(), Alive = r.ReadBoolean()
                     };
                 s.SpawnLocationId = r.ReadString(); s.OpeningSeen = r.ReadBoolean();
+            }
+            if (version >= 4)
+            {
+                s.Hunger = r.ReadSingle(); s.Rest = r.ReadSingle(); s.SicknessKind = r.ReadByte(); s.SickDays = r.ReadInt32();
+                s.InventoryIds = Strings(r); s.InventoryCounts = Ints(r);
+                s.StandingValue = r.ReadSingle(); s.MassesAttended = r.ReadInt32(); s.MassesMissed = r.ReadInt32();
+                s.ApprenticeTrade = r.ReadString(); s.ApprenticeMaster = r.ReadInt32(); s.ApprenticeSeasons = r.ReadSingle(); s.ApprenticeCompetence = r.ReadSingle();
+                s.MarketIds = Strings(r); s.MarketStocks = Floats(r); s.MarketShock = r.ReadByte(); s.MarketShockStrength = r.ReadSingle(); s.MarketWealth = r.ReadSingle();
+                s.Outbreak = r.ReadSingle(); s.LastMassDay = r.ReadInt64();
             }
             return s;
         }
@@ -198,8 +219,8 @@ namespace AshesAndCrowns.Save
         }
 
         private const int MaxArray = 4_000_000;
-        private static void Floats(BinaryWriter w, float[] a) { w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
-        private static void Ints(BinaryWriter w, int[] a) { w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
+        private static void Floats(BinaryWriter w, float[] a) { a = a ?? new float[0]; w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
+        private static void Ints(BinaryWriter w, int[] a) { a = a ?? new int[0]; w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
         private static void Bytes(BinaryWriter w, byte[] a) { w.Write(a.Length); w.Write(a); }
         private static float[] Floats(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > MaxArray) throw new SaveCorruptException("bad array length"); var a = new float[n]; for (int i = 0; i < n; i++) a[i] = r.ReadSingle(); return a; }
         private static int[] Ints(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > MaxArray) throw new SaveCorruptException("bad array length"); var a = new int[n]; for (int i = 0; i < n; i++) a[i] = r.ReadInt32(); return a; }

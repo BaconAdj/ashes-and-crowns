@@ -34,8 +34,26 @@ namespace AshesAndCrowns.Game
             CoastData coast = DataFiles.LoadCoast();
             ctx.Baronage = BaronageGenerator.Generate(balance.baronage, anchors, coast.mapSideKm, nameGen, boot.Rng.Fork(43));
             ctx.SpawnLocationId = RunSetup.ChooseSpawn(ctx.Character, villages, castles, boot.Rng.Fork(44));
+            ctx.EnsureSurvival(balance, DataFiles.LoadItems(), DataFiles.LoadTrades());
+            StartingKit(ctx);
             Debug.Log($"[run] {ctx.Character.Name}, {ctx.Character.Rank} ({bg.name}); {ctx.Family.Count} kin, {ctx.Baronage.Count} minor lords; spawn {ctx.SpawnLocationId}");
             return ctx;
+        }
+
+        private static void StartingKit(RunContext ctx)
+        {
+            var inv = ctx.Inventory; var c = ctx.Character;
+            inv.Add("bread", 3); inv.Add("ale", 1);
+            TradeDef trade = string.IsNullOrEmpty(c.Trade) ? null : ctx.Trades.Find(c.Trade);
+            if (trade != null)
+            {
+                if (!string.IsNullOrEmpty(trade.tool)) inv.Add(trade.tool, 1);
+                if (!string.IsNullOrEmpty(trade.input)) inv.Add(trade.input, 4);
+            }
+            if (c.Rank == Rank.Warrior) { inv.Add("spear", 1); inv.Add("gambeson", 1); inv.Add("knife", 1); }
+            else if (c.Rank == Rank.Knight) { inv.Add("sword", 1); inv.Add("mail", 1); inv.Add("helm", 1); inv.Add("shield", 1); }
+            else if (c.Rank >= Rank.Lord) { inv.Add("sword", 1); inv.Add("mail", 1); inv.Add("helm", 1); inv.Add("shield", 1); inv.Add("cheese", 2); }
+            else inv.Add("knife", 1);
         }
 
         /// <summary>A character without the screen, for test scenes and smoke tests.</summary>
