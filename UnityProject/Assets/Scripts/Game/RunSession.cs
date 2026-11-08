@@ -15,6 +15,8 @@ namespace AshesAndCrowns.Game
         public static bool LaunchHandled;
         /// <summary>Set when the England scene sends the player to the battlefield; read by the battlefield scene.</summary>
         public static BattleLaunch PendingBattle;
+        /// <summary>The launch the current battlefield was started with (kept after PendingBattle is cleared).</summary>
+        public static BattleLaunch LastBattleLaunch;
         /// <summary>Set by the battlefield when the player returns; the England scene shows it once.</summary>
         public static List<string> ReturnChronicle;
         /// <summary>Clock and body carried across a scene load inside one process (England to battlefield and back).</summary>

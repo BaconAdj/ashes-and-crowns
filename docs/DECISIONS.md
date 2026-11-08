@@ -210,3 +210,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 11 summary (what exists, what is stubbed)
 - Built: plots with warnings and counters, five outcomes; village war events with real raiders; blood decals; audio stub registry; French HUD strings and a language menu; start-balance harness; save v10. 8 new tests (156 under .NET).
 - Stubbed: no NPC schemers you can watch in the world (plots are text and a fight); no fog or film-grain retune beyond the Phase 1 look; dialogue bodies untranslated; no audio files (stubs only); the balance pass covers survival and purse, not combat difficulty by start.
+
+## 2026-11-08 — Phase 9 review fixes
+- A cold launch straight into a saved storm now reads the siege from the pending save (the context is restored later), so the wall, ladders and army sizes match the save instead of a plain thousand-a-side field.
+- Attackers below the wall who have a target above it steer to the nearest ladder or the open gate instead of freezing at the stone (`SiegeLayout.NearestCrossingX`); storms no longer stall.
+- Defending your own walls: the besiegers giving up or being driven off by a relieving force now ends the siege instead of re-opening the menu forever; misleading mirrored log lines are filtered.
+- `PendingBattle` is cleared once at battlefield start (`LastBattleLaunch` keeps it for the grunt's company size); an open objection survives save and load; a finished adulterine castle is a fixed site, not a procedural village, on reload.

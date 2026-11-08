@@ -44,23 +44,24 @@ namespace AshesAndCrowns.Game
             var enemyCentre = new Vector3(field.enemyArmyCentre.x, 0f, field.enemyArmyCentre.z);
             director.playerCharacter = player.transform;
             var ctx = RunSession.Context;
-            var launch = RunSession.PendingBattle;
+            var launch = RunSession.PendingBattle; RunSession.PendingBattle = null; RunSession.LastBattleLaunch = launch;
             var siege = ctx != null ? ctx.Siege : null;
+            var resume = ctx == null ? RunSession.PendingResume : null;   // cold launch straight into a saved storm: the context is restored later by SaveManager
             bool siegeBattle = siegeField != null && siege != null && ((launch != null && launch.Siege) || siege.InAssault);
-            SiegeLayout layout = default; int playerCount = -1, enemyCount = -1;
+            bool resumeSiege = siegeField != null && resume != null && resume.HasSiege && resume.SiegeInAssault;
+            SiegeLayout layout = default; int playerCount = -1, enemyCount = -1; bool playerAttacking = true;
             if (siegeBattle)
             {
-                var sb = balance.siege;
-                layout = new SiegeLayout
-                {
-                    Active = 1, AttackersArePlayer = (byte)(siege.PlayerAttacking ? 1 : 0), GateOpen = (byte)(siege.GateBroken ? 1 : 0), HasRam = (byte)(siege.RamBuilt ? 1 : 0),
-                    WallZ = sb.wallZ, WallHalf = sb.wallHalfThickness, GateX = sb.gateX, GateHalf = sb.gateHalfWidth, LadderHalf = sb.ladderHalfWidth, LadderSpacing = sb.ladderSpacing,
-                    LadderCount = Mathf.Min(sb.maxLadders + 2, siege.Ladders + (siege.TowerBuilt ? 2 : 0)), LadderVulnerability = sb.ladderVulnerability
-                };
-                var attackers = new Vector3(sb.gateX, 0f, sb.attackerCentreZ); var defenders = new Vector3(sb.gateX, 0f, sb.defenderCentreZ);
-                playerCentre = siege.PlayerAttacking ? attackers : defenders; enemyCentre = siege.PlayerAttacking ? defenders : attackers;
-                playerCount = siege.PlayerAttacking ? siege.Attackers : siege.Defenders; enemyCount = siege.PlayerAttacking ? siege.Defenders : siege.Attackers;
+                playerAttacking = siege.PlayerAttacking;
+                layout = Layout(balance.siege, siege.PlayerAttacking, siege.GateBroken, siege.RamBuilt, siege.TowerBuilt, siege.Ladders);
+                SiegeCentres(balance.siege, siege.PlayerAttacking, siege.Attackers, siege.Defenders, out playerCentre, out enemyCentre, out playerCount, out enemyCount);
                 siege.InAssault = true;
+            }
+            else if (resumeSiege)
+            {
+                playerAttacking = resume.SiegePlayerAttacking; siegeBattle = true;
+                layout = Layout(balance.siege, resume.SiegePlayerAttacking, resume.SiegeGateBroken, resume.SiegeRamBuilt, resume.SiegeTowerBuilt, resume.SiegeLadders);
+                SiegeCentres(balance.siege, resume.SiegePlayerAttacking, resume.SiegeAttackers, resume.SiegeDefenders, out playerCentre, out enemyCentre, out playerCount, out enemyCount);
             }
             director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames(), playerCount, enemyCount, layout);
             director.BattleEnded += OnBattleEnded;
@@ -71,7 +72,7 @@ namespace AshesAndCrowns.Game
             banners.Build();
             command.Init(balance);
 
-            if (siegeBattle && !siege.PlayerAttacking)
+            if (siegeBattle && !playerAttacking)
             {
                 // Defending your own walls: you and the vantage stand inside the castle.
                 float wz = balance.siege.wallZ, gx = balance.siege.gateX;
@@ -93,7 +94,7 @@ namespace AshesAndCrowns.Game
             thirdPersonCamera.Init(balance, boot.Input);
             hud.Init(balance, vitals, melee, director, command);
             modes.Init(balance, boot.Input);
-            if (grunt != null && grunt.enabled) { grunt.Init(balance); RunSession.PendingBattle = null; }
+            if (grunt != null && grunt.enabled) grunt.Init(balance);
             if (perf != null) perf.director = director;
         }
 
@@ -130,6 +131,20 @@ namespace AshesAndCrowns.Game
             RunSession.ReturnChronicle = lines;
             if (vitals.Body != null) RunSession.CarriedBody = vitals.Body.Export();
             UnityEngine.SceneManagement.SceneManager.LoadScene("Phase1_England");
+        }
+
+        private static SiegeLayout Layout(Sim.SiegeBalance sb, bool playerAttacking, bool gateBroken, bool ramBuilt, bool towerBuilt, int ladders) => new SiegeLayout
+        {
+            Active = 1, AttackersArePlayer = (byte)(playerAttacking ? 1 : 0), GateOpen = (byte)(gateBroken ? 1 : 0), HasRam = (byte)(ramBuilt ? 1 : 0),
+            WallZ = sb.wallZ, WallHalf = sb.wallHalfThickness, GateX = sb.gateX, GateHalf = sb.gateHalfWidth, LadderHalf = sb.ladderHalfWidth, LadderSpacing = sb.ladderSpacing,
+            LadderCount = Mathf.Min(sb.maxLadders + 2, ladders + (towerBuilt ? 2 : 0)), LadderVulnerability = sb.ladderVulnerability
+        };
+
+        private static void SiegeCentres(Sim.SiegeBalance sb, bool playerAttacking, int attackers, int defenders, out Vector3 playerCentre, out Vector3 enemyCentre, out int playerCount, out int enemyCount)
+        {
+            var att = new Vector3(sb.gateX, 0f, sb.attackerCentreZ); var def = new Vector3(sb.gateX, 0f, sb.defenderCentreZ);
+            playerCentre = playerAttacking ? att : def; enemyCentre = playerAttacking ? def : att;
+            playerCount = playerAttacking ? attackers : defenders; enemyCount = playerAttacking ? defenders : attackers;
         }
 
         private void Place(Transform t, float x, float z, float lift)

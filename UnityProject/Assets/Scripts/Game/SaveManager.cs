@@ -289,6 +289,7 @@ namespace AshesAndCrowns.Game
                 };
                 rc.Castle = !s.HasCastle ? null : new CastleBuild { Name = s.CastleName ?? string.Empty, SiteSettlementId = s.CastleSiteId ?? string.Empty, Nx = s.CastleNx, Nz = s.CastleNz, Stage = (CastleStage)s.CastleStage, DaysIntoStage = s.CastleDays, CoinSpent = s.CastleCoin, ObjectorLordId = s.CastleObjector };
                 rc.Garrison = s.Garrison;
+                if (rc.Castle != null && rc.Castle.Active && rc.Castle.ObjectorLordId >= 0 && rc.Siege == null) rc.PendingObjector = rc.LordById(rc.Castle.ObjectorLordId);
             }
             if (s.Version >= 9)
             {

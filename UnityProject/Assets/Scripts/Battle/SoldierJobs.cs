@@ -152,6 +152,15 @@ namespace AshesAndCrowns.Battle
                 stopDistance = 0.05f;
             }
 
+            if (Siege.Active == 1 && target >= 0)
+            {
+                // An attacker below the wall who wants a man above it goes to the nearest ladder or the open gate, not straight at the stone.
+                bool attacker = (i < PlayerSoldierEnd) == (Siege.AttackersArePlayer == 1);
+                if (attacker && p.z < Siege.WallZ - Siege.WallHalf && desired.z > Siege.WallZ - Siege.WallHalf)
+                {
+                    desired = new float3(Siege.NearestCrossingX(p.x), 0f, Siege.WallZ + Siege.WallHalf + 1f); stopDistance = 0.3f;
+                }
+            }
             float3 to = desired - p; to.y = 0f;
             float dist = math.length(to);
             float yaw = Yaws[i];

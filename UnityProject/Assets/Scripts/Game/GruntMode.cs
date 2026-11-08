@@ -44,7 +44,7 @@ namespace AshesAndCrowns.Game
             // Your unit: the first of your side; your slot: the last man of the front rank.
             unitIndex = 0; slotIndex = Mathf.Min(director.Units[0].SoldierCount - 1, FormationMath.LineRankWidth - 1);
             if (modes != null) { modes.commandAllowed = false; }
-            if (RunSession.PendingBattle != null) _companySize = RunSession.PendingBattle.CompanySize;
+            if (RunSession.LastBattleLaunch != null) _companySize = RunSession.LastBattleLaunch.CompanySize;
             _siegeBattle = director.Siege.Active == 1;
             Vector3 slot = director.SlotWorldPosition(unitIndex, slotIndex);
             if (placeBody)

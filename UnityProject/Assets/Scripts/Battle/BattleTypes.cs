@@ -42,6 +42,14 @@ namespace AshesAndCrowns.Battle
         public float LadderX(int k) { int m = (k >> 1) + 1; return GateX + (((k & 1) == 0) ? m : -m) * LadderSpacing; }
         public bool InBand(float z) => z >= WallZ - WallHalf && z <= WallZ + WallHalf;
         public bool OnLadderSide(float z) => z >= WallZ - WallHalf && z < WallZ;   // the climb: lower half of the band
+        public float NearestCrossingX(float x)
+        {
+            float best = x, bd = float.MaxValue;
+            if (GateOpen == 1) { best = GateX; bd = math.abs(x - GateX); }
+            for (int k = 0; k < LadderCount; k++) { float lx = LadderX(k), d = math.abs(x - lx); if (d < bd) { bd = d; best = lx; } }
+            return best;
+        }
+
         public bool NearLadderOrGate(float x)
         {
             if (GateOpen == 1 && math.abs(x - GateX) <= GateHalf) return true;

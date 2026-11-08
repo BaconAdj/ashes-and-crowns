@@ -265,7 +265,7 @@ namespace AshesAndCrowns.Sim
             return new Settlement
             {
                 Id = "castle_" + cb.SiteSettlementId, Name = cb.Name, Type = SettlementType.Castle, Nx = cb.Nx + 0.004f, Nz = cb.Nz + 0.004f,
-                Population = 40, Wealth = 0.8f, Allegiance = side, LordId = PlayerLordId, Region = region ?? string.Empty
+                Population = 40, Wealth = 0.8f, Allegiance = side, LordId = PlayerLordId, Region = region ?? string.Empty, IsFixed = true
             };
         }
     }

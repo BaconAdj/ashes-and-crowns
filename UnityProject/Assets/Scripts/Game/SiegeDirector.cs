@@ -75,7 +75,7 @@ namespace AshesAndCrowns.Game
                 ("Pull it down", () => { ctx.PendingObjector = null; ctx.Castle = null; hud.Toast("The ditch is filled in by evening. The silver is gone."); saveManager?.SaveNow(AffairsChoice.None); }),
                 ("Hold what you built", () =>
                 {
-                    ctx.PendingObjector = null;
+                    ctx.PendingObjector = null; cb.ObjectorLordId = -1;
                     var stub = new Settlement { Id = "castle_" + cb.SiteSettlementId, Name = cb.Name, Type = SettlementType.Castle, Population = 30, Wealth = 0.8f, LordId = CastleRules.PlayerLordId, Nx = cb.Nx, Nz = cb.Nz };
                     var s = SiegeRules.Begin(stub, lord.Declared, men, playerAttacking: false, playerCommands: true, 0f, GameBootstrap.Instance.Rng.Fork(143), _balance.siege);
                     s.Defenders = Mathf.Max(5, ctx.Garrison + 5); s.DefenderFoodDays = 30f; s.LordId = lord.Id; s.DefenderMorale = 0.8f;
@@ -134,8 +134,10 @@ namespace AshesAndCrowns.Game
                 SiegeRules.BlockadeDay(mirror, raining, true, rng, b, _log);
                 s.Day = mirror.Day; s.Attackers = mirror.Attackers; s.Defenders = mirror.Defenders; s.DefenderFoodDays = mirror.DefenderFoodDays; s.DefenderSickness = mirror.DefenderSickness; s.AttackerSickness = mirror.AttackerSickness;
                 s.DefenderMorale = Mathf.Max(0.3f, mirror.DefenderMorale); s.Ladders = mirror.Ladders; s.RamDays = mirror.RamDays; s.TowerDays = mirror.TowerDays; s.RamBuilt = mirror.RamBuilt; s.TowerBuilt = mirror.TowerBuilt;
+                _log.RemoveAll(line => line.StartsWith("A white cloth") || line.StartsWith("Horsemen on the ridge"));
                 if (mirror.Outcome == SiegeOutcome.Surrendered && s.Defenders <= 0) s.Outcome = SiegeOutcome.Surrendered;
-                else if (SiegeRules.CaptainAbandons(mirror)) { s.Outcome = SiegeOutcome.Abandoned; _log.Add("At dawn their camp is empty: they have had enough of the rain."); }
+                else if (mirror.Outcome == SiegeOutcome.Abandoned || SiegeRules.CaptainAbandons(mirror)) { s.Outcome = SiegeOutcome.Abandoned; _log.Add("At dawn their camp is empty: they have had enough of the rain."); }
+                else if (mirror.Outcome == SiegeOutcome.Relieved) s.Outcome = SiegeOutcome.Relieved;
                 else if (SiegeRules.CaptainStorms(mirror, b)) { _log.Add("Horns before light. They are coming over the wall."); }
             }
             clock.SkipHours(24f);
