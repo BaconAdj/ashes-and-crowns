@@ -69,6 +69,17 @@ namespace AshesAndCrowns.Game
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
                 Place(root, "Hut_" + i, assets.hut, new[] { assets.wattle, assets.thatch }, pos, Quaternion.LookRotation(toGreen.normalized) * Quaternion.Euler(0f, rng.Range(-10f, 10f), 0f));
             }
+            if (assets.oak != null)
+            {
+                for (int i = 0; i < 14; i++)
+                {
+                    float a = rng.Range(0f, Mathf.PI * 2f), r = green + 34f + rng.Range(0f, 30f);
+                    Vector3 pos = centre + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
+                    var t = Place(root, "Oak_" + i, assets.oak, new[] { assets.bark != null ? assets.bark : assets.darkWood, assets.leaf != null ? assets.leaf : assets.thatch }, pos, Quaternion.Euler(0f, rng.Range(0f, 360f), 0f));
+                    float sc = rng.Range(0.8f, 1.25f); t.localScale = new Vector3(sc, sc, sc);
+                }
+            }
+            if (s.Type == SettlementType.Castle && assets.keep != null) Place(root, "Keep", assets.keep, new[] { assets.stone, assets.darkWood }, centre + new Vector3(-green - 22f, 0f, green + 10f), Quaternion.identity);
             var well = GameObject.CreatePrimitive(PrimitiveType.Cylinder); well.name = "Well"; well.transform.SetParent(root, true);
             well.transform.localScale = new Vector3(1.6f, 0.5f, 1.6f); well.transform.position = centre + Vector3.up * 0.5f; well.GetComponent<Renderer>().sharedMaterial = assets.stone;
             var site = root.gameObject.AddComponent<SettlementSite>();

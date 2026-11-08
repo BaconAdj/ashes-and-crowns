@@ -30,6 +30,7 @@ namespace AshesAndCrowns.Game
         public SiegeDirector siege;         // optional: sieges and castles
         public LordshipDirector lordship;   // optional: the hall
         public IntrigueDirector intrigue;   // optional: the knife in the dark
+        public DevCheats cheats;            // optional: F10 testing menu
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -63,6 +64,7 @@ namespace AshesAndCrowns.Game
             if (siege != null && siege.IsOpen) return;
             if (lordship != null && lordship.IsOpen) return;
             if (intrigue != null && intrigue.IsOpen) return;
+            if (cheats != null && cheats.IsOpen) return;
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)

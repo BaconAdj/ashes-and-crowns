@@ -144,7 +144,8 @@ namespace AshesAndCrowns.EditorTools
             var directorGo = new GameObject("BattleDirector");
             var director = directorGo.AddComponent<BattleDirector>();
             director.playerSoldierMaterial = ironPlayer; director.enemySoldierMaterial = ironEnemy;
-            director.soldierMesh = SceneKit.CapsuleMesh();
+            director.soldierMesh = SceneKit.ArtMesh("Characters/Soldier.fbx") ?? SceneKit.CapsuleMesh();
+            director.soldierIronMaterial = SceneKit.Mat("SoldierIron", LitShader, new Color(0.44f, 0.46f, 0.49f), 0.6f, 0.5f, instancing: true);
             var bannersGo = new GameObject("UnitBanners");
             var banners = bannersGo.AddComponent<UnitBanners>();
             banners.director = director; banners.playerBanner = bannerPlayer; banners.enemyBanner = bannerEnemy;
@@ -210,6 +211,27 @@ namespace AshesAndCrowns.EditorTools
             float size = terrain.terrainData.size.x;
             float topY = terrain.SampleHeight(new Vector3(sb.gateX, 0f, sb.wallZ + sb.wallHalfThickness + 2f)) + terrain.transform.position.y;
             float footY = terrain.SampleHeight(new Vector3(sb.gateX, 0f, sb.wallZ - sb.wallHalfThickness - 1f)) + terrain.transform.position.y;
+            Mesh wallMesh = SceneKit.ArtMesh("Siege/WallSegment.fbx"), towerMesh = SceneKit.ArtMesh("Siege/Tower.fbx");
+            if (wallMesh != null)
+            {
+                // Tile 10 m segments along the wall line, leaving the gate bay open; towers flank the gate.
+                float sizeX = terrain.terrainData.size.x;
+                for (float x = 45f; x < sizeX - 45f; x += 10f)
+                {
+                    if (Mathf.Abs(x + 5f - sb.gateX) < sb.gateHalfWidth + 8f) continue;
+                    var seg = SceneKit.MeshChild("Wall_" + (int)x, root.transform, wallMesh, stone, stone, collider: false);
+                    seg.transform.position = new Vector3(x + 5f, footY, sb.wallZ - sb.wallHalfThickness * 0.5f);
+                }
+                if (towerMesh != null)
+                {
+                    SceneKit.MeshChild("TowerWest", root.transform, towerMesh, stone, darkWood).transform.position = new Vector3(sb.gateX - sb.gateHalfWidth - 6f, footY, sb.wallZ);
+                    SceneKit.MeshChild("TowerEast", root.transform, towerMesh, stone, darkWood).transform.position = new Vector3(sb.gateX + sb.gateHalfWidth + 6f, footY, sb.wallZ);
+                }
+                var gateFbx = SceneKit.Primitive(PrimitiveType.Cube, "Gate", root.transform, new Vector3(sb.gateX, footY + sb.wallHeight * 0.45f, sb.wallZ - sb.wallHalfThickness), new Vector3(sb.gateHalfWidth * 2f + 1f, sb.wallHeight * 0.9f, 0.5f), darkWood);
+                sf.gate = gateFbx;
+                var laddersFbx = new GameObject("Ladders"); laddersFbx.transform.SetParent(root.transform, false); sf.ladderRoot = laddersFbx.transform;
+                return sf;
+            }
             // parapet along the plateau edge, in two halves so the gate stays open
             float left = 40f, right = size - 40f, gl = sb.gateX - sb.gateHalfWidth - 3f, gr = sb.gateX + sb.gateHalfWidth + 3f;
             SceneKit.Primitive(PrimitiveType.Cube, "ParapetWest", root.transform, new Vector3((left + gl) * 0.5f, topY + 0.9f, sb.wallZ + 0.6f), new Vector3(gl - left, 1.8f, 1.2f), stone);

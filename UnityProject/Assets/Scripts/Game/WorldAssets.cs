@@ -7,6 +7,8 @@ namespace AshesAndCrowns.Game
     {
         public Material wattle, thatch, stone, slate, darkWood, villager;
         public Mesh hut, alehouse, church;
+        public Mesh oak, keep;              // optional (Blender art)
+        public Material bark, leaf;
         public Terrain terrain;
     }
 }

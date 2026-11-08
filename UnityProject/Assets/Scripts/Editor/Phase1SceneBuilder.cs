@@ -121,6 +121,7 @@ namespace AshesAndCrowns.EditorTools
             var ashbySite = vill.Root.GetComponent<SettlementSite>(); if (ashbySite != null) ashbySite.transform.SetParent(fixedSites, true);
             var assets = sceneGo.AddComponent<WorldAssets>();
             assets.wattle = vill.Wattle; assets.thatch = vill.Thatch; assets.stone = vill.Stone; assets.slate = vill.Slate; assets.darkWood = vill.DarkWood; assets.hut = vill.HutMesh; assets.alehouse = vill.AlehouseMesh; assets.church = vill.ChurchMesh; assets.terrain = terrain;
+            assets.oak = SceneKit.ArtMesh("Nature/Oak.fbx"); assets.keep = SceneKit.ArtMesh("Buildings/Keep.fbx"); assets.bark = vill.DarkWood; assets.leaf = SceneKit.Mat("Leaf", SceneKit.LitShader, new Color(0.22f, 0.27f, 0.17f), 0f, 0.95f);
             var spawnerGo = new GameObject("Settlements");
             var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
             save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life; save.villageLife = life; life.narration = narration;
@@ -139,6 +140,9 @@ namespace AshesAndCrowns.EditorTools
             var intrigue = sceneGo.AddComponent<IntrigueDirector>();
             intrigue.clock = clock; intrigue.hud = hud; intrigue.saveManager = save; intrigue.village = life; intrigue.encounter = enc; intrigue.vitals = vitals;
             life.intrigue = intrigue;
+            var cheats = sceneGo.AddComponent<DevCheats>();
+            cheats.clock = clock; cheats.hud = hud; cheats.saveManager = save; cheats.village = life; cheats.siege = siege; cheats.lordship = lordship; cheats.spawner = spawnerComp; cheats.player = pc; cheats.horse = horse; cheats.vitals = vitals;
+            life.cheats = cheats;
             var blood = sceneGo.AddComponent<BloodDecals>(); blood.vitals = vitals; blood.melee = melee; blood.player = playerGo.transform;
             blood.material = SceneKit.Mat("Blood", SceneKit.LitShader, new Color(0.22f, 0.04f, 0.03f), 0f, 0.6f, instancing: true);
 

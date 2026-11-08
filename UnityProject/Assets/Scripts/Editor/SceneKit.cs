@@ -146,6 +146,29 @@ namespace AshesAndCrowns.EditorTools
             return go;
         }
 
+        public const string ArtFolder = "Assets/Art";
+
+        /// <summary>A Blender FBX under Assets/Art, or null when it has not been generated yet (callers fall back to primitives).</summary>
+        public static Mesh ArtMesh(string relativePath)
+        {
+            string path = ArtFolder + "/" + relativePath;
+            if (!File.Exists(path)) return null;
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (mesh == null) foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path)) if (o is Mesh m) { mesh = m; break; }
+            if (mesh != null) Debug.Log("[Ashes and Crowns] using Blender asset " + path);
+            return mesh;
+        }
+
+        /// <summary>A static mesh child with two palette materials (slot 1 / slot 2) and an optional collider.</summary>
+        public static GameObject MeshChild(string name, Transform parent, Mesh mesh, Material slot1, Material slot2, bool collider = false)
+        {
+            var go = new GameObject(name); go.transform.SetParent(parent, false);
+            var mf = go.AddComponent<MeshFilter>(); mf.sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterials = mesh.subMeshCount >= 2 ? new[] { slot1, slot2 } : new[] { slot1 };
+            if (collider) { var mc = go.AddComponent<MeshCollider>(); mc.sharedMesh = mesh; }
+            return go;
+        }
+
         public static Mesh CapsuleMesh()
         {
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -210,8 +233,13 @@ namespace AshesAndCrowns.EditorTools
             var playerGo = new GameObject("Player");
             var pcc = playerGo.AddComponent<CharacterController>();
             pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f;
-            Primitive(PrimitiveType.Capsule, "Body", playerGo.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.55f, 0.75f, 0.55f), leather);
-            Primitive(PrimitiveType.Sphere, "Head", playerGo.transform, new Vector3(0f, 1.78f, 0f), new Vector3(0.3f, 0.32f, 0.3f), steel);
+            Mesh man = ArtMesh("Characters/Man.fbx");
+            if (man != null) MeshChild("Body", playerGo.transform, man, leather, Mat("Skin", LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f));
+            else
+            {
+                Primitive(PrimitiveType.Capsule, "Body", playerGo.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.55f, 0.75f, 0.55f), leather);
+                Primitive(PrimitiveType.Sphere, "Head", playerGo.transform, new Vector3(0f, 1.78f, 0f), new Vector3(0.3f, 0.32f, 0.3f), steel);
+            }
             var weaponPivot = new GameObject("WeaponPivot").transform;
             weaponPivot.SetParent(playerGo.transform, false); weaponPivot.localPosition = new Vector3(0.38f, 1.2f, 0.1f);
             Primitive(PrimitiveType.Cube, "Blade", weaponPivot, new Vector3(0f, 0f, 0.55f), new Vector3(0.05f, 0.12f, 1.0f), steel);
@@ -228,12 +256,17 @@ namespace AshesAndCrowns.EditorTools
             var horseGo = new GameObject("Horse");
             var hcc = horseGo.AddComponent<CharacterController>();
             hcc.height = 1.7f; hcc.radius = 0.6f; hcc.center = new Vector3(0f, 0.95f, 0f); hcc.slopeLimit = 55f;
-            Primitive(PrimitiveType.Cube, "Barrel", horseGo.transform, new Vector3(0f, 1.15f, 0f), new Vector3(0.65f, 0.75f, 1.9f), bay);
-            Primitive(PrimitiveType.Cube, "Neck", horseGo.transform, new Vector3(0f, 1.6f, 1.05f), new Vector3(0.3f, 0.7f, 0.5f), bay);
-            Primitive(PrimitiveType.Cube, "Head", horseGo.transform, new Vector3(0f, 1.85f, 1.45f), new Vector3(0.26f, 0.3f, 0.6f), bay);
-            foreach (var (x, z) in new[] { (-0.22f, 0.7f), (0.22f, 0.7f), (-0.22f, -0.7f), (0.22f, -0.7f) })
-                Primitive(PrimitiveType.Cube, "Leg", horseGo.transform, new Vector3(x, 0.4f, z), new Vector3(0.14f, 0.8f, 0.14f), bay);
-            Primitive(PrimitiveType.Cube, "Saddle", horseGo.transform, new Vector3(0f, 1.55f, -0.1f), new Vector3(0.5f, 0.12f, 0.6f), leather);
+            Mesh horseMesh = ArtMesh("Characters/Horse.fbx");
+            if (horseMesh != null) MeshChild("Body", horseGo.transform, horseMesh, bay, leather);
+            else
+            {
+                Primitive(PrimitiveType.Cube, "Barrel", horseGo.transform, new Vector3(0f, 1.15f, 0f), new Vector3(0.65f, 0.75f, 1.9f), bay);
+                Primitive(PrimitiveType.Cube, "Neck", horseGo.transform, new Vector3(0f, 1.6f, 1.05f), new Vector3(0.3f, 0.7f, 0.5f), bay);
+                Primitive(PrimitiveType.Cube, "Head", horseGo.transform, new Vector3(0f, 1.85f, 1.45f), new Vector3(0.26f, 0.3f, 0.6f), bay);
+                foreach (var (x, z) in new[] { (-0.22f, 0.7f), (0.22f, 0.7f), (-0.22f, -0.7f), (0.22f, -0.7f) })
+                    Primitive(PrimitiveType.Cube, "Leg", horseGo.transform, new Vector3(x, 0.4f, z), new Vector3(0.14f, 0.8f, 0.14f), bay);
+                Primitive(PrimitiveType.Cube, "Saddle", horseGo.transform, new Vector3(0f, 1.55f, -0.1f), new Vector3(0.5f, 0.12f, 0.6f), leather);
+            }
             var seat = new GameObject("Seat").transform;
             seat.SetParent(horseGo.transform, false); seat.localPosition = new Vector3(0f, balance.horse.seatHeight - 0.15f, -0.1f);
             horse = horseGo.AddComponent<HorseController>();

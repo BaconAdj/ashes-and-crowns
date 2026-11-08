@@ -71,6 +71,9 @@ namespace AshesAndCrowns.EditorTools
             var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
             string[] trades = { "farmer", "blacksmith", "miller", "hunter", "brewer", "carpenter", "shepherd", "fisherman" };
             Material villagerMat = SceneKit.Mat("Villager", SceneKit.LitShader, new Color(0.3f, 0.26f, 0.2f), 0f, 0.9f);
+            Material skinMat = SceneKit.Mat("Skin", SceneKit.LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f);
+            Mesh manMesh = SceneKit.ArtMesh("Characters/Man.fbx");
+            PlantOaks(root, terrain, centre, green, rng, darkWood);
             int k = 0;
             foreach (string trade in trades)
             {
@@ -79,8 +82,12 @@ namespace AshesAndCrowns.EditorTools
                 pos.y = SceneKit.GroundY(terrain, pos);
                 var m = new GameObject("Master_" + trade); m.transform.SetParent(masters, true); m.transform.position = pos;
                 m.transform.rotation = Quaternion.LookRotation(new Vector3(centre.x - pos.x, 0f, centre.z - pos.z));
-                SceneKit.Primitive(PrimitiveType.Capsule, "Body", m.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.5f, 0.72f, 0.5f), villagerMat, keepCollider: true);
-                SceneKit.Primitive(PrimitiveType.Sphere, "Head", m.transform, new Vector3(0f, 1.75f, 0f), new Vector3(0.28f, 0.3f, 0.28f), villagerMat);
+                if (manMesh != null) SceneKit.MeshChild("Body", m.transform, manMesh, villagerMat, skinMat, collider: true);
+                else
+                {
+                    SceneKit.Primitive(PrimitiveType.Capsule, "Body", m.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.5f, 0.72f, 0.5f), villagerMat, keepCollider: true);
+                    SceneKit.Primitive(PrimitiveType.Sphere, "Head", m.transform, new Vector3(0f, 1.75f, 0f), new Vector3(0.28f, 0.3f, 0.28f), villagerMat);
+                }
                 var tag = m.AddComponent<VillagerTag>(); tag.npcId = 100 + k; tag.trade = trade; tag.displayName = nameGen.Given(k % 3 == 2, false); tag.disposition = rng.Range(-0.2f, 0.5f);
                 k++;
             }
@@ -91,6 +98,22 @@ namespace AshesAndCrowns.EditorTools
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
             var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
             return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
+        }
+
+        /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>
+        private static void PlantOaks(Transform root, Terrain terrain, Vector3 centre, float green, DeterministicRng rng, Material bark)
+        {
+            Mesh oak = SceneKit.ArtMesh("Nature/Oak.fbx"); if (oak == null) return;
+            Material leaf = SceneKit.Mat("Leaf", SceneKit.LitShader, new Color(0.22f, 0.27f, 0.17f), 0f, 0.95f);
+            var trees = new GameObject("Oaks").transform; trees.SetParent(root, true);
+            for (int i = 0; i < 26; i++)
+            {
+                float a = rng.Range(0f, Mathf.PI * 2f), r = green + 36f + rng.Range(0f, 40f);
+                var pos = centre + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r); pos.y = SceneKit.GroundY(terrain, pos) - 0.2f;
+                var t = SceneKit.MeshChild("Oak_" + i, trees, oak, bark, leaf, collider: true);
+                t.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, rng.Range(0f, 360f), 0f));
+                float s = rng.Range(0.8f, 1.25f); t.transform.localScale = new Vector3(s, s, s); t.isStatic = true;
+            }
         }
 
         private static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)

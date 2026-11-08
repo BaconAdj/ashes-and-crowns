@@ -23,6 +23,9 @@ namespace AshesAndCrowns.Battle
         public Material playerSoldierMaterial;
         public Material enemySoldierMaterial;
         public Mesh soldierMesh;
+        [Tooltip("Second material for the soldier mesh's second submesh (iron), when the Blender mesh is used.")]
+        public Material soldierIronMaterial;
+        private RenderParams _rpIron;
         public Transform playerCharacter;
 
         [Header("Runtime read-only")]
@@ -314,16 +317,21 @@ namespace AshesAndCrowns.Battle
         private void Render()
         {
             if (soldierMesh == null) return;
-            DrawRange(_rpPlayer, 0, _playerSoldierEnd);
-            DrawRange(_rpEnemy, _playerSoldierEnd, SoldierCount - _playerSoldierEnd);
+            DrawRange(_rpPlayer, 0, _playerSoldierEnd, 0);
+            DrawRange(_rpEnemy, _playerSoldierEnd, SoldierCount - _playerSoldierEnd, 0);
+            if (soldierMesh.subMeshCount > 1 && soldierIronMaterial != null)
+            {
+                if (_rpIron.material != soldierIronMaterial) _rpIron = new RenderParams(soldierIronMaterial) { shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On, worldBounds = new Bounds(Vector3.zero, Vector3.one * 20000f) };
+                DrawRange(_rpIron, 0, SoldierCount, 1);
+            }
         }
 
-        private void DrawRange(RenderParams rp, int start, int count)
+        private void DrawRange(RenderParams rp, int start, int count, int subMesh)
         {
             while (count > 0)
             {
                 int n = Mathf.Min(count, MaxInstancesPerDraw);
-                Graphics.RenderMeshInstanced(rp, soldierMesh, 0, _matrices, n, start);
+                Graphics.RenderMeshInstanced(rp, soldierMesh, subMesh, _matrices, n, start);
                 start += n; count -= n;
             }
         }
