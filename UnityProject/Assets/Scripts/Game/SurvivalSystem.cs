@@ -60,7 +60,6 @@ namespace AshesAndCrowns.Game
             var cal = clock.Calendar;
             long today = Calendar.JulianDayNumber(cal.Year, cal.Month, cal.Day);
             long yesterday = today - 1;
-            Feast f = Festivals.FeastOn(cal.Year, cal.Month, cal.Day == 1 ? cal.Day : cal.Day - 1);
             if ((yesterday + 1) % 7 == 0 && ctx.LastMassDay != yesterday && home != null) ctx.Standing.MissedMass();
             if (vitals.Body.IsDead) vitals.NotifyDeadFromBody();
         }

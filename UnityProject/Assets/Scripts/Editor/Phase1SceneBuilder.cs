@@ -124,7 +124,7 @@ namespace AshesAndCrowns.EditorTools
             assets.wattle = vill.Wattle; assets.thatch = vill.Thatch; assets.stone = vill.Stone; assets.slate = vill.Slate; assets.darkWood = vill.DarkWood; assets.hut = vill.HutMesh; assets.alehouse = vill.AlehouseMesh; assets.church = vill.ChurchMesh; assets.terrain = terrain;
             var spawnerGo = new GameObject("Settlements");
             var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
-            save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life;
+            save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life; save.villageLife = life; life.narration = narration;
             var map = sceneGo.AddComponent<MapScreen>(); map.hud = hud; map.saveManager = save; map.player = playerGo.transform; map.terrainSize = size;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);

@@ -24,6 +24,9 @@ namespace AshesAndCrowns.Game
         public Transform church, alehouse, home, workplace;
         public Transform mastersRoot;       // children named "Master_<trade>"
         public SettlementSpawner spawner;   // every settlement site, home included
+        public OpeningNarration narration;  // optional: no village keys while it plays
+        private enum Open : byte { None, Dialogue, Market, Moment }
+        private Open _openKind;
         public float useRadius = 4f;
         private SettlementSite _site; private float _nextSiteScan; private string _lastSiteId = string.Empty;
         public SettlementSite CurrentSite => _site;
@@ -47,14 +50,16 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             if (ctx == null || ctx.Needs == null || vitals == null || vitals.IsDead) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
+            if (narration != null && narration.Running) return;
             vitals.StaminaRegenScale = (ctx.Needs.Hungry ? 0.4f : 1f) * (ctx.Disease.Current != Sickness.None ? 0.5f : 1f);
             var kb = Keyboard.current; if (kb == null) return;
 
             if (_busy)
             {
+                if (_openKind != Open.Dialogue) return; // market and moment have their own controls
                 for (int i = 0; i < _options.Count && i < 6; i++)
                     if (DigitPressed(kb, i)) { var act = _options[i].act; CloseDialogue(); act?.Invoke(); return; }
-                if (kb.escapeKey.wasPressedThisFrame || kb.qKey.wasPressedThisFrame) CloseDialogue();
+                if (kb.qKey.wasPressedThisFrame) CloseDialogue();   // Esc is the quit screen; Q closes talk
                 return;
             }
 
@@ -223,14 +228,6 @@ namespace AshesAndCrowns.Game
             Dialogue(title, "Smoke, wet wool and talk. The alewife sells what the place has to spare.", opts.ToArray());
         }
 
-        private void AlehouseOld()
-        {
-            Dialogue("The alehouse", "Smoke, wet wool and talk. The alewife sells what the village has to spare.",
-                ("Buy and sell", () => OpenMarket(true)),
-                ("A gallon of ale and the rumour of the day (1 penny)", () => { var c = RunSession.Context; if (c.Character.Coins >= 1) { c.Character.Coins -= 1; c.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }),
-                ("Leave", null));
-        }
-
         private void AskForWork()
         {
             var ctx = RunSession.Context; var s = ctx.Current;
@@ -334,8 +331,9 @@ namespace AshesAndCrowns.Game
             vitals.Body.Rest(hours);
             clock.SkipHours(hours);
             survival.RestingAtHome = false;
+            if (vitals.IsDead) return;
             saveManager?.SaveNow(AffairsChoice.None);
-            Dialogue("Morning", vitals.Body.IsDead ? "You do not wake." : $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry."), ("Rise", null));
+            Dialogue("Morning", $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry."), ("Rise", null));
         }
 
         private void EatSomething()
@@ -381,10 +379,10 @@ namespace AshesAndCrowns.Game
 
         private void StartWork(TradeDef def, bool onHolyDay)
         {
-            _busy = true;
+            _busy = true; _openKind = Open.Moment; _options.Clear();
             hud.ShowMoment(def.momentKind, def.id, quality =>
             {
-                _busy = false;
+                _busy = false; _openKind = Open.None;
                 var ctx = RunSession.Context;
                 float weatherPenalty = clock.Weather.Current == WeatherKind.Rain ? 0.2f : clock.Weather.Current == WeatherKind.Snow ? 0.4f : 0f;
                 if (def.id == "blacksmith" || def.id == "brewer" || def.id == "carpenter" || def.id == "miller") weatherPenalty *= 0.25f;
@@ -394,6 +392,7 @@ namespace AshesAndCrowns.Game
                 if (apprentice && ctx.Apprenticeship.WorkedDay(quality)) { ctx.Character.Trade = ctx.Apprenticeship.Trade; ctx.Apprenticeship.Trade = string.Empty; r.Note += " Your master calls you a " + ctx.Character.Trade + " now."; }
                 if (onHolyDay) ctx.Standing.BrawlStarted();
                 clock.SkipHours(10f);
+                if (vitals.IsDead) return;
                 var prod = ctx.Items.Find(r.Product);
                 string made = r.UnitsProduced > 0 ? $"{r.UnitsProduced} x {(prod != null ? prod.name : r.Product)}" : "nothing worth the name";
                 Dialogue("The day's work", $"Ten hours at the {def.id}'s work ({(quality > 0.75f ? "good hands today" : quality > 0.4f ? "steady" : "clumsy")}). You made {made}. {r.Note}{(r.Injured ? " You hurt yourself." : "")}", ("Done", null));
@@ -448,14 +447,14 @@ namespace AshesAndCrowns.Game
         private void OpenMarket(bool buying)
         {
             var ctx = RunSession.Context; int month = clock.Calendar.Month; float standing = ctx.Standing.Value;
-            _busy = true;
+            _busy = true; _openKind = Open.Market; _options.Clear();
             hud.ShowMarket(ctx.Market, ctx.Items, ctx.Inventory, month, standing,
                 onBuy: (id, haggled) =>
                 {
                     int asking = ctx.Market.BuyPrice(id, month, standing);
                     if (haggled)
                     {
-                        var rng = GameBootstrap.Instance.Rng.Fork(91); rng.State ^= (ulong)(clock.Calendar.TotalHours * 7919) ^ (ulong)id.GetHashCode();
+                        var rng = GameBootstrap.Instance.Rng.Fork(91); rng.State ^= (ulong)(clock.Calendar.TotalHours * 7919) ^ (ulong)StableHash(id);
                         bool ok = ctx.Market.Haggle(0.8f, true, ctx.Character.Get(Skill.Haggling), standing, rng);
                         ctx.Character.Use(Skill.Haggling, _balance.character, ok ? 1f : 0.4f);
                         if (ok) { int price = Mathf.Max(1, Mathf.RoundToInt(asking * 0.8f)); if (ctx.Character.Coins >= price && ctx.Market.Find(id).Stock >= 1f) { ctx.Character.Coins -= price; ctx.Market.Find(id).Stock -= 1f; ctx.Inventory.Add(id); return "Grudgingly, for " + price + "."; } return "Agreed, but you cannot pay."; }
@@ -467,27 +466,20 @@ namespace AshesAndCrowns.Game
                 {
                     return ctx.Market.Sell(id, 1, month, standing, ctx.Character, ctx.Inventory, out int earned) ? "Sold for " + earned + "." : "You have none to sell.";
                 },
-                onClose: () => { _busy = false; saveManager?.SaveNow(AffairsChoice.None); });
+                onClose: () => { _busy = false; _openKind = Open.None; saveManager?.SaveNow(AffairsChoice.None); });
         }
 
         // ------------------------------------------------------------------ dialogue
 
+        private static uint StableHash(string s) { uint h = 2166136261; foreach (char c in s) { h ^= c; h *= 16777619; } return h; }
+
         private void Dialogue(string title, string body, params (string label, System.Action act)[] options)
         {
             _options.Clear(); _options.AddRange(options);
-            _busy = true;
+            _busy = true; _openKind = Open.Dialogue;
             hud.ShowDialogue(title, body, options, i => { var act = _options[i].act; CloseDialogue(); act?.Invoke(); });
         }
 
-        private void CloseDialogue() { _busy = false; hud.HideDialogue(); }
-    }
-
-    /// <summary>Marks a village NPC placeholder with who they are.</summary>
-    public sealed class VillagerTag : MonoBehaviour
-    {
-        public int npcId;
-        public string displayName = "Someone";
-        public string trade = string.Empty;
-        public float disposition;
+        private void CloseDialogue() { _busy = false; _openKind = Open.None; _options.Clear(); hud.HideDialogue(); }
     }
 }

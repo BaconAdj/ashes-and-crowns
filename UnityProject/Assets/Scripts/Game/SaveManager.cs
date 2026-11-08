@@ -37,6 +37,7 @@ namespace AshesAndCrowns.Game
         public PlayerAppearance appearance;  // optional
         public Transform spawnPoints;        // optional: children named by location id
         public SettlementSpawner spawner;    // optional (England): builds the run's villages once the context exists
+        public VillageLife villageLife;      // optional: Esc belongs to its dialogues while they are open
 
         private Balance _balance;
         private SaveStore _store;
@@ -117,6 +118,7 @@ namespace AshesAndCrowns.Game
             }
             if (GameBootstrap.Instance.Input.ToggleCursor.WasPressedThisFrame())
             {
+                if (villageLife != null && villageLife.IsBusy && !_quitScreenOpen) return;
                 if (_quitScreenOpen) CloseQuitScreen(); else OpenQuitScreen();
                 return;
             }
@@ -220,7 +222,7 @@ namespace AshesAndCrowns.Game
                 rc.Inventory.Clear(); for (int i = 0; i < s.InventoryIds.Length && i < s.InventoryCounts.Length; i++) rc.Inventory.Add(s.InventoryIds[i], s.InventoryCounts[i]);
                 rc.Standing.Set(s.StandingValue, s.MassesAttended, s.MassesMissed);
                 rc.Apprenticeship.Trade = s.ApprenticeTrade ?? string.Empty; rc.Apprenticeship.MasterNpcId = s.ApprenticeMaster; rc.Apprenticeship.SeasonsRemaining = s.ApprenticeSeasons; rc.Apprenticeship.Competence = s.ApprenticeCompetence;
-                for (int i = 0; i < s.MarketIds.Length && i < s.MarketStocks.Length; i++) { var good = rc.Market.Find(s.MarketIds[i]); if (good != null) good.Stock = s.MarketStocks[i]; }
+                for (int i = 0; i < s.MarketIds.Length && i < s.MarketStocks.Length; i++) { var good = rc.Market.Find(s.MarketIds[i]); if (good == null) { rc.Market.Stock(s.MarketIds[i], 0.5f, 0.5f); good = rc.Market.Find(s.MarketIds[i]); } good.Stock = s.MarketStocks[i]; }
                 rc.Market.RestoreShock((WarShock)s.MarketShock, s.MarketShockStrength);
                 rc.Market.Wealth = s.MarketWealth; rc.Outbreak = s.Outbreak; rc.LastMassDay = s.LastMassDay;
             }
