@@ -48,6 +48,7 @@ namespace AshesAndCrowns.Battle
         [ReadOnly] public NativeArray<byte> SideOf;
         [ReadOnly] public NativeArray<int> UnitOf;
         [ReadOnly] public NativeArray<UnitState> Units;
+        [ReadOnly] public NativeArray<byte> UnitStance;   // UnitStance per unit
         [ReadOnly] public NativeParallelMultiHashMap<int, int> Grid;
         public BattleParams P;
         public float3 PlayerPosition;
@@ -58,6 +59,8 @@ namespace AshesAndCrowns.Battle
         public void Execute(int i)
         {
             if (Alive[i] == 0) { Targets[i] = TargetIds.None; return; }
+            byte myStance = UnitStance[UnitOf[i]];
+            if (myStance == 2 || myStance == 3) { Targets[i] = TargetIds.None; return; } // routing or surrendered men do not fight
             float3 p = Positions[i];
             byte side = SideOf[i];
             UnitState unit = Units[UnitOf[i]];
@@ -85,6 +88,7 @@ namespace AshesAndCrowns.Battle
                 do
                 {
                     if (j == i || SideOf[j] == side) continue;
+                    if (UnitStance[UnitOf[j]] == 3) continue; // prisoners are not targets
                     float d2 = math.distancesq(p, Positions[j]);
                     if (d2 < bestD2 && d2 <= searchR2) { bestD2 = d2; best = j; }
                 } while (Grid.TryGetNextValue(out j, ref it));
@@ -112,6 +116,7 @@ namespace AshesAndCrowns.Battle
         [ReadOnly] public NativeArray<int> Targets;
         [ReadOnly] public NativeArray<UnitState> Units;
         [ReadOnly] public NativeArray<float3> TargetPositionsSnapshot; // positions at frame start (read-only copy)
+        [ReadOnly] public NativeArray<byte> UnitStance;
         public HeightField Ground;
         public BattleParams P;
         public float3 PlayerPosition;
@@ -120,6 +125,8 @@ namespace AshesAndCrowns.Battle
         public void Execute(int i)
         {
             if (Alive[i] == 0) return;
+            byte stance = UnitStance[UnitOf[i]];
+            if (stance == 3) return; // surrendered: stands where he is
             float3 p = Positions[i];
             UnitState unit = Units[UnitOf[i]];
             int target = Targets[i];
@@ -189,6 +196,9 @@ namespace AshesAndCrowns.Battle
         public NativeArray<float> Cooldowns;
         public NativeArray<byte> PlayerAttackFlags;
         public NativeArray<int> KillsThisFrame; // length 1
+        [ReadOnly] public NativeArray<int> UnitOf;
+        [ReadOnly] public NativeArray<byte> UnitStance;
+        public float RunDownKillChance;        // per attack against a routing man
         public BattleParams P;
         public float3 PlayerPosition;
         public float Dt;
@@ -202,6 +212,8 @@ namespace AshesAndCrowns.Battle
             {
                 PlayerAttackFlags[i] = 0;
                 if (Alive[i] == 0) continue;
+                byte myStance = UnitStance[UnitOf[i]];
+                if (myStance == 2 || myStance == 3) { Cooldowns[i] = 0f; continue; }
                 float cd = Cooldowns[i] - Dt;
                 int t = Targets[i];
                 if (t == TargetIds.None) { Cooldowns[i] = math.max(0f, cd); continue; }
@@ -220,6 +232,13 @@ namespace AshesAndCrowns.Battle
 
                 if (Alive[t] == 0) { Cooldowns[i] = 0f; continue; }
                 if (math.distancesq(Positions[i], Positions[t]) > P.AttackRange * P.AttackRange) { Cooldowns[i] = 0f; continue; }
+                if (UnitStance[UnitOf[t]] == 2)
+                {
+                    // Running men are cut down from behind: brutal, effective.
+                    if (rng.NextFloat() < RunDownKillChance) { Health[t] = 0f; Alive[t] = 0; kills++; }
+                    Cooldowns[i] = P.AttackCooldown * 0.5f;
+                    continue;
+                }
                 float dmg = CombatMath.Damage(P.BaseDamage, P.DamageVariance, rng.NextFloat(), P.Armour);
                 float h = Health[t] - dmg;
                 Health[t] = h;

@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -97,5 +97,7 @@ namespace AshesAndCrowns.Save
         public float[] UnitAnchor = new float[0];  // xyz per unit
         public float[] UnitYaw = new float[0];
         public float[] UnitTarget = new float[0];  // xyz per unit
+        public byte[] UnitStance = new byte[0];    // version 6
+        public float[] UnitMorale = new float[0];
     }
 }

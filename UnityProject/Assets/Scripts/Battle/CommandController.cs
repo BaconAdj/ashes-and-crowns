@@ -170,9 +170,10 @@ namespace AshesAndCrowns.Battle
         {
             int n = 0;
             for (int u = 0; u < director.UnitCount; u++) if (director.Units[u].Side == (byte)Side.Player && director.Units[u].Alive != 0) n++;
-            return SelectedCount == 0
-                ? $"{n} units under your command. Left-click a banner to select. Arrows pan, wheel zooms. WASD walks you off the hill."
-                : $"{SelectedCount} selected  |  RMB move  C charge  H hold  1 line  2 wedge  3 square  4 shieldwall";
+            if (SelectedCount == 0) return $"{n} units under your command. Left-click a banner to select. Arrows pan, wheel zooms. WASD walks you off the hill.";
+            string morale = string.Empty;
+            for (int u = 0; u < director.UnitCount && u < _selected.Length; u++) if (_selected[u]) { morale = $"  |  {director.StanceOf(u)}, morale {Mathf.RoundToInt(director.MoraleOf(u) * 100)}%"; break; }
+            return $"{SelectedCount} selected{morale}  |  RMB move  C charge  H hold  1 line  2 wedge  3 square  4 shieldwall";
         }
     }
 }

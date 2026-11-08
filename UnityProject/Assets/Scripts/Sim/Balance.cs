@@ -51,7 +51,7 @@ namespace AshesAndCrowns.Sim
     [Serializable] public sealed class BattleBalance
     {
         public int soldiersPerUnit = 1;          // 1 rendered soldier = N men (escape hatch)
-        public int soldiersPerSide = 50, unitSize = 25;
+        public int soldiersPerSide = 1000, unitSize = 50;
         public float formationSpacing = 1.3f, shieldwallSpacing = 0.9f;
         public float soldierHealth = 30f, soldierArmour = 0.2f, soldierBaseDamage = 11f, soldierDamageVariance = 0.35f;
         public float soldierWalkSpeed = 2f, soldierChargeSpeed = 4.3f, soldierTurnRate = 6f;

@@ -70,8 +70,8 @@
   },
   "battle": {
     "soldiersPerUnit": 1,
-    "soldiersPerSide": 50,
-    "unitSize": 25,
+    "soldiersPerSide": 1000,
+    "unitSize": 50,
     "formationSpacing": 1.3,
     "shieldwallSpacing": 0.9,
     "soldierHealth": 30.0,
@@ -86,7 +86,7 @@
     "engageRangeHold": 6.0,
     "engageRangeAdvance": 14.0,
     "spatialCellSize": 3.0,
-    "enemyAdvanceDelaySeconds": 8.0,
+    "enemyAdvanceDelaySeconds": 15,
     "enemyChargeDistance": 30.0,
     "unitArrivalRadius": 1.5
   },

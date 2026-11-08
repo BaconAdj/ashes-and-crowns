@@ -138,3 +138,15 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 6 summary (what exists, what is stubbed)
 - Built: directional melee with parry, block, dodge, stamina and armour by region; NPC duellists; four encounter kinds; yield and mercy; weapon skill growth per kill; HUD fight line. 7 new tests (114 under .NET).
 - Stubbed: animations and weapon colliders, duels of honour by challenge, assassinations, mounted combat (no dodge in the saddle, no lance), ambush terrain and bandit camps, loot beyond coins.
+
+## 2026-11-08 — Phase 7 battle engine at scale
+- Default armies are now 1,000 a side in 20 units of 50 (`battle.soldiersPerSide`, `battle.unitSize`); `soldiersPerUnit` stays the escape hatch. The jobs and the spatial hash were built for this; the rendering is one instanced draw per 1,023 soldiers.
+- Morale runs four times a second per unit on the main thread (40 units: trivial). Perception is unit-to-unit: enemy centroids within 40 m are classed front, flank or rear by the unit's facing; flanked = anything on a flank or behind; surrounded = front and rear both occupied. Commander presence applies to the player's side when commanding within range, or fighting personally anywhere.
+- Routing units take a flee point away from the nearest enemy and ignore orders; soldiers in routing or surrendered units neither target nor strike; pursuers who reach a running man kill him with a per-attack chance (run-down). Surrendered units stand still and are not targets: prisoners. Routers rally to shaken when left alone.
+- The battle ends when one side has no steady or shaken unit left. The report names the dead among the sergeants and veterans (`UnitRoster`), counts the fled and the taken, and shows on the chronicle overlay.
+- Save format v6 adds unit stance and morale to the battle snapshot.
+- Not measured here: fps. The PlayMode scale test logs the mean frame time for 2,000 soldiers; the user's machine supplies the number.
+
+## Phase 7 summary (what exists, what is stubbed)
+- Built: morale, rout, rally, surrender, run-down, prisoners, battle end and report with named dead, commander presence, 1,000-a-side default, scale smoke test, stance in the command summary and the save.
+- Stubbed: vertex-animation textures (capsules still), cavalry as a unit type (run-down is done by whoever reaches the router), flow fields (formation steering only), LOD meshes, profiler numbers (the user runs the scale test and reads the log), ransom values for prisoners (Phase 10).

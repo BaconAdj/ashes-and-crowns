@@ -35,6 +35,9 @@ With no save on disk the England scene opens on character creation: name, sex, o
 ## The peasant day
 Dawn bells wake you. At the bench behind your hut, E works the day: a short hands-on moment sets the quality, ten hours pass, goods land in your pack. The alehouse buys and sells at prices that move with the season, stock and war; haggling is a skill. Sunday mass between Terce and Sext is seen by the village; standing opens doors and lowers prices. Wounds must be bound at home or they turn bad. Eat, or starve.
 
+## Battles
+Units have morale. Losses, being flanked or surrounded, fatigue, rain and snow, and friends running all erode it; a commander on the hill or in the line, and enemies seen running, restore it. Below a threshold a unit is shaken; lower still it routs, flees the nearest enemy and hears no orders. Men who catch runners cut them down. A shaken unit that is surrounded surrenders and becomes prisoners. Battles end when one side has nothing steady left; the report names the dead the sergeants knew.
+
 ## Fighting
 Every blow has a line: high, left, right or low, read from how the mouse moves as you press. Guard the same line to block; a guard raised just as the blow lands parries and staggers the attacker; a shield covers both sides. Dodge costs stamina and buys a quarter second. Mail and helm turn most of a sword; a bare head does not. Men who are losing may yield. Killing them then is murder in the eyes of the village and the Church.
 

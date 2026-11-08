@@ -187,6 +187,17 @@ namespace AshesAndCrowns.UI
 
         public void HideMap() { if (_mapOverlay != null) _mapOverlay.style.display = DisplayStyle.None; }
 
+        /// <summary>The field after the battle: who broke, who died, and the names. Uses the chronicle overlay; any key closes it.</summary>
+        public void ShowBattleReport(BattleReport r)
+        {
+            var lines = new List<string>(8) { r.Summary() };
+            if (r.NamedDead.Count > 0) { lines.Add("Among the dead:"); int n = 0; foreach (string name in r.NamedDead) { if (n++ >= 12) { lines.Add("...and others whose names the sergeants knew."); break; } lines.Add(name); } }
+            lines.Add("(press any key)");
+            ShowChronicle(r.PlayerWon ? "The field is yours" : r.Draw ? "The field" : "The field is lost", lines);
+            _reportOpen = true;
+        }
+        private bool _reportOpen;
+
         public void SetPrompt(string text) { if (_prompt != null && _prompt.text != text) _prompt.text = text; }
         public void SetHunger(float value01) { if (_hungerFill != null) _hungerFill.style.width = new Length(Mathf.Clamp01(value01) * 100f, LengthUnit.Percent); }
         public void SetStandingLine(string text) { if (_standing != null) _standing.text = text; }
@@ -435,6 +446,7 @@ namespace AshesAndCrowns.UI
             if (_fpsAccum > 0f) _fpsValue = _fpsFrames / _fpsAccum; _fpsAccum = 0f; _fpsFrames = 0;
 
             if (_bellToast.style.display == DisplayStyle.Flex && Time.unscaledTime > _bellToastUntil) _bellToast.style.display = DisplayStyle.None;
+            if (_reportOpen) { var kb = UnityEngine.InputSystem.Keyboard.current; if (kb != null && kb.anyKey.wasPressedThisFrame) { _reportOpen = false; HideChronicle(); } }
             if (_director != null && _director.IsReady)
             {
                 _fps.text = $"{_fpsValue:F0} fps   {_director.PlayerAlive + _director.EnemyAlive} soldiers";

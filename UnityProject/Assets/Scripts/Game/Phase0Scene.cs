@@ -37,7 +37,8 @@ namespace AshesAndCrowns.Game
             var playerCentre = new Vector3(field.playerArmyCentre.x, 0f, field.playerArmyCentre.z);
             var enemyCentre = new Vector3(field.enemyArmyCentre.x, 0f, field.enemyArmyCentre.z);
             director.playerCharacter = player.transform;
-            director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre);
+            director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames());
+            director.BattleEnded += OnBattleEnded;
             banners.Build();
             command.Init(balance);
 
@@ -53,6 +54,11 @@ namespace AshesAndCrowns.Game
             hud.Init(balance, vitals, melee, director, command);
             modes.Init(balance, boot.Input);
             if (perf != null) perf.director = director;
+        }
+
+        private void OnBattleEnded(Sim.BattleReport report)
+        {
+            hud.ShowBattleReport(report);
         }
 
         private void Place(Transform t, float x, float z, float lift)

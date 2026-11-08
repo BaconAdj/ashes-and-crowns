@@ -82,7 +82,7 @@ namespace AshesAndCrowns.Save
             w.Write(s.Stamina);
             w.Write(s.HoursSurvived); w.Write(s.Kills); w.Write(s.MenLost); w.Write(s.Battles); w.Write(s.PeakWealth);
             w.Write(s.Battle != null);
-            if (s.Battle != null) WriteBattle(w, s.Battle);
+            if (s.Battle != null) WriteBattle(w, s.Battle, version);
             if (version >= 2)
             {
                 w.Write(s.HasCharacter && s.Character != null);
@@ -189,7 +189,7 @@ namespace AshesAndCrowns.Save
             s.Body = b;
             s.Stamina = r.ReadSingle();
             s.HoursSurvived = r.ReadDouble(); s.Kills = r.ReadInt32(); s.MenLost = r.ReadInt32(); s.Battles = r.ReadInt32(); s.PeakWealth = r.ReadInt32();
-            if (r.ReadBoolean()) s.Battle = ReadBattle(r);
+            if (r.ReadBoolean()) s.Battle = ReadBattle(r, version);
             if (version >= 2)
             {
                 s.HasCharacter = r.ReadBoolean();
@@ -243,7 +243,7 @@ namespace AshesAndCrowns.Save
             return s;
         }
 
-        private static void WriteBattle(BinaryWriter w, BattleSnapshot b)
+        private static void WriteBattle(BinaryWriter w, BattleSnapshot b, int version)
         {
             w.Write(b.SoldierCount); w.Write(b.UnitCount); w.Write(b.PlayerSoldierEnd); w.Write(b.Elapsed); w.Write(b.EnemyThinkTimer); w.Write(b.Started); w.Write(b.PlayerCharacterAlive);
             Floats(w, b.Positions); Floats(w, b.Yaws); Floats(w, b.Health); Floats(w, b.Cooldowns);
@@ -251,9 +251,10 @@ namespace AshesAndCrowns.Save
             Bytes(w, b.UnitSide); Bytes(w, b.UnitFormation); Bytes(w, b.UnitOrder); Bytes(w, b.UnitAlive);
             Ints(w, b.UnitStart); Ints(w, b.UnitCount_); Ints(w, b.UnitAliveCount);
             Floats(w, b.UnitAnchor); Floats(w, b.UnitYaw); Floats(w, b.UnitTarget);
+            if (version >= 6) { Bytes(w, b.UnitStance); Floats(w, b.UnitMorale); }
         }
 
-        private static BattleSnapshot ReadBattle(BinaryReader r)
+        private static BattleSnapshot ReadBattle(BinaryReader r, int version)
         {
             var b = new BattleSnapshot
             {
@@ -266,6 +267,7 @@ namespace AshesAndCrowns.Save
             b.UnitSide = Bytes(r); b.UnitFormation = Bytes(r); b.UnitOrder = Bytes(r); b.UnitAlive = Bytes(r);
             b.UnitStart = Ints(r); b.UnitCount_ = Ints(r); b.UnitAliveCount = Ints(r);
             b.UnitAnchor = Floats(r); b.UnitYaw = Floats(r); b.UnitTarget = Floats(r);
+            if (version >= 6) { b.UnitStance = Bytes(r); b.UnitMorale = Floats(r); }
             return b;
         }
 

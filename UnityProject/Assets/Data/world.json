@@ -141,11 +141,11 @@
     },
     "playerArmyCentre": {
       "x": 200,
-      "z": 150
+      "z": 120
     },
     "enemyArmyCentre": {
       "x": 200,
-      "z": 262
+      "z": 290
     },
     "playerSpawn": {
       "x": 148,

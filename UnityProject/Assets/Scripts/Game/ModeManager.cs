@@ -62,6 +62,7 @@ namespace AshesAndCrowns.Game
             _wasInVantage = inVantage;
 
             hud.SetVantageDistance(vantage != null ? Vector3.Distance(body, vantage.position) - _balance.command.vantageRadius : 0f);
+            if (director != null) director.SetCommander(body, _mode == GameMode.Command, _mode != GameMode.Command && director.CountWithin(body, _balance.melee.enemyEngagePlayerRange, Side.Enemy) > 0);
         }
 
         private void SetMode(GameMode mode)
