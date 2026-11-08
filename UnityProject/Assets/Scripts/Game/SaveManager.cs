@@ -28,6 +28,7 @@ namespace AshesAndCrowns.Game
         public PlayerVitals vitals;
         public MeleeController melee;        // optional
         public BattleDirector director;      // optional
+        public GruntMode grunt;              // optional (battlefield)
         public HudController hud;
         public Transform home;               // where "sleep at home" is possible; optional
         public ModeManager modes;            // optional (battlefield)
@@ -103,6 +104,8 @@ namespace AshesAndCrowns.Game
             {
                 // Came from another scene in this process (battle and back): keep the run, place the body.
                 if (appearance != null) appearance.Apply(RunSession.Context.Character);
+                if (clock != null && clock.IsReady && RunSession.CarriedTotalHours >= 0) clock.Resume(RunSession.CarriedTotalHours, RunSession.CarriedWeather, RunSession.CarriedWeatherRng);
+                if (RunSession.CarriedBody != null && vitals != null && vitals.Body != null) { vitals.Body.Import(RunSession.CarriedBody); RunSession.CarriedBody = null; }
                 if (spawner != null && RunSession.Context.Settlements.Count > 0) spawner.Build(RunSession.Context.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
                 Transform back = FindSpawn(RunSession.Context.HomeSettlementId);
                 if (back != null && spawnPoints != null) PlaceBody(back.position, back.rotation);
@@ -268,6 +271,7 @@ namespace AshesAndCrowns.Game
             }
             _lastMounted = horse.Mounted;
             if (director != null && director.IsReady && s.Battle != null) director.ImportSnapshot(s.Battle);
+            if (director != null && grunt != null && !grunt.enabled && rc.Service.Active && rc.Service.Role != ServiceRole.Commander) { grunt.enabled = true; director.AiCommandsPlayerSide = true; grunt.Init(_balance, placeBody: false); }
             if (modes != null) modes.RefreshAfterResume();
             if (englandScene != null) englandScene.RefreshAfterResume();
 
@@ -461,7 +465,7 @@ namespace AshesAndCrowns.Game
             if (!gone) Debug.LogError("[save] could not delete the save after death");
             double days = (clock != null && clock.IsReady ? clock.Calendar.TotalHours : _hoursSurvivedAtLoad) / 24.0;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
-            hud.ShowDeath(vitals.CauseOfDeath ?? "unknown", days, melee != null ? melee.Kills : 0, director != null ? director.PlayerLosses : 0, null, neverWoke: false);
+            hud.ShowDeath(vitals.CauseOfDeath ?? "unknown", days, melee != null ? melee.Kills : 0, director != null ? director.PlayerLosses : 0, RunSession.ReturnChronicle, neverWoke: false);
         }
 
         private void BeginAgain()

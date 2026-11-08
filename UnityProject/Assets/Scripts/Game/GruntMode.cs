@@ -33,7 +33,9 @@ namespace AshesAndCrowns.Game
         private DeterministicRng _rng;
         private readonly List<string> _chronicle = new List<string>(8);
 
-        public void Init(Balance balance)
+        private int _companySize = 60, _lastInfractionToast;
+
+        public void Init(Balance balance, bool placeBody = true)
         {
             _balance = balance;
             _rng = GameBootstrap.Instance.Rng.Fork(131);
@@ -41,11 +43,15 @@ namespace AshesAndCrowns.Game
             // Your unit: the first of your side; your slot: the last man of the front rank.
             unitIndex = 0; slotIndex = Mathf.Min(director.Units[0].SoldierCount - 1, FormationMath.LineRankWidth - 1);
             if (modes != null) { modes.commandAllowed = false; }
+            if (RunSession.PendingBattle != null) _companySize = RunSession.PendingBattle.CompanySize;
             Vector3 slot = director.SlotWorldPosition(unitIndex, slotIndex);
-            var cc = player.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
-            player.transform.position = slot + Vector3.up * 0.2f; player.transform.rotation = Quaternion.Euler(0f, director.Units[unitIndex].Yaw * Mathf.Rad2Deg, 0f);
-            if (cc != null) cc.enabled = true;
-            if (horse != null) horse.transform.position = slot + new Vector3(-30f, 0f, -20f);
+            if (placeBody)
+            {
+                var cc = player.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
+                player.transform.position = slot + Vector3.up * 0.2f; player.transform.rotation = Quaternion.Euler(0f, director.Units[unitIndex].Yaw * Mathf.Rad2Deg, 0f);
+                if (cc != null) cc.enabled = true;
+                if (horse != null) horse.transform.position = slot + new Vector3(-30f, 0f, -20f);
+            }
             _ring = new GameObject("SlotRing").AddComponent<LineRenderer>();
             _ring.loop = true; _ring.positionCount = 24; _ring.startWidth = _ring.endWidth = 0.12f; _ring.material = ringMaterial; _ring.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             melee.Swung += OnSwung;
@@ -77,7 +83,8 @@ namespace AshesAndCrowns.Game
             float dist = Vector2.Distance(new Vector2(body.x, body.z), new Vector2(slot.x, slot.z));
             bool contact = director.UnitInContact(unitIndex);
             float added = ServiceRules.TickDiscipline(ctx.Service, dist, stance, contact, dt, _balance.service);
-            if (added > 0f && ctx.Service.Infractions > _balance.service.floggingAbove && Mathf.FloorToInt(ctx.Service.Infractions) % 10 == 0) hud.Toast("The sergeant has seen you out of the line.");
+            int tens = Mathf.FloorToInt(ctx.Service.Infractions) / 10;
+            if (added > 0f && ctx.Service.Infractions > _balance.service.floggingAbove && tens != _lastInfractionToast) { _lastInfractionToast = tens; hud.Toast("The sergeant has seen you out of the line."); }
             if (contact && dist <= _balance.service.formationSlack && stance <= UnitStance.Shaken) { _contactInSlotSeconds += dt; if (!_lineCredited && _contactInSlotSeconds >= 30f) { _lineCredited = true; ServiceRules.HeldTheLine(ctx.Service, _balance.service); hud.Toast("You held the line. The sergeant saw."); } }
             if (stance == UnitStance.Routing && director.CountWithin(body, 8f, Side.Enemy) > 0) { _standingAloneSeconds += dt; if (!_stoodCredited && _standingAloneSeconds >= 8f) { _stoodCredited = true; ServiceRules.StoodWhileOthersRan(ctx.Service, _balance.service); hud.Toast("Your unit ran. You did not. Someone will remember."); } }
             hud.SetVantageDistance(0f);
@@ -102,7 +109,7 @@ namespace AshesAndCrowns.Game
             bool won = report.PlayerWon;
             if (won)
             {
-                int loot = ServiceRules.LootShare(report.EnemyDead, RunSession.PendingBattle != null ? RunSession.PendingBattle.CompanySize : 60, b, _rng);
+                int loot = ServiceRules.LootShare(report.EnemyDead, _companySize, b, _rng);
                 ctx.Character.Coins += loot; _chronicle.Add($"Loot divided by the fire: {loot} pennies to you.");
                 ctx.Reputation.Record(sv.Side == Allegiance.Stephen ? Deed.FoughtForStephen : Deed.FoughtForMatilda);
             }
@@ -126,7 +133,7 @@ namespace AshesAndCrowns.Game
             }
             foreach (string n in report.NamedDead) _chronicle.Add(n);
             if (sv.Renown > 0) _chronicle.Add($"Renown: {sv.Renown}.");
-            if (vitals.IsDead) { vitals.NotifyDeadFromBody(); return; }
+            if (vitals.IsDead) { RunSession.ReturnChronicle = new List<string>(_chronicle); vitals.NotifyDeadFromBody(); return; }
             hud.ShowChronicle(won ? "The field is yours" : "The field is lost", _chronicle);
             hud.SetOrderBanner(string.Empty, "Press R to march home.");
             RunSession.ReturnChronicle = new List<string>(_chronicle);
@@ -142,6 +149,7 @@ namespace AshesAndCrowns.Game
             {
                 _waitingReturn = false;
                 var ctx = RunSession.Context; if (ctx != null) ctx.Service.InCamp = ctx.Service.Active;
+                if (vitals.Body != null) RunSession.CarriedBody = vitals.Body.Export();
                 SceneManager.LoadScene("Phase1_England");
             }
         }

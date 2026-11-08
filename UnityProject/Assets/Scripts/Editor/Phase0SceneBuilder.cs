@@ -180,7 +180,7 @@ namespace AshesAndCrowns.EditorTools
             driver.hud = hud; driver.sun = sun; driver.perf = perf;
             var grunt = sceneGo.AddComponent<GruntMode>();
             grunt.director = director; grunt.modes = modes; grunt.player = pc; grunt.horse = horse; grunt.vitals = vitals; grunt.melee = melee; grunt.hud = hud; grunt.ringMaterial = ring; grunt.enabled = false;
-            driver.grunt = grunt;
+            driver.grunt = grunt; save.grunt = grunt;
 
             // Initial placement so the scene view is not empty before play.
             playerGo.transform.position = new Vector3(field.playerSpawn.x, terrain.SampleHeight(new Vector3(field.playerSpawn.x, 0f, field.playerSpawn.z)) + 0.2f, field.playerSpawn.z);

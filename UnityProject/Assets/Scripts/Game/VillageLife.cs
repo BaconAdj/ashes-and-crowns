@@ -359,7 +359,15 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             RunSession.PendingBattle = new BattleLaunch { AsGrunt = true, Side = ctx.Service.Side, CompanyName = ctx.Service.CompanyName, CompanySize = 60 };
             saveManager?.SaveNow(AffairsChoice.None);
+            CarryAcrossScenes();
             UnityEngine.SceneManagement.SceneManager.LoadScene("Phase0_Battlefield");
+        }
+
+        /// <summary>Stash what the next scene cannot read from the save: the clock and the body.</summary>
+        public void CarryAcrossScenes()
+        {
+            if (clock != null && clock.IsReady) { RunSession.CarriedTotalHours = clock.Calendar.TotalHours; RunSession.CarriedWeather = clock.Weather.Export(); RunSession.CarriedWeatherRng = clock.Weather.RngState; }
+            if (vitals != null && vitals.Body != null) RunSession.CarriedBody = vitals.Body.Export();
         }
 
         /// <summary>Called by the levy event: armed men at the door.</summary>

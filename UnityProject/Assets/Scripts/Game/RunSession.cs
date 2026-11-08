@@ -17,11 +17,15 @@ namespace AshesAndCrowns.Game
         public static BattleLaunch PendingBattle;
         /// <summary>Set by the battlefield when the player returns; the England scene shows it once.</summary>
         public static List<string> ReturnChronicle;
+        /// <summary>Clock and body carried across a scene load inside one process (England to battlefield and back).</summary>
+        public static double CarriedTotalHours = -1;
+        public static WeatherSnapshot CarriedWeather = default; public static ulong CarriedWeatherRng;
+        public static BodySnapshot CarriedBody;
         /// <summary>The living run: character, family, baronage. Null until a character exists.</summary>
         public static RunContext Context;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; PendingBattle = null; ReturnChronicle = null; }
+        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; PendingBattle = null; ReturnChronicle = null; CarriedTotalHours = -1; CarriedWeather = default; CarriedBody = null; }
     }
 
     public sealed class BattleLaunch
