@@ -17,6 +17,11 @@ namespace AshesAndCrowns.Sim
         public float windClear = 0.2f, windOvercast = 0.4f, windRain = 0.7f, windFog = 0.05f, windSnow = 0.5f;
     }
 
+    public struct WeatherSnapshot
+    {
+        public byte Kind; public float UntilChange, Precipitation, Fog, Wind, Cloud;
+    }
+
     /// <summary>
     /// Spell-based weather: every changeIntervalHours a new spell is drawn from the month's table.
     /// Precipitation and fog blend smoothly toward the spell's targets so the renderer never pops.
@@ -39,6 +44,15 @@ namespace AshesAndCrowns.Sim
             _rng = rng ?? throw new ArgumentNullException(nameof(rng));
             _untilChange = balance.changeIntervalHours;
             FogDensityFactor = balance.fogDensityOvercast; Wind = balance.windOvercast; CloudCover = 0.8f;
+        }
+
+        public ulong RngState { get => _rng.State; set => _rng.State = value; }
+
+        public WeatherSnapshot Export() => new WeatherSnapshot { Kind = (byte)Current, UntilChange = _untilChange, Precipitation = Precipitation, Fog = FogDensityFactor, Wind = Wind, Cloud = CloudCover };
+
+        public void Import(WeatherSnapshot s)
+        {
+            Current = (WeatherKind)s.Kind; _untilChange = s.UntilChange; Precipitation = s.Precipitation; FogDensityFactor = s.Fog; Wind = s.Wind; CloudCover = s.Cloud;
         }
 
         public void AdvanceHours(float hours, int month)

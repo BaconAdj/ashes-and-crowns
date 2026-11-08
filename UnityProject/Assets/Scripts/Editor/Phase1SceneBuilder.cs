@@ -78,6 +78,11 @@ namespace AshesAndCrowns.EditorTools
             driver.rainMaterial = rainMat; driver.snowMaterial = snowMat; driver.player = pc; driver.horse = horse; driver.vitals = vitals;
             driver.thirdPersonCamera = tpc; driver.hud = hud; driver.perf = perf; driver.spawnPoint = spawn; driver.horseSpawnPoint = horseSpawn;
 
+            var saveGo = new GameObject("SaveManager");
+            var save = saveGo.AddComponent<SaveManager>();
+            save.clock = clock; save.player = pc; save.horse = horse; save.vitals = vitals; save.hud = hud; save.home = vill.Root; save.englandScene = driver;
+            driver.saveManager = save;
+
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();
             Debug.Log($"[Ashes and Crowns] England scene built at {Paths.Phase1Scene}; village '{village.name}' at {centre}");

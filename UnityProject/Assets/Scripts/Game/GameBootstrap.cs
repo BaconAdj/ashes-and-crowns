@@ -16,6 +16,7 @@ namespace AshesAndCrowns.Game
         public WorldData World { get; private set; }
         public DeterministicRng Rng { get; private set; }
         public GameInput Input { get; private set; }
+        public long Seed { get; private set; }
 
         private void Awake()
         {
@@ -23,7 +24,9 @@ namespace AshesAndCrowns.Game
             Instance = this;
             Balance = DataFiles.LoadBalance();
             World = DataFiles.LoadWorld();
-            long seed = seedOverride != 0 ? seedOverride : Balance.simulation.defaultSeed;
+            long seed = RunSession.NextSeed != 0 ? RunSession.NextSeed : (seedOverride != 0 ? seedOverride : Balance.simulation.defaultSeed);
+            RunSession.NextSeed = 0;
+            Seed = seed;
             Rng = new DeterministicRng((ulong)seed);
             Input = new GameInput();
             Debug.Log($"[Ashes and Crowns] run seed {seed}");

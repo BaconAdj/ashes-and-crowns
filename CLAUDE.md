@@ -29,7 +29,7 @@ docs/                 GDD.md, DECISIONS.md, audio-list.md, sources.md
 ```
 
 ## Assembly dependency direction (never create cycles)
-`Sim` ← `Battle` ← `Combat` ← `UI` ← `Game` ← `Editor`. `Save` and `Trades` reference `Sim` only (for now).
+`Sim` ← `Save` ← `Battle` ← `Combat` ← `UI` ← `Game` ← `Editor`. `Save` (engine-free: RunState, codec, store) references `Sim` only; `Trades` references `Sim` only (for now).
 Sim must never reference UnityEngine. Battle must never reference Game.
 
 ## Coding standards
@@ -40,7 +40,8 @@ Sim must never reference UnityEngine. Battle must never reference Game.
 - Scenes are built by code (`Phase0SceneBuilder`, `Phase1SceneBuilder`, shared helpers in `SceneKit`), never hand-edited; change the builder and rebuild via menu `Ashes and Crowns > Rebuild > ...`. Generated assets live in `Assets/Generated` and `Assets/Art/Palette` and are not committed; textures are written as PNG and imported (a Texture2D saved as .asset renders white).
 - Geography comes from `Assets/Data/england_coast.json` + `world.json` (normalized 0..1 coordinates, x east, z north); `EnglandTerrainBuilder` rasterises it. World scale: 8192 m terrain = 673 km; villages and battles are 1:1.
 - Art direction: desaturated, mud/iron/blood/cold light; URP Lit with `_BaseColor`; everything through the palette materials in `Assets/Art/Palette`. No cartoon colours.
-- Tests first for Sim rules and the save system (TDD). PlayMode tests for the death flow and battle smoke.
+- Tests first for Sim rules and the save system (TDD). PlayMode tests for the death flow and battle smoke. The Save assembly must stay engine-free so `dotnet test Tools/dotnet-tests` covers it.
+- Permadeath invariants: the save is deleted synchronously in `SaveManager.OnDied` before the death screen; nothing may write a save after `_dead` is set; every scene gets a SaveManager wired by its builder.
 - Commit at the end of each milestone. Never force-push or rewrite history. Push only when the user says so.
 
 ## How we work (from the user)
@@ -59,4 +60,5 @@ Sim must never reference UnityEngine. Battle must never reference Game.
 ## Phase status
 - Phase 0 (vertical slice): verified on the user's Mac (Unity 6000.6.8f1, about 100 fps with 100 soldiers).
 - Phase 1 (world foundation): code complete, awaiting the user's first open. Scenes: `Phase1_England.unity` (default) and `Phase0_Battlefield.unity`. Menus under `Ashes and Crowns`.
+- Phase 2 (ironman save, living world): code complete, awaiting the user's first open. Save files: `persistentDataPath/saves/run.{sav,bak,tmp}`. Delete them to start fresh while testing.
 - The editor in use is 6000.6.x; the manifest pins 6000.0-era package versions and Unity upgrades them on open.

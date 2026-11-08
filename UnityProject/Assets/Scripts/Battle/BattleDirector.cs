@@ -1,4 +1,5 @@
 using System;
+using AshesAndCrowns.Save;
 using AshesAndCrowns.Sim;
 using Unity.Collections;
 using Unity.Jobs;
@@ -312,6 +313,64 @@ namespace AshesAndCrowns.Battle
             }
             return best;
         }
+
+        // ------------------------------------------------------------------ persistence
+
+        public BattleSnapshot ExportSnapshot()
+        {
+            if (!_ready) return null;
+            var b = new BattleSnapshot
+            {
+                SoldierCount = SoldierCount, UnitCount = UnitCount, PlayerSoldierEnd = _playerSoldierEnd, Elapsed = _elapsed, EnemyThinkTimer = _enemyThinkTimer,
+                Started = BattleStarted, PlayerCharacterAlive = _playerCharacterAlive,
+                Positions = new float[SoldierCount * 3], Yaws = _yaws.ToArray(), Health = _health.ToArray(), Cooldowns = _cooldowns.ToArray(),
+                Alive = _alive.ToArray(), Side = _side.ToArray(), UnitOf = _unitOf.ToArray(), SlotOf = _slotOf.ToArray(), Targets = _targets.ToArray(),
+                UnitSide = new byte[UnitCount], UnitFormation = new byte[UnitCount], UnitOrder = new byte[UnitCount], UnitAlive = new byte[UnitCount],
+                UnitStart = new int[UnitCount], UnitCount_ = new int[UnitCount], UnitAliveCount = new int[UnitCount],
+                UnitAnchor = new float[UnitCount * 3], UnitYaw = new float[UnitCount], UnitTarget = new float[UnitCount * 3]
+            };
+            for (int i = 0; i < SoldierCount; i++) { float3 p = _positions[i]; b.Positions[i * 3] = p.x; b.Positions[i * 3 + 1] = p.y; b.Positions[i * 3 + 2] = p.z; }
+            for (int u = 0; u < UnitCount; u++)
+            {
+                UnitState s = _units[u];
+                b.UnitSide[u] = s.Side; b.UnitFormation[u] = s.Formation; b.UnitOrder[u] = s.Order; b.UnitAlive[u] = s.Alive;
+                b.UnitStart[u] = s.SoldierStart; b.UnitCount_[u] = s.SoldierCount; b.UnitAliveCount[u] = s.AliveCount;
+                b.UnitAnchor[u * 3] = s.Anchor.x; b.UnitAnchor[u * 3 + 1] = s.Anchor.y; b.UnitAnchor[u * 3 + 2] = s.Anchor.z;
+                b.UnitYaw[u] = s.Yaw; b.UnitTarget[u * 3] = s.Target.x; b.UnitTarget[u * 3 + 1] = s.Target.y; b.UnitTarget[u * 3 + 2] = s.Target.z;
+            }
+            return b;
+        }
+
+        /// <summary>Restore a battle in progress. Call after Setup with the same balance; returns false if the layout no longer matches.</summary>
+        public bool ImportSnapshot(BattleSnapshot b)
+        {
+            if (!_ready || b == null) return false;
+            if (b.SoldierCount != SoldierCount || b.UnitCount != UnitCount || b.Positions.Length != SoldierCount * 3 || b.UnitAnchor.Length != UnitCount * 3)
+            {
+                Debug.LogWarning("[Ashes and Crowns] saved battle does not match the current army layout; starting the battle fresh");
+                return false;
+            }
+            for (int i = 0; i < SoldierCount; i++) _positions[i] = new float3(b.Positions[i * 3], b.Positions[i * 3 + 1], b.Positions[i * 3 + 2]);
+            _yaws.CopyFrom(b.Yaws); _health.CopyFrom(b.Health); _cooldowns.CopyFrom(b.Cooldowns);
+            _alive.CopyFrom(b.Alive); _side.CopyFrom(b.Side); _unitOf.CopyFrom(b.UnitOf); _slotOf.CopyFrom(b.SlotOf); _targets.CopyFrom(b.Targets);
+            for (int u = 0; u < UnitCount; u++)
+            {
+                _units[u] = new UnitState
+                {
+                    Side = b.UnitSide[u], Formation = b.UnitFormation[u], Order = b.UnitOrder[u], Alive = b.UnitAlive[u],
+                    SoldierStart = b.UnitStart[u], SoldierCount = b.UnitCount_[u], AliveCount = b.UnitAliveCount[u],
+                    Anchor = new float3(b.UnitAnchor[u * 3], b.UnitAnchor[u * 3 + 1], b.UnitAnchor[u * 3 + 2]), Yaw = b.UnitYaw[u],
+                    Target = new float3(b.UnitTarget[u * 3], b.UnitTarget[u * 3 + 1], b.UnitTarget[u * 3 + 2])
+                };
+                _centroids[u] = _units[u].Anchor;
+            }
+            _positionsSnapshot.CopyFrom(_positions);
+            _playerSoldierEnd = b.PlayerSoldierEnd; _elapsed = b.Elapsed; _enemyThinkTimer = b.EnemyThinkTimer; BattleStarted = b.Started; _playerCharacterAlive = b.PlayerCharacterAlive;
+            RecountAndDrift(0f);
+            return true;
+        }
+
+        public float Elapsed => _elapsed;
 
         // ------------------------------------------------------------------ command API (used by CommandController)
 

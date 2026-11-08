@@ -6,7 +6,8 @@
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Mathematics",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "AshesAndCrowns.Save"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -18,6 +18,7 @@ Unity 6 (URP). Design document: `docs/GDD.md`.
 | Ride | W/S speed, A/D steer, Shift gallop |
 | Swing / block | Left mouse / hold right mouse |
 | Command (only inside the ring on the hill) | LMB select unit banner, RMB move, C charge, H hold, 1–4 formation, arrows pan, wheel zoom |
+| Leave your affairs (quit) | Esc, then 1 to 3 or click |
 | Begin again after death | R |
 | Debug time (England scene) | `]` skips an hour, `[` skips a day |
 
@@ -27,8 +28,12 @@ Church bells are the clock: Prime, Terce, Sext, None, Vespers and Compline ring 
 ## The command position
 You command your army only while you stand inside the ring at the standard on the hill. Ride down into the fight and you lose the tactical camera and every order you could give; the army keeps its last orders and the sergeants fight on. To command again, ride back up. As a soldier in another's army you never command.
 
-## Soldier service, permadeath, the living world
-These arrive in Phases 2 and 8 (see `docs/GDD.md`): one hidden ironman save per run, deleted on death; the simulation catches up for real time spent away; conscription, diegetic orders and discipline.
+## Permadeath and the living world
+There is one hidden save per run and no way to load, copy or reload it from inside the game. It is written every 30 seconds, on every wound, bell, kill and mount, and when you quit, including in the middle of a battle. When you die the save is deleted before the death screen appears. R begins a new life with a new seed.
+
+Press Esc to leave. You choose how you leave your affairs: sleep at home, keep travelling, or hide; in a battle, stand your ground or run for it. The world keeps moving while the game is closed: one real hour is two game hours, capped at ten game days. Dangers roll against your choice and where you were. On return a short "While you slept..." chronicle tells you what happened. Logging off carelessly in enemy country can mean waking wounded, robbed, or not at all. Quitting mid-fight is resolved as if you stood still.
+
+Soldier service (conscription, diegetic orders, discipline) arrives in Phase 8.
 
 ## Development
 - `CLAUDE.md` holds the working rules. `docs/DECISIONS.md` logs decisions.

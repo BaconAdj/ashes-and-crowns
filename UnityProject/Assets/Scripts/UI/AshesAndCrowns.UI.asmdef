@@ -1,7 +1,19 @@
 {
     "name": "AshesAndCrowns.UI",
     "rootNamespace": "AshesAndCrowns.UI",
-    "references": [ "AshesAndCrowns.Sim", "AshesAndCrowns.Battle", "AshesAndCrowns.Combat" ],
-    "includePlatforms": [], "excludePlatforms": [], "allowUnsafeCode": false, "overrideReferences": false,
-    "precompiledReferences": [], "autoReferenced": true, "defineConstraints": [], "versionDefines": [], "noEngineReferences": false
+    "references": [
+        "AshesAndCrowns.Sim",
+        "AshesAndCrowns.Battle",
+        "AshesAndCrowns.Combat",
+        "AshesAndCrowns.Save"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

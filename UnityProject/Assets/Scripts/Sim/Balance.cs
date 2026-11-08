@@ -98,6 +98,31 @@ namespace AshesAndCrowns.Sim
         public float rainParticlesPerSecond = 2500f, snowParticlesPerSecond = 900f;
     }
 
+    [Serializable] public sealed class SaveBalance
+    {
+        public float autosaveIntervalSeconds = 30f;
+    }
+
+    /// <summary>Dangers while the game is closed, per game day, by how the player left their affairs.</summary>
+    [Serializable] public sealed class AbsenceBalance
+    {
+        public float dangerNone = 0.09f;           // closed the game without choosing: careless
+        public float dangerSleepAtHome = 0.012f;
+        public float dangerPostGuards = 0.006f;
+        public float dangerLeaveSteward = 0.010f;
+        public float dangerFortify = 0.004f;
+        public float dangerKeepTravelling = 0.07f;
+        public float dangerHide = 0.035f;
+        public float hostileCountryMultiplier = 3f;
+        public float woundSeverityMin = 0.12f, woundSeverityMax = 0.55f;
+        public float feverBloodLoss = 0.08f;
+        public float restHealMultiplier = 1f;      // scales WoundBalance.restHealPerHour while resting safely
+        public float battleStandHitsPerEnemy = 1.1f;
+        public float battleFleeHitChance = 0.35f;
+        public float attackShare = 0.45f, feverShare = 0.30f, robberyShare = 0.25f; // what a bad night turns out to be
+        public float hostilityHome = 0f, hostilityCountry = 0.35f, hostilityBattlefield = 0.7f, homeRadiusMetres = 150f;
+    }
+
     [Serializable] public sealed class VillageBalance
     {
         public int hutCount = 9;
@@ -125,6 +150,8 @@ namespace AshesAndCrowns.Sim
         public LookBalance look = new LookBalance();
         public WeatherBalance weather = new WeatherBalance();
         public VillageBalance village = new VillageBalance();
+        public SaveBalance save = new SaveBalance();
+        public AbsenceBalance absence = new AbsenceBalance();
     }
 
     public static class BalanceValidator
@@ -160,6 +187,15 @@ namespace AshesAndCrowns.Sim
             if (b.simulation.realHoursToGameHours <= 0f) errors.Add("simulation.realHoursToGameHours must be positive");
             Positive(errors, b.time.realSecondsPerGameHour, "time.realSecondsPerGameHour");
             if (b.time.startMonth < 1 || b.time.startMonth > 12) errors.Add("time.startMonth must be 1..12");
+            if (b.save == null || b.save.autosaveIntervalSeconds <= 0f) errors.Add("save.autosaveIntervalSeconds must be positive");
+            if (b.absence == null) errors.Add("absence missing");
+            else
+            {
+                Unit(errors, b.absence.dangerNone, "absence.dangerNone"); Unit(errors, b.absence.dangerKeepTravelling, "absence.dangerKeepTravelling");
+                if (b.absence.woundSeverityMax < b.absence.woundSeverityMin) errors.Add("absence.woundSeverityMax must be >= woundSeverityMin");
+                if (Math.Abs(b.absence.attackShare + b.absence.feverShare + b.absence.robberyShare - 1f) > 0.01f) errors.Add("absence shares must sum to 1");
+            }
+            if (b.simulation.maxCatchUpGameDays <= 0) errors.Add("simulation.maxCatchUpGameDays must be positive");
             if (b.weather == null) errors.Add("weather missing");
             else
             {

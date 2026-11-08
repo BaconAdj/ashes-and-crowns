@@ -37,6 +37,14 @@ namespace AshesAndCrowns.Game
             Tick(Time.deltaTime * timeScale);
         }
 
+        /// <summary>Restore from a save: exact calendar, weather spell and weather rng.</summary>
+        public void Resume(double totalHours, WeatherSnapshot weather, ulong weatherRngState)
+        {
+            Calendar = Calendar.FromTotalHours(_balance.time, totalHours);
+            Weather.Import(weather);
+            Weather.RngState = weatherRngState;
+        }
+
         /// <summary>Advance by real seconds. Public so tests can drive it without frames.</summary>
         public void Tick(float realSeconds)
         {

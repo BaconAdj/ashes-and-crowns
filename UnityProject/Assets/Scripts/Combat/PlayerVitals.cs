@@ -32,6 +32,8 @@ namespace AshesAndCrowns.Combat
             Stamina -= amount; return true;
         }
 
+        public void SetStamina(float value) => Stamina = Mathf.Clamp(value, 0f, StaminaMax);
+
         public void DrainStamina(float perSecond) => Stamina = Mathf.Max(0f, Stamina - perSecond * Time.deltaTime);
 
         /// <summary>A blow has landed. Severity 0..1; location rolled from balance weights.</summary>

@@ -265,5 +265,31 @@
       7
     ],
     "alehouseWallHeight": 3.0
+  },
+  "save": {
+    "autosaveIntervalSeconds": 30
+  },
+  "absence": {
+    "dangerNone": 0.09,
+    "dangerSleepAtHome": 0.012,
+    "dangerPostGuards": 0.006,
+    "dangerLeaveSteward": 0.01,
+    "dangerFortify": 0.004,
+    "dangerKeepTravelling": 0.07,
+    "dangerHide": 0.035,
+    "hostileCountryMultiplier": 3,
+    "woundSeverityMin": 0.12,
+    "woundSeverityMax": 0.55,
+    "feverBloodLoss": 0.08,
+    "restHealMultiplier": 1,
+    "battleStandHitsPerEnemy": 1.1,
+    "battleFleeHitChance": 0.35,
+    "attackShare": 0.45,
+    "feverShare": 0.3,
+    "robberyShare": 0.25,
+    "hostilityHome": 0,
+    "hostilityCountry": 0.35,
+    "hostilityBattlefield": 0.7,
+    "homeRadiusMetres": 150
   }
 }

@@ -1,7 +1,24 @@
 {
     "name": "AshesAndCrowns.Game",
     "rootNamespace": "AshesAndCrowns.Game",
-    "references": [ "AshesAndCrowns.Sim", "AshesAndCrowns.Battle", "AshesAndCrowns.Combat", "AshesAndCrowns.UI", "Unity.InputSystem", "Unity.Mathematics", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime" ],
-    "includePlatforms": [], "excludePlatforms": [], "allowUnsafeCode": false, "overrideReferences": false,
-    "precompiledReferences": [], "autoReferenced": true, "defineConstraints": [], "versionDefines": [], "noEngineReferences": false
+    "references": [
+        "AshesAndCrowns.Sim",
+        "AshesAndCrowns.Battle",
+        "AshesAndCrowns.Combat",
+        "AshesAndCrowns.UI",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "AshesAndCrowns.Save"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

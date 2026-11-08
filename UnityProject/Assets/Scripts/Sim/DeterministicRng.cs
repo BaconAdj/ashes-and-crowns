@@ -12,6 +12,9 @@ namespace AshesAndCrowns.Sim
 
         public ulong Seed { get; }
 
+        /// <summary>Raw generator state, for saving and restoring a run exactly.</summary>
+        public ulong State { get => _state; set => _state = value == 0 ? 0x2545F4914F6CDD1DUL : value; }
+
         public DeterministicRng(ulong seed)
         {
             Seed = seed;

@@ -1,0 +1,307 @@
+using System;
+using System.Collections.Generic;
+using AshesAndCrowns.Battle;
+using AshesAndCrowns.Combat;
+using AshesAndCrowns.Save;
+using AshesAndCrowns.Sim;
+using AshesAndCrowns.UI;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace AshesAndCrowns.Game
+{
+    /// <summary>
+    /// The ironman save, one per run, hidden in persistentDataPath. Autosaves on a timer, on significant
+    /// events and on quit (including mid-battle). On launch it resumes exactly, resolves the time the
+    /// game was closed, and shows the chronicle. On death it deletes the save synchronously before the
+    /// death screen appears. Also owns the "leave your affairs" quit screen.
+    /// </summary>
+    [DefaultExecutionOrder(100)]
+    public sealed class SaveManager : MonoBehaviour
+    {
+        public const string SaveFolder = "saves";
+
+        [Header("Wiring")]
+        public WorldClock clock;             // optional
+        public PlayerController player;
+        public HorseController horse;
+        public PlayerVitals vitals;
+        public MeleeController melee;        // optional
+        public BattleDirector director;      // optional
+        public HudController hud;
+        public Transform home;               // where "sleep at home" is possible; optional
+        public ModeManager modes;            // optional (battlefield)
+        public Phase1Scene englandScene;     // optional (England)
+
+        private Balance _balance;
+        private SaveStore _store;
+        private float _nextAutosave;
+        private bool _lastMounted;
+        private bool _dead;
+        private bool _quitScreenOpen;
+        private bool _chronicleOpen;
+        private bool _quitting;
+        private double _hoursSurvivedAtLoad;
+        private int _battles, _peakWealth;
+        private readonly List<string> _lines = new List<string>(8);
+        private readonly List<AffairsChoice> _quitOptions = new List<AffairsChoice>(4);
+
+        public bool IsQuitScreenOpen => _quitScreenOpen || _chronicleOpen;
+        public SaveStore Store => _store;
+
+        /// <summary>Override for tests. Defaults to persistentDataPath/saves.</summary>
+        public static string SaveDirectoryOverride;
+        public static string SaveDirectory => SaveDirectoryOverride ?? System.IO.Path.Combine(Application.persistentDataPath, SaveFolder);
+
+        private void Awake()
+        {
+            _store = new SaveStore(SaveDirectory);
+        }
+
+        private void Start()
+        {
+            _balance = GameBootstrap.Instance.Balance;
+            vitals.Died += OnDied;
+            vitals.Wounded += (_, __) => MarkDirty();
+            if (clock != null) clock.BellRang += (_, __) => MarkDirty();
+            if (director != null) director.PlayerKilledSoldier += _ => MarkDirty();
+            _lastMounted = horse.Mounted;
+            _nextAutosave = Time.unscaledTime + _balance.save.autosaveIntervalSeconds;
+
+            RunState pending = RunSession.PendingResume;
+            RunSession.PendingResume = null;
+            if (pending != null) { Apply(pending, resolveAbsence: true); return; }
+            if (!RunSession.LaunchHandled)
+            {
+                RunSession.LaunchHandled = true;
+                LoadResult r = _store.Load();
+                if (r.Found)
+                {
+                    if (r.Source == LoadSource.Backup) Debug.LogWarning("[save] main file unreadable (" + r.MainError + "); resumed from backup");
+                    if (r.State.SceneId != SceneManager.GetActiveScene().name && Application.CanStreamedLevelBeLoaded(r.State.SceneId))
+                    {
+                        RunSession.PendingResume = r.State;
+                        SceneManager.LoadScene(r.State.SceneId);
+                        return;
+                    }
+                    Apply(r.State, resolveAbsence: true);
+                    return;
+                }
+                if (r.MainError != null && r.MainError != "no main save") Debug.LogWarning("[save] no usable save: " + r.MainError + " / " + r.BackupError);
+            }
+            SaveNow(AffairsChoice.None); // a run exists from its first frame
+        }
+
+        private void Update()
+        {
+            if (_dead)
+            {
+                if (GameBootstrap.Instance.Input.Restart.WasPressedThisFrame()) BeginAgain();
+                return;
+            }
+            if (_chronicleOpen)
+            {
+                var kb = UnityEngine.InputSystem.Keyboard.current; var mouse = UnityEngine.InputSystem.Mouse.current;
+                if ((kb != null && kb.anyKey.wasPressedThisFrame) || (mouse != null && mouse.leftButton.wasPressedThisFrame)) CloseChronicle();
+                return;
+            }
+            if (GameBootstrap.Instance.Input.ToggleCursor.WasPressedThisFrame())
+            {
+                if (_quitScreenOpen) CloseQuitScreen(); else OpenQuitScreen();
+                return;
+            }
+            if (_quitScreenOpen)
+            {
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb != null && _quitOptions.Count > 0)
+                {
+                    if (kb.digit1Key.wasPressedThisFrame && _quitOptions.Count > 0) OnQuitChoice(_quitOptions[0]);
+                    else if (kb.digit2Key.wasPressedThisFrame && _quitOptions.Count > 1) OnQuitChoice(_quitOptions[1]);
+                    else if (kb.digit3Key.wasPressedThisFrame && _quitOptions.Count > 2) OnQuitChoice(_quitOptions[2]);
+                }
+                return;
+            }
+            if (horse.Mounted != _lastMounted) { _lastMounted = horse.Mounted; MarkDirty(); }
+            if (Time.unscaledTime >= _nextAutosave) SaveNow(AffairsChoice.None);
+        }
+
+        private void MarkDirty() { if (!_dead && !_quitting) SaveNow(AffairsChoice.None); }
+
+        // ------------------------------------------------------------------ capture / apply
+
+        public RunState Capture(AffairsChoice affairs)
+        {
+            var boot = GameBootstrap.Instance;
+            var s = new RunState
+            {
+                Seed = boot.Seed, RngState = boot.Rng.State, SceneId = SceneManager.GetActiveScene().name, SavedAtUtcTicks = DateTime.UtcNow.Ticks,
+                Affairs = affairs, Hostility = CurrentHostility(), InBattle = InBattle(), EnemiesNearby = EnemiesNearby(),
+                PlayerName = "A nameless rider", Mounted = horse.Mounted, Body = vitals.Body.Export(), Stamina = vitals.Stamina,
+                Kills = melee != null ? melee.Kills : 0, MenLost = director != null ? director.PlayerLosses : 0, Battles = _battles, PeakWealth = _peakWealth
+            };
+            if (clock != null && clock.IsReady)
+            {
+                s.CalendarTotalHours = clock.Calendar.TotalHours; s.Weather = clock.Weather.Export(); s.WeatherRngState = clock.Weather.RngState;
+                s.HoursSurvived = clock.Calendar.TotalHours;
+            }
+            else s.HoursSurvived = _hoursSurvivedAtLoad + Time.timeSinceLevelLoad / _balance.time.realSecondsPerGameHour;
+            Transform body = horse.Mounted ? horse.transform : player.transform;
+            s.PlayerX = body.position.x; s.PlayerY = body.position.y; s.PlayerZ = body.position.z; s.PlayerYaw = body.eulerAngles.y;
+            s.HorseX = horse.transform.position.x; s.HorseY = horse.transform.position.y; s.HorseZ = horse.transform.position.z; s.HorseYaw = horse.transform.eulerAngles.y;
+            if (director != null && director.IsReady) { s.Battle = director.ExportSnapshot(); if (director.BattleStarted && _battles == 0) { _battles = 1; s.Battles = 1; } }
+            return s;
+        }
+
+        public void Apply(RunState s, bool resolveAbsence)
+        {
+            var boot = GameBootstrap.Instance;
+            boot.Rng.State = s.RngState;
+            _battles = s.Battles; _peakWealth = s.PeakWealth; _hoursSurvivedAtLoad = s.HoursSurvived;
+            if (clock != null && clock.IsReady) clock.Resume(s.CalendarTotalHours, s.Weather, s.WeatherRngState);
+            vitals.Body.Import(s.Body);
+            vitals.SetStamina(s.Stamina);
+            var cc = player.GetComponent<CharacterController>();
+            if (horse.Mounted && !s.Mounted) horse.Dismount(player.transform);
+            horse.transform.SetPositionAndRotation(new Vector3(s.HorseX, s.HorseY, s.HorseZ), Quaternion.Euler(0f, s.HorseYaw, 0f));
+            if (s.Mounted)
+            {
+                if (!horse.Mounted) horse.Mount(player.transform);
+            }
+            else
+            {
+                if (cc != null) cc.enabled = false;
+                player.transform.SetPositionAndRotation(new Vector3(s.PlayerX, s.PlayerY, s.PlayerZ), Quaternion.Euler(0f, s.PlayerYaw, 0f));
+                if (cc != null) cc.enabled = true;
+            }
+            _lastMounted = horse.Mounted;
+            if (director != null && director.IsReady && s.Battle != null) director.ImportSnapshot(s.Battle);
+            if (modes != null) modes.RefreshAfterResume();
+            if (englandScene != null) englandScene.RefreshAfterResume();
+
+            if (resolveAbsence)
+            {
+                double elapsed = (DateTime.UtcNow.Ticks - s.SavedAtUtcTicks) / (double)TimeSpan.TicksPerSecond;
+                var calendar = clock != null && clock.IsReady ? clock.Calendar : new Calendar(_balance.time);
+                var input = new AbsenceInput { ElapsedRealSeconds = elapsed, Choice = s.Affairs, Hostility = s.Hostility, InBattle = s.InBattle, EnemiesNearby = s.EnemiesNearby };
+                AbsenceReport report = AbsenceResolver.Resolve(input, _balance, vitals.Body, calendar, boot.Rng.Fork(99));
+                if (clock != null && clock.IsReady && report.GameHoursElapsed > 0f) clock.Weather.AdvanceHours(report.GameHoursElapsed, clock.Calendar.Month);
+                Debug.Log($"[save] resumed after {elapsed / 3600.0:F1} real hours = {report.GameHoursElapsed:F1} game hours ({s.Affairs}); died={report.Died}");
+                if (report.Died || vitals.Body.IsDead)
+                {
+                    _dead = true;
+                    bool gone = _store.DeleteAll();
+                    if (!gone) Debug.LogError("[save] could not delete the save after death");
+                    Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+                    hud.ShowDeath(vitals.Body.CauseOfDeath ?? report.CauseOfDeath ?? "unknown", s.HoursSurvived / 24.0, s.Kills, s.MenLost, report.Chronicle, neverWoke: true);
+                    return;
+                }
+                _lines.Clear(); _lines.AddRange(report.Chronicle);
+                if (report.CoinsLost > 0) _lines.Add($"You are {report.CoinsLost} pennies poorer.");
+                hud.ShowChronicle("While you slept...", _lines);
+                _chronicleOpen = true;
+                Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            }
+            SaveNow(AffairsChoice.None);
+        }
+
+        // ------------------------------------------------------------------ save / quit / death
+
+        public void SaveNow(AffairsChoice affairs)
+        {
+            if (_dead) return;
+            try { _store.Save(Capture(affairs)); }
+            catch (Exception e) { Debug.LogError("[save] write failed: " + e.Message); }
+            _nextAutosave = Time.unscaledTime + _balance.save.autosaveIntervalSeconds;
+        }
+
+        private void OnDied()
+        {
+            if (_dead) return;
+            _dead = true;
+            _quitScreenOpen = false; hud.HideQuitScreen();
+            bool gone = _store.DeleteAll();           // synchronous, before anything renders
+            if (!gone) Debug.LogError("[save] could not delete the save after death");
+            double days = (clock != null && clock.IsReady ? clock.Calendar.TotalHours : _hoursSurvivedAtLoad) / 24.0;
+            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            hud.ShowDeath(vitals.CauseOfDeath ?? "unknown", days, melee != null ? melee.Kills : 0, director != null ? director.PlayerLosses : 0, null, neverWoke: false);
+        }
+
+        private void BeginAgain()
+        {
+            _store.DeleteAll();
+            RunSession.NextSeed = DateTime.UtcNow.Ticks & 0x7FFFFFFF;
+            RunSession.LaunchHandled = true;
+            SceneManager.LoadScene(0);
+        }
+
+        private void OnApplicationQuit()
+        {
+            if (_dead || _quitting) return;
+            // Closed the window without choosing: careless. Mid-battle counts as standing still.
+            SaveNow(InBattle() ? AffairsChoice.StandInBattle : AffairsChoice.None);
+        }
+
+        private void OnApplicationPause(bool paused) { if (paused && !_dead) SaveNow(AffairsChoice.None); }
+
+        // ------------------------------------------------------------------ quit screen
+
+        private void OpenQuitScreen()
+        {
+            if (_dead) return;
+            _quitScreenOpen = true;
+            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            var options = new List<(string label, AffairsChoice choice)>(6);
+            if (InBattle())
+            {
+                options.Add(("Stand your ground (the fight goes on without you)", AffairsChoice.StandInBattle));
+                options.Add(("Run for it (blows may find your back)", AffairsChoice.FleeBattle));
+            }
+            else
+            {
+                if (IsHome()) options.Add(("Sleep at home", AffairsChoice.SleepAtHome));
+                options.Add(("Keep travelling", AffairsChoice.KeepTravelling));
+                options.Add(("Hide and wait", AffairsChoice.Hide));
+            }
+            _quitOptions.Clear(); foreach (var o in options) _quitOptions.Add(o.choice);
+            hud.ShowQuitScreen("Leave your affairs", options, OnQuitChoice, CloseQuitScreen);
+        }
+
+        private void CloseQuitScreen()
+        {
+            _quitScreenOpen = false;
+            hud.HideQuitScreen();
+            if (modes == null || modes.Mode != GameMode.Command) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+        }
+
+        private void OnQuitChoice(AffairsChoice choice)
+        {
+            _quitting = true;
+            SaveNow(choice);
+            Debug.Log("[save] quit with affairs = " + choice);
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        private void CloseChronicle()
+        {
+            _chronicleOpen = false;
+            hud.HideChronicle();
+            if (modes == null || modes.Mode != GameMode.Command) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+        }
+
+        // ------------------------------------------------------------------ context
+
+        private bool InBattle() => director != null && director.IsReady && director.EnemyAlive > 0 && director.CountWithin(BodyPosition(), _balance.melee.enemyEngagePlayerRange * 2f, Side.Enemy) > 0;
+        private int EnemiesNearby() => director != null && director.IsReady ? director.CountWithin(BodyPosition(), _balance.melee.enemyReach * 2f, Side.Enemy) : 0;
+        private bool IsHome() => home != null && Vector3.Distance(BodyPosition(), home.position) <= _balance.absence.homeRadiusMetres;
+        private float CurrentHostility()
+        {
+            if (director != null) return _balance.absence.hostilityBattlefield;
+            return IsHome() ? _balance.absence.hostilityHome : _balance.absence.hostilityCountry;
+        }
+        private Vector3 BodyPosition() => horse.Mounted ? horse.transform.position : player.transform.position;
+    }
+}

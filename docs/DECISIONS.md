@@ -58,3 +58,17 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Built: England terrain from real coastline + stylised relief, sea plane, three terrain layers by height/slope; day/night with real solar geometry; weather spells with rain and snow particles and fog; church bells as the clock with HUD toast and audio stub; village of a church, alehouse, nine huts and a well on flattened ground; new England scene, menus, build settings; Sim tests (49 total) and a PlayMode clock test.
 - Stubbed: bell audio clips, trees and forests, roads, rivers as visible water (they only carve the ground), other settlements, interiors, NPCs.
 - Not done here: Blender run (scripts are ready), fps measurement of the big terrain.
+
+## 2026-11-08 — Phase 2 save format and ironman rules
+- Binary save (`SaveCodec`): magic `ASHC`, version, length, FNV-1a 64 checksum, then a fixed-order payload. Chosen over JSON so the Save assembly stays engine-free (no JsonUtility), stays small (a 2,000-soldier battle is under 100 KB) and encodes deterministically. The checksum discourages casual editing; it is not anti-cheat.
+- `SaveStore` writes `run.tmp` with write-through and flush, renames the previous `run.sav` to `run.bak`, then renames the temp over `run.sav`. Load prefers main, falls back to backup, and always discards a leftover temp. Delete removes all three synchronously; the death screen is only shown after that returns.
+- Files live in `Application.persistentDataPath/saves/`. One run per machine; no slots.
+- Autosave: every `save.autosaveIntervalSeconds` (30), on wounds, bells, kills, mount changes, on pause, on quit. A run is written on its very first frame so a crash before the first autosave still leaves a run.
+- Scenes are self-contained: each scene has a SaveManager. On launch the first SaveManager loads the save; if it belongs to another scene it hands the state to that scene through `RunSession.PendingResume` and loads it.
+- Leaving your affairs (`AffairsChoice`): peasants get Sleep at home (within `absence.homeRadiusMetres` of the village), Keep travelling, Hide. Mid-battle: Stand or Run. Closing the window without choosing is `None` (careless) and mid-battle counts as standing still. Rank widens this list later.
+- Catch-up (`AbsenceResolver`): elapsed real time × `simulation.realHoursToGameHours`, capped at `maxCatchUpGameDays`. Per game day a danger roll by choice × hostility; outcomes are an attack (wounds), a fever, or a robbery. Resting choices heal. Quitting mid-battle applies blows from the enemies that were within reach. Death during absence deletes the save and shows "You did not wake" with the chronicle.
+- Clock moved backwards or no elapsed time: nothing happens. Very long absences hit the cap and the chronicle says so.
+
+## Phase 2 summary (what exists, what is stubbed)
+- Built: Save assembly (RunState, codec, store) with 15 EditMode tests; AbsenceResolver with 7 tests; snapshots for rng, weather, body; BattleDirector export/import; SaveManager (autosave, resume across scenes, death deletion, quit screen, chronicle, Begin Again with a fresh seed); HUD chronicle and quit overlays; 3 PlayMode tests. 71 tests run under .NET, plus 5 PlayMode in Unity.
+- Stubbed: coins (robbery reports pennies but no wallet exists yet), steward/guards/fortify choices (need rank), named character, peak wealth, titles, "how history diverged" on the death screen.

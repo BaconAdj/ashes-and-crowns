@@ -22,6 +22,7 @@ namespace AshesAndCrowns.Game
         public PerfProbe perf;
         public Transform spawnPoint;
         public Transform horseSpawnPoint;
+        public SaveManager saveManager;
 
         private float _nextClockText;
 
@@ -46,9 +47,20 @@ namespace AshesAndCrowns.Game
             hud.SetMode(GameMode.OnFoot);
         }
 
+        /// <summary>Called by the SaveManager after a resume so camera and HUD match the restored mount state.</summary>
+        public void RefreshAfterResume()
+        {
+            player.enabled = !horse.Mounted;
+            thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
+            thirdPersonCamera.SetRiding(horse.Mounted);
+            hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
+        }
+
         private void Update()
         {
             var input = GameBootstrap.Instance.Input;
+            if (vitals.IsDead) return;
+            if (saveManager != null && saveManager.IsQuitScreenOpen) return;
             if (input.Mount.WasPressedThisFrame())
             {
                 if (horse.Mounted) { horse.Dismount(player.transform); player.enabled = true; }
@@ -57,11 +69,6 @@ namespace AshesAndCrowns.Game
                 thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
                 thirdPersonCamera.SetRiding(horse.Mounted);
                 hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
-            }
-            if (input.ToggleCursor.WasPressedThisFrame())
-            {
-                bool locked = Cursor.lockState == CursorLockMode.Locked;
-                Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = locked;
             }
             // Debug: ] skips an hour, [ skips a day, so day/night and weather can be checked quickly.
             var kb = UnityEngine.InputSystem.Keyboard.current;

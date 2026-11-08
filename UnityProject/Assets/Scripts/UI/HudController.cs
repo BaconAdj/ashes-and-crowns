@@ -1,5 +1,7 @@
 using AshesAndCrowns.Battle;
 using AshesAndCrowns.Combat;
+using System.Collections.Generic;
+using AshesAndCrowns.Save;
 using AshesAndCrowns.Sim;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -24,7 +26,9 @@ namespace AshesAndCrowns.UI
         private BattleDirector _director;
         private CommandController _command;
 
-        private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death;
+        private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death, _chronicle, _quit;
+        private Label _chronicleTitle, _chronicleBody, _quitTitle;
+        private VisualElement _quitButtons;
         private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast;
         private float _bellToastUntil;
         private float _nextTextUpdate;
@@ -81,17 +85,52 @@ namespace AshesAndCrowns.UI
             }
         }
 
-        public void ShowDeath(string cause, float daysSurvived, int kills, int menLost)
+        public void ShowDeath(string cause, double daysSurvived, int kills, int menLost, IReadOnlyList<string> chronicle, bool neverWoke)
         {
             if (_death == null) return;
+            HideChronicle(); HideQuitScreen();
             _death.style.display = DisplayStyle.Flex;
-            _deathText.text =
-                "Here ends the life of a nameless rider.\n\n" +
-                $"Cause of death: {cause}\n" +
-                $"Battles: 1    Men you killed: {kills}    Men lost under your banner: {menLost}\n" +
-                $"Time on the field: {daysSurvived * 24f * 60f:F0} minutes of a single grey day\n\n" +
-                "The war did not notice.\n\n[ R ]  Begin Again";
+            var sb = new System.Text.StringBuilder(512);
+            if (chronicle != null) { foreach (string line in chronicle) sb.Append(line).Append('\n'); sb.Append('\n'); }
+            sb.Append(neverWoke ? "You did not wake.\n\n" : "Here ends the life of a nameless rider.\n\n");
+            sb.Append("Cause of death: ").Append(cause).Append('\n');
+            sb.Append("Days survived: ").Append(daysSurvived.ToString("F1")).Append("    Men you killed: ").Append(kills).Append("    Men lost under your banner: ").Append(menLost).Append("\n\n");
+            sb.Append("The war did not notice. The save is gone.\n\n[ R ]  Begin Again");
+            _deathText.text = sb.ToString();
         }
+
+        public void ShowChronicle(string title, IReadOnlyList<string> lines)
+        {
+            if (_chronicle == null) return;
+            _chronicleTitle.text = title;
+            var sb = new System.Text.StringBuilder(512);
+            foreach (string line in lines) sb.Append(line).Append("\n\n");
+            sb.Append("(press any key)");
+            _chronicleBody.text = sb.ToString();
+            _chronicle.style.display = DisplayStyle.Flex;
+        }
+
+        public void HideChronicle() { if (_chronicle != null) _chronicle.style.display = DisplayStyle.None; }
+
+        public void ShowQuitScreen(string title, IList<(string label, AffairsChoice choice)> options, System.Action<AffairsChoice> onChoose, System.Action onStay)
+        {
+            if (_quit == null) return;
+            _quitTitle.text = title;
+            _quitButtons.Clear();
+            for (int i = 0; i < options.Count; i++)
+            {
+                var (label, choice) = options[i];
+                var b = MakeButton($"{i + 1}.  {label}");
+                b.clicked += () => onChoose(choice);
+                _quitButtons.Add(b);
+            }
+            var stay = MakeButton("Stay (Esc)");
+            stay.clicked += () => onStay();
+            _quitButtons.Add(stay);
+            _quit.style.display = DisplayStyle.Flex;
+        }
+
+        public void HideQuitScreen() { if (_quit != null) _quit.style.display = DisplayStyle.None; }
 
         private void Build()
         {
@@ -153,6 +192,22 @@ namespace AshesAndCrowns.UI
             _death.Add(_deathText);
             _root.Add(_death);
 
+            // Chronicle ("While you slept...")
+            _chronicle = MakeOverlay(0.85f);
+            _chronicleTitle = MakeLabel(string.Empty, 24, Parchment); _chronicleTitle.style.unityFontStyleAndWeight = FontStyle.Bold; _chronicleTitle.style.marginBottom = 18;
+            _chronicleBody = MakeLabel(string.Empty, 17, Parchment); _chronicleBody.style.whiteSpace = WhiteSpace.Normal; _chronicleBody.style.maxWidth = 760; _chronicleBody.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _chronicle.Add(_chronicleTitle); _chronicle.Add(_chronicleBody);
+            _root.Add(_chronicle);
+
+            // Quit screen ("Leave your affairs")
+            _quit = MakeOverlay(0.8f);
+            _quit.pickingMode = PickingMode.Position;
+            _quitTitle = MakeLabel(string.Empty, 24, Parchment); _quitTitle.style.unityFontStyleAndWeight = FontStyle.Bold; _quitTitle.style.marginBottom = 6;
+            var quitHint = MakeLabel("The world keeps moving while you are gone. How do you leave things?", 14, new Color(0.7f, 0.66f, 0.58f)); quitHint.style.marginBottom = 18;
+            _quitButtons = new VisualElement(); _quitButtons.style.width = 560;
+            _quit.Add(_quitTitle); _quit.Add(quitHint); _quit.Add(_quitButtons);
+            _root.Add(_quit);
+
             ApplyModeText();
             _vitals.Wounded += (_, severity) => _hitFlash.style.backgroundColor = new Color(0.5f, 0f, 0f, Mathf.Clamp01(0.25f + severity * 2f));
         }
@@ -205,6 +260,27 @@ namespace AshesAndCrowns.UI
             }
             if (wounds.Count > 4) sb.Append("...and ").Append(wounds.Count - 4).Append(" more");
             return sb.ToString();
+        }
+
+        private static VisualElement MakeOverlay(float alpha)
+        {
+            var o = new VisualElement { pickingMode = PickingMode.Ignore };
+            o.style.position = Position.Absolute; o.style.left = 0; o.style.right = 0; o.style.top = 0; o.style.bottom = 0;
+            o.style.backgroundColor = new Color(0.02f, 0.02f, 0.02f, alpha);
+            o.style.alignItems = Align.Center; o.style.justifyContent = Justify.Center;
+            o.style.display = DisplayStyle.None;
+            return o;
+        }
+
+        private static Button MakeButton(string text)
+        {
+            var b = new Button { text = text };
+            b.style.fontSize = 16; b.style.color = Parchment; b.style.backgroundColor = new Color(0.12f, 0.11f, 0.10f, 0.95f);
+            b.style.borderBottomColor = b.style.borderTopColor = b.style.borderLeftColor = b.style.borderRightColor = new Color(0.35f, 0.32f, 0.27f);
+            b.style.borderBottomWidth = b.style.borderTopWidth = b.style.borderLeftWidth = b.style.borderRightWidth = 1;
+            b.style.paddingTop = b.style.paddingBottom = 10; b.style.paddingLeft = b.style.paddingRight = 16;
+            b.style.marginBottom = 8; b.style.unityTextAlign = TextAnchor.MiddleLeft;
+            return b;
         }
 
         private static VisualElement MakePanel(float? top, float? left, float? right, float? bottom, float width)

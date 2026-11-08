@@ -10,7 +10,8 @@
         "AshesAndCrowns.Game",
         "AshesAndCrowns.UI",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "AshesAndCrowns.Save"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

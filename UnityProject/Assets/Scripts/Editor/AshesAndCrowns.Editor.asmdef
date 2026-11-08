@@ -2,11 +2,28 @@
     "name": "AshesAndCrowns.Editor",
     "rootNamespace": "AshesAndCrowns.EditorTools",
     "references": [
-        "AshesAndCrowns.Sim", "AshesAndCrowns.Battle", "AshesAndCrowns.Combat", "AshesAndCrowns.Game", "AshesAndCrowns.UI",
-        "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Universal.Editor",
-        "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Core.Editor",
-        "Unity.InputSystem", "Unity.Mathematics"
+        "AshesAndCrowns.Sim",
+        "AshesAndCrowns.Battle",
+        "AshesAndCrowns.Combat",
+        "AshesAndCrowns.Game",
+        "AshesAndCrowns.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Core.Editor",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "AshesAndCrowns.Save"
     ],
-    "includePlatforms": [ "Editor" ], "excludePlatforms": [], "allowUnsafeCode": false, "overrideReferences": false,
-    "precompiledReferences": [], "autoReferenced": true, "defineConstraints": [], "versionDefines": [], "noEngineReferences": false
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

@@ -3,7 +3,6 @@ using AshesAndCrowns.Combat;
 using AshesAndCrowns.Sim;
 using AshesAndCrowns.UI;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace AshesAndCrowns.Game
 {
@@ -25,6 +24,7 @@ namespace AshesAndCrowns.Game
         public BattleDirector director;
         public Transform vantage;
         public HudController hud;
+        public SaveManager saveManager;
 
         private Balance _balance;
         private GameInput _input;
@@ -45,17 +45,8 @@ namespace AshesAndCrowns.Game
         private void Update()
         {
             if (_balance == null) return;
-            if (_mode == GameMode.Dead)
-            {
-                if (_input.Restart.WasPressedThisFrame()) SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-                return;
-            }
-
-            if (_input.ToggleCursor.WasPressedThisFrame() && _mode != GameMode.Command)
-            {
-                bool locked = Cursor.lockState == CursorLockMode.Locked;
-                Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = locked;
-            }
+            if (_mode == GameMode.Dead) return;
+            if (saveManager != null && saveManager.IsQuitScreenOpen) return;
 
             // Mount / dismount
             bool mountChanged = false;
@@ -97,9 +88,10 @@ namespace AshesAndCrowns.Game
             if (horse.Mounted) horse.Dismount(player.transform);
             SetMode(GameMode.Dead);
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
-            float days = (Time.time - _startTime) / 60f; // placeholder until the calendar arrives in Phase 1
-            hud.ShowDeath(vitals.CauseOfDeath ?? "unknown", days, melee.Kills, director.PlayerLosses);
-            // Phase 2: delete the save synchronously here, before the death screen renders.
+            // The SaveManager deletes the save and shows the death screen.
         }
+
+        /// <summary>Restore mount state after a resume (the horse already has the rider parented).</summary>
+        public void RefreshAfterResume() => SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
     }
 }

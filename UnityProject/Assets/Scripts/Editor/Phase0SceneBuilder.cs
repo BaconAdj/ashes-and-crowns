@@ -161,6 +161,12 @@ namespace AshesAndCrowns.EditorTools
             modes.player = pc; modes.horse = horse; modes.vitals = vitals; modes.melee = melee; modes.thirdPersonCamera = tpc;
             modes.gameplayCamera = cam; modes.command = command; modes.director = director; modes.vantage = vantageGo.transform; modes.hud = hud;
 
+            // ---- save
+            var saveGo = new GameObject("SaveManager");
+            var save = saveGo.AddComponent<SaveManager>();
+            save.player = pc; save.horse = horse; save.vitals = vitals; save.melee = melee; save.director = director; save.hud = hud; save.modes = modes;
+            modes.saveManager = save;
+
             // ---- wiring
             tpc.target = playerGo.transform;
             pc.cameraRig = tpc; pc.vitals = vitals;

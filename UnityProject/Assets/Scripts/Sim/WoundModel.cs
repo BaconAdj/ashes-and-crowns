@@ -30,6 +30,14 @@ namespace AshesAndCrowns.Sim
         public float AgeSeconds;
     }
 
+    public sealed class BodySnapshot
+    {
+        public float Blood = 1f;
+        public float[] PartIntegrity = new float[BodyParts.Count];
+        public Wound[] Wounds = new Wound[0];
+        public string CauseOfDeath;
+    }
+
     /// <summary>
     /// Per-body-part wound tracking. Blood (0..1) is the life total; it never regenerates in combat.
     /// Wounds persist, bleed, clot slowly, and can maim. Deterministic and allocation-free after construction.
@@ -54,6 +62,21 @@ namespace AshesAndCrowns.Sim
         }
 
         public float PartIntegrity(BodyPart part) => _partIntegrity[(int)part];
+
+        public BodySnapshot Export()
+        {
+            var s = new BodySnapshot { Blood = Blood, CauseOfDeath = CauseOfDeath, Wounds = _wounds.ToArray() };
+            Array.Copy(_partIntegrity, s.PartIntegrity, BodyParts.Count);
+            return s;
+        }
+
+        public void Import(BodySnapshot s)
+        {
+            Blood = s.Blood; CauseOfDeath = s.CauseOfDeath;
+            for (int i = 0; i < BodyParts.Count; i++) _partIntegrity[i] = s.PartIntegrity != null && i < s.PartIntegrity.Length ? s.PartIntegrity[i] : 1f;
+            _wounds.Clear();
+            if (s.Wounds != null) for (int i = 0; i < s.Wounds.Length && i < MaxWounds; i++) _wounds.Add(s.Wounds[i]);
+        }
         public bool IsMaimed(BodyPart part) => _partIntegrity[(int)part] <= 1f - _balance.maimThreshold;
 
         /// <summary>Pick a body part to hit using the configured weights.</summary>

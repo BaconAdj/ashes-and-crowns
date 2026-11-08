@@ -15,7 +15,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Sim/**/*.cs" />
+    <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Save/**/*.cs" />
     <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Tests/EditMode/Sim/**/*.cs" />
+    <Compile Include="$(RepoRoot)UnityProject/Assets/Scripts/Tests/EditMode/Save/**/*.cs" />
     <Compile Include="Harness/**/*.cs" />
   </ItemGroup>
   <ItemGroup>
