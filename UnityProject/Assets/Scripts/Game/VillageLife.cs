@@ -28,6 +28,7 @@ namespace AshesAndCrowns.Game
         public EncounterDirector encounter; // optional: melees and bounties
         public MeleeController melee;       // optional: loadout refresh after trading
         public SiegeDirector siege;         // optional: sieges and castles
+        public LordshipDirector lordship;   // optional: the hall
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -59,6 +60,7 @@ namespace AshesAndCrowns.Game
             var kb = Keyboard.current; if (kb == null) return;
 
             if (siege != null && siege.IsOpen) return;
+            if (lordship != null && lordship.IsOpen) return;
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)
@@ -241,7 +243,8 @@ namespace AshesAndCrowns.Game
                 if (hostile != null && siege != null && ctx.Service.Role != ServiceRole.Household) opts.Add(($"Report to the muster: the company marches to besiege {hostile.Name}", () => siege.BeginAsGrunt(hostile)));
                 opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", DesertService));
             }
-            if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
+            if (s != null && lordship != null && ctx.Estate != null && ctx.Estate.SettlementId == s.Id) opts.Add(("Go up to the hall", lordship.Hall));
+            if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
             if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) opts.Add(($"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies} pennies)", HireGarrison));
             if (s != null && (s.Type == SettlementType.Castle || s.Type == SettlementType.City || s.Type == SettlementType.Town)) opts.Add(("Seek an audience with the lord", Audience));
             opts.Add(("Lift a purse while nobody looks", Steal));
@@ -435,6 +438,69 @@ namespace AshesAndCrowns.Game
         }
 
         private void Audience()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            MinorLord lord = null; foreach (var l in ctx.Baronage) if (l.Id == s.LordId) lord = l;
+            if (lord == null || lordship == null) { AudienceKnighthood(); return; }
+            var opts = new List<(string, System.Action)> { ("Ask for knighthood, or a command", AudienceKnighthood) };
+            bool hasDaughter = (lord.Id % 3) != 0 && lord.Alive;
+            var suit = ctx.Suit;
+            if (ServiceGrantRules.Eligible(ctx.Service, _balance.lordship) && ctx.Service.PatronId == lord.Id.ToString() && ctx.Estate == null)
+                opts.Add(("Ask for land for your service", () =>
+                {
+                    var manor = NearestUnheldVillage(ctx, lord);
+                    if (manor == null) { Dialogue(lord.FullName, "\"I have nothing to give that is not already given.\"", ("...", null)); return; }
+                    Dialogue(lord.FullName, $"\"You have bled for me. {manor.Name} is yours, and its villeins, and its troubles. Kneel.\" You swear on his sword and rise a landed man.", ("Rise", () => lordship.Grant(manor, "by " + lord.FullName + "'s grant.")));
+                }));
+            if (hasDaughter && (suit == null || suit.FatherLordId != lord.Id) && !(suit != null && suit.Married))
+                opts.Add(("Pay court to his daughter", () => { ctx.Suit = SuitRules.Begin(lord, new NameGenerator(ctx.Names, GameBootstrap.Instance.Rng.Fork(161)), NearestUnheldVillage(ctx, lord)?.Id ?? s.Id); Visit(); }));
+            else if (suit != null && suit.FatherLordId == lord.Id && !suit.Married)
+            {
+                opts.Add(($"Visit {suit.Heiress}", Visit));
+                opts.Add(($"Ask for {suit.Heiress}'s hand", () =>
+                {
+                    bool ok = SuitRules.Propose(suit, ctx.Character, ctx.Service.Renown, _balance.lordship, out string text);
+                    if (!ok) { Dialogue(lord.FullName, text, ("...", null)); return; }
+                    Dialogue(lord.FullName, text, ("Marry her", () =>
+                    {
+                        var rng = GameBootstrap.Instance.Rng.Fork(162); rng.State ^= (ulong)clock.Calendar.TotalHours;
+                        var wife = SuitRules.Wed(suit, ctx.NextNpcId++, lord.Declared, rng); ctx.Family.Add(wife);
+                        ctx.Character.Coins += _balance.lordship.heiressDowryPennies;
+                        var dowry = ctx.FindSettlement(suit.DowrySettlementId);
+                        if (dowry != null && ctx.Estate == null) lordship.Grant(dowry, "by marriage."); else hud.Toast("Married. Her dowry is silver and her father's goodwill.");
+                        if (ctx.Lordship.Declared == Allegiance.Neutral) ctx.Lordship.Declared = lord.Declared;
+                        saveManager?.SaveNow(AffairsChoice.None);
+                    }));
+                }));
+            }
+            opts.Add(("Leave", null));
+            Dialogue(lord.FullName + "'s hall", $"The hall smells of dogs and wet wool. {lord.FullName} looks up from his accounts.", opts.ToArray());
+        }
+
+        private void Visit()
+        {
+            var ctx = RunSession.Context; var suit = ctx.Suit; if (suit == null) return;
+            var rng = GameBootstrap.Instance.Rng.Fork(163); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            string t = SuitRules.Visit(suit, ctx.Character, ctx.Standing.Value, rng, _balance.lordship);
+            ctx.Character.Use(Skill.Leadership, _balance.character);
+            clock.SkipHours(3f);
+            saveManager?.SaveNow(AffairsChoice.None);
+            Dialogue(suit.Heiress, t + (suit.Favour >= _balance.lordship.suitConsentFavour ? " You could ask her father now." : string.Empty), ("...", null));
+        }
+
+        private static Settlement NearestUnheldVillage(RunContext ctx, MinorLord lord)
+        {
+            Settlement best = null; float bestD = float.MaxValue;
+            foreach (var t in ctx.Settlements)
+            {
+                if (t.Type != SettlementType.Village || t.LordId == CastleRules.PlayerLordId) continue;
+                float d = (t.Nx - lord.Nx) * (t.Nx - lord.Nx) + (t.Nz - lord.Nz) * (t.Nz - lord.Nz);
+                if (d < bestD) { bestD = d; best = t; }
+            }
+            return best;
+        }
+
+        private void AudienceKnighthood()
         {
             var ctx = RunSession.Context; var s = ctx.Current;
             MinorLord lord = null; foreach (var l in ctx.Baronage) if (l.Id == s.LordId) lord = l;

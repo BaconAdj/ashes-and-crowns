@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 8;
+        public const int CurrentVersion = 9;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -72,6 +72,14 @@ namespace AshesAndCrowns.Save
         public float SiegeFood, SiegeDefSick, SiegeAttSick, SiegeDefMorale, SiegeRelief;
         public bool HasCastle; public string CastleName = "", CastleSiteId = ""; public float CastleNx, CastleNz; public byte CastleStage; public int CastleDays, CastleCoin, CastleObjector;
         public int Garrison;
+
+        // Version 9: lordship and crown
+        public bool HasEstate; public string EstateSettlementId = "", EstateName = "", StewardName = ""; public byte EstateTax, EstateJustice, EstateCrisis; public float StewardHonesty, StewardCompetence, EstateUnrest, EstateProsperity, EstateGranary;
+        public int EstateTreasury, EstateDaysSinceCourt, EstateGarrison, EstateIncomeMonth, EstateSkimMonth; public bool EstateRevolt;
+        public byte LordDeclared, LordSecret; public int LordDeals, LordRefusedStephen, LordRefusedMatilda; public float LordSuspicion; public bool LordDiscovered;
+        public bool HasSuit; public string SuitHeiress = "", SuitDowryId = ""; public int SuitFather, SuitVisits; public float SuitFavour; public bool SuitConsented, SuitMarried;
+        public bool HasRealm; public int RealmTreasury, RealmSeasons; public float RealmChurch; public string[] RealmChronicle = new string[0];
+        public int DaysIntoSeason, NextNpcId; public byte PendingDemand;
     }
 
     public sealed class CompanySnapshot { public string Name = "", Captain = "", BasedAtId = ""; public byte Employer; public int Size, ContractDaysLeft; public float Reputation; }

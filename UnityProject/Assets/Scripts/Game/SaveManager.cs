@@ -210,6 +210,17 @@ namespace AshesAndCrowns.Game
                 var cb = ctx.Castle;
                 if (cb != null && cb.Stage != CastleStage.None) { s.HasCastle = true; s.CastleName = cb.Name; s.CastleSiteId = cb.SiteSettlementId; s.CastleNx = cb.Nx; s.CastleNz = cb.Nz; s.CastleStage = (byte)cb.Stage; s.CastleDays = cb.DaysIntoStage; s.CastleCoin = cb.CoinSpent; s.CastleObjector = cb.ObjectorLordId; }
                 s.Garrison = ctx.Garrison;
+                var es = ctx.Estate;
+                if (es != null)
+                {
+                    s.HasEstate = true; s.EstateSettlementId = es.SettlementId; s.EstateName = es.Name; s.StewardName = es.StewardName; s.EstateTax = (byte)es.Tax; s.EstateJustice = (byte)es.Justice; s.EstateCrisis = (byte)es.PendingCrisis;
+                    s.StewardHonesty = es.StewardHonesty; s.StewardCompetence = es.StewardCompetence; s.EstateUnrest = es.Unrest; s.EstateProsperity = es.Prosperity; s.EstateGranary = es.Granary;
+                    s.EstateTreasury = es.Treasury; s.EstateDaysSinceCourt = es.DaysSinceCourt; s.EstateGarrison = es.GarrisonMen; s.EstateIncomeMonth = es.IncomeThisMonth; s.EstateSkimMonth = es.SkimmedThisMonth; s.EstateRevolt = es.InRevolt;
+                }
+                var la = ctx.Lordship; s.LordDeclared = (byte)la.Declared; s.LordSecret = (byte)la.SecretDeal; s.LordDeals = la.DealsTaken; s.LordRefusedStephen = la.DemandsRefusedStephen; s.LordRefusedMatilda = la.DemandsRefusedMatilda; s.LordSuspicion = la.Suspicion; s.LordDiscovered = la.Discovered;
+                var su = ctx.Suit; if (su != null) { s.HasSuit = true; s.SuitHeiress = su.Heiress; s.SuitDowryId = su.DowrySettlementId; s.SuitFather = su.FatherLordId; s.SuitVisits = su.Visits; s.SuitFavour = su.Favour; s.SuitConsented = su.Consented; s.SuitMarried = su.Married; }
+                var rl = ctx.Realm; if (rl != null) { s.HasRealm = true; s.RealmTreasury = rl.CrownTreasury; s.RealmSeasons = rl.SeasonsElapsed; s.RealmChurch = rl.ChurchFavour; s.RealmChronicle = rl.Chronicle.ToArray(); }
+                s.DaysIntoSeason = ctx.DaysIntoSeason; s.NextNpcId = ctx.NextNpcId; s.PendingDemand = (byte)ctx.PendingDemand;
             }
             if (clock != null && clock.IsReady)
             {
@@ -276,6 +287,19 @@ namespace AshesAndCrowns.Game
                 };
                 rc.Castle = !s.HasCastle ? null : new CastleBuild { Name = s.CastleName ?? string.Empty, SiteSettlementId = s.CastleSiteId ?? string.Empty, Nx = s.CastleNx, Nz = s.CastleNz, Stage = (CastleStage)s.CastleStage, DaysIntoStage = s.CastleDays, CoinSpent = s.CastleCoin, ObjectorLordId = s.CastleObjector };
                 rc.Garrison = s.Garrison;
+            }
+            if (s.Version >= 9)
+            {
+                rc.Estate = !s.HasEstate ? null : new Estate
+                {
+                    SettlementId = s.EstateSettlementId ?? string.Empty, Name = s.EstateName ?? string.Empty, StewardName = s.StewardName ?? string.Empty, Tax = (TaxPolicy)s.EstateTax, Justice = (JusticePolicy)s.EstateJustice, PendingCrisis = (EstateCrisis)s.EstateCrisis,
+                    StewardHonesty = s.StewardHonesty, StewardCompetence = s.StewardCompetence, Unrest = s.EstateUnrest, Prosperity = s.EstateProsperity, Granary = s.EstateGranary,
+                    Treasury = s.EstateTreasury, DaysSinceCourt = s.EstateDaysSinceCourt, GarrisonMen = s.EstateGarrison, IncomeThisMonth = s.EstateIncomeMonth, SkimmedThisMonth = s.EstateSkimMonth, InRevolt = s.EstateRevolt
+                };
+                rc.Lordship = new LordAllegiance { Declared = (Allegiance)s.LordDeclared, SecretDeal = (Allegiance)s.LordSecret, DealsTaken = s.LordDeals, DemandsRefusedStephen = s.LordRefusedStephen, DemandsRefusedMatilda = s.LordRefusedMatilda, Suspicion = s.LordSuspicion, Discovered = s.LordDiscovered };
+                rc.Suit = !s.HasSuit ? null : new Suit { Heiress = s.SuitHeiress ?? string.Empty, DowrySettlementId = s.SuitDowryId ?? string.Empty, FatherLordId = s.SuitFather, Visits = s.SuitVisits, Favour = s.SuitFavour, Consented = s.SuitConsented, Married = s.SuitMarried };
+                if (s.HasRealm) { rc.Realm = new RealmState { CrownTreasury = s.RealmTreasury, SeasonsElapsed = s.RealmSeasons, ChurchFavour = s.RealmChurch }; if (s.RealmChronicle != null) rc.Realm.Chronicle.AddRange(s.RealmChronicle); }
+                rc.DaysIntoSeason = s.DaysIntoSeason; rc.NextNpcId = s.NextNpcId > 0 ? s.NextNpcId : 100; rc.PendingDemand = (Allegiance)s.PendingDemand;
             }
             if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);

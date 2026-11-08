@@ -133,6 +133,9 @@ namespace AshesAndCrowns.EditorTools
             var siege = sceneGo.AddComponent<SiegeDirector>();
             siege.clock = clock; siege.hud = hud; siege.saveManager = save; siege.village = life; siege.vitals = vitals; siege.spawner = spawnerComp;
             life.siege = siege;
+            var lordship = sceneGo.AddComponent<LordshipDirector>();
+            lordship.clock = clock; lordship.hud = hud; lordship.saveManager = save; lordship.village = life; lordship.siege = siege; lordship.vitals = vitals;
+            life.lordship = lordship;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

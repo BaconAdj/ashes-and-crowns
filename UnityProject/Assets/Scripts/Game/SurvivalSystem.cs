@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AshesAndCrowns.Combat;
 using AshesAndCrowns.Sim;
 using UnityEngine;
@@ -56,6 +57,31 @@ namespace AshesAndCrowns.Game
                 foreach (var co in ctx.Companies) if (co.ContractDaysLeft > 0) co.ContractDaysLeft--;
                 var homeS = ctx.Home;
                 if (ctx.PendingLevyAt == null && ctx.Service != null && !ctx.Service.Active && !ctx.Service.Deserter && ctx.Character.Rank <= Rank.Warrior && homeS != null && ctx.CurrentSettlementId == homeS.Id && rng.Chance(_balance.service.levyDemandChancePerDay)) ctx.PendingLevyAt = homeS;
+                if (ctx.Estate != null)
+                {
+                    var manor = ctx.FindSettlement(ctx.Estate.SettlementId);
+                    var elog = new List<string>(2);
+                    EstateRules.DayTick(ctx.Estate, manor, ctx.CurrentSettlementId == ctx.Estate.SettlementId, rng, _balance.lordship, elog);
+                    ctx.PendingNotices.AddRange(elog);
+                    if (clock.Calendar.Day == 1) EstateRules.EndMonth(ctx.Estate);
+                    if (ctx.PendingDemand == Allegiance.Neutral && AllegianceRules.DemandArrives(ctx.Lordship, rng, _balance.lordship, out Allegiance from)) ctx.PendingDemand = from;
+                }
+                if (AllegianceRules.DayTick(ctx.Lordship, rng, _balance.lordship))
+                {
+                    var here = ctx.Current;
+                    AllegianceRules.OnDiscovered(ctx.Lordship, ctx.Crime, ctx.Reputation, here != null ? here.Id : "road", JobBoard.Today(clock.Calendar), rng);
+                    if (here != null) here.WantedHere = 1f;
+                    ctx.PendingNotices.Add("Your courier was taken on the road with your letters on him. By tonight every hall in the shire knows whose seal was on them. That is treason, and the rope for it.");
+                }
+                if (ctx.Realm == null) ctx.Realm = RealmRules.Fresh(_balance.lordship);
+                if (++ctx.DaysIntoSeason >= _balance.lordship.seasonDays)
+                {
+                    ctx.DaysIntoSeason = 0;
+                    var rlog = new List<string>(4);
+                    RealmRules.Season(ctx.Realm, ctx.Baronage, ctx.Settlements, rng, _balance.lordship, rlog);
+                    ctx.Realm.Chronicle.AddRange(rlog); if (ctx.Realm.Chronicle.Count > 40) ctx.Realm.Chronicle.RemoveRange(0, ctx.Realm.Chronicle.Count - 40);
+                    ctx.PendingNotices.AddRange(rlog);
+                }
                 if (ctx.Castle != null && ctx.Castle.Active && ctx.PendingObjector == null && ctx.Siege == null && ctx.CurrentSettlementId == ctx.Castle.SiteSettlementId)
                 {
                     string built = CastleRules.BuildDay(ctx.Castle, ctx.Character, ctx.Service.Side, ctx.Baronage, rng, _balance.siege, out MinorLord objector);
@@ -68,6 +94,7 @@ namespace AshesAndCrowns.Game
                         castle.Market = new Market(_balance.economy, ctx.Items);
                         ctx.Settlements.Add(castle); ctx.PendingNewSettlement = castle;
                         ctx.Character.Rank = Rank.Lord; ctx.HomeSettlementId = castle.Id;
+                        if (ctx.Estate == null) { ctx.Estate = EstateRules.Grant(castle, new NameGenerator(ctx.Names, rng.Fork(3)), rng.Fork(4)); if (ctx.Lordship.Declared == Allegiance.Neutral) ctx.Lordship.Declared = ctx.Service.Side; }
                         ctx.PendingNotices.Add($"You are lord of {castle.Name}. Nobody licensed it. Someone will mind.");
                     }
                 }

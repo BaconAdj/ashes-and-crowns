@@ -143,6 +143,17 @@ namespace AshesAndCrowns.Save
                 w.Write(s.HasCastle); w.Write(s.CastleName ?? ""); w.Write(s.CastleSiteId ?? ""); w.Write(s.CastleNx); w.Write(s.CastleNz); w.Write(s.CastleStage); w.Write(s.CastleDays); w.Write(s.CastleCoin); w.Write(s.CastleObjector);
                 w.Write(s.Garrison);
             }
+            if (version >= 9)
+            {
+                w.Write(s.HasEstate); w.Write(s.EstateSettlementId ?? ""); w.Write(s.EstateName ?? ""); w.Write(s.StewardName ?? ""); w.Write(s.EstateTax); w.Write(s.EstateJustice); w.Write(s.EstateCrisis);
+                w.Write(s.StewardHonesty); w.Write(s.StewardCompetence); w.Write(s.EstateUnrest); w.Write(s.EstateProsperity); w.Write(s.EstateGranary);
+                w.Write(s.EstateTreasury); w.Write(s.EstateDaysSinceCourt); w.Write(s.EstateGarrison); w.Write(s.EstateIncomeMonth); w.Write(s.EstateSkimMonth); w.Write(s.EstateRevolt);
+                w.Write(s.LordDeclared); w.Write(s.LordSecret); w.Write(s.LordDeals); w.Write(s.LordRefusedStephen); w.Write(s.LordRefusedMatilda); w.Write(s.LordSuspicion); w.Write(s.LordDiscovered);
+                w.Write(s.HasSuit); w.Write(s.SuitHeiress ?? ""); w.Write(s.SuitDowryId ?? ""); w.Write(s.SuitFather); w.Write(s.SuitVisits); w.Write(s.SuitFavour); w.Write(s.SuitConsented); w.Write(s.SuitMarried);
+                w.Write(s.HasRealm); w.Write(s.RealmTreasury); w.Write(s.RealmSeasons); w.Write(s.RealmChurch);
+                var ch = s.RealmChronicle ?? new string[0]; w.Write(ch.Length); foreach (var line in ch) w.Write(line ?? "");
+                w.Write(s.DaysIntoSeason); w.Write(s.NextNpcId); w.Write(s.PendingDemand);
+            }
         }
 
         private static void WriteJob(BinaryWriter w, JobSnapshot j)
@@ -274,6 +285,17 @@ namespace AshesAndCrowns.Save
                 s.SiegeFood = r.ReadSingle(); s.SiegeDefSick = r.ReadSingle(); s.SiegeAttSick = r.ReadSingle(); s.SiegeDefMorale = r.ReadSingle(); s.SiegeRelief = r.ReadSingle();
                 s.HasCastle = r.ReadBoolean(); s.CastleName = r.ReadString(); s.CastleSiteId = r.ReadString(); s.CastleNx = r.ReadSingle(); s.CastleNz = r.ReadSingle(); s.CastleStage = r.ReadByte(); s.CastleDays = r.ReadInt32(); s.CastleCoin = r.ReadInt32(); s.CastleObjector = r.ReadInt32();
                 s.Garrison = r.ReadInt32();
+            }
+            if (version >= 9)
+            {
+                s.HasEstate = r.ReadBoolean(); s.EstateSettlementId = r.ReadString(); s.EstateName = r.ReadString(); s.StewardName = r.ReadString(); s.EstateTax = r.ReadByte(); s.EstateJustice = r.ReadByte(); s.EstateCrisis = r.ReadByte();
+                s.StewardHonesty = r.ReadSingle(); s.StewardCompetence = r.ReadSingle(); s.EstateUnrest = r.ReadSingle(); s.EstateProsperity = r.ReadSingle(); s.EstateGranary = r.ReadSingle();
+                s.EstateTreasury = r.ReadInt32(); s.EstateDaysSinceCourt = r.ReadInt32(); s.EstateGarrison = r.ReadInt32(); s.EstateIncomeMonth = r.ReadInt32(); s.EstateSkimMonth = r.ReadInt32(); s.EstateRevolt = r.ReadBoolean();
+                s.LordDeclared = r.ReadByte(); s.LordSecret = r.ReadByte(); s.LordDeals = r.ReadInt32(); s.LordRefusedStephen = r.ReadInt32(); s.LordRefusedMatilda = r.ReadInt32(); s.LordSuspicion = r.ReadSingle(); s.LordDiscovered = r.ReadBoolean();
+                s.HasSuit = r.ReadBoolean(); s.SuitHeiress = r.ReadString(); s.SuitDowryId = r.ReadString(); s.SuitFather = r.ReadInt32(); s.SuitVisits = r.ReadInt32(); s.SuitFavour = r.ReadSingle(); s.SuitConsented = r.ReadBoolean(); s.SuitMarried = r.ReadBoolean();
+                s.HasRealm = r.ReadBoolean(); s.RealmTreasury = r.ReadInt32(); s.RealmSeasons = r.ReadInt32(); s.RealmChurch = r.ReadSingle();
+                int nch = r.ReadInt32(); if (nch < 0 || nch > 1000) throw new SaveCorruptException("bad chronicle count"); s.RealmChronicle = new string[nch]; for (int i = 0; i < nch; i++) s.RealmChronicle[i] = r.ReadString();
+                s.DaysIntoSeason = r.ReadInt32(); s.NextNpcId = r.ReadInt32(); s.PendingDemand = r.ReadByte();
             }
             return s;
         }

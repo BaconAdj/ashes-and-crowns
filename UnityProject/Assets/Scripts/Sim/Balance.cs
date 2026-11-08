@@ -171,6 +171,7 @@ namespace AshesAndCrowns.Sim
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
         public SiegeBalance siege = new SiegeBalance();
+        public LordshipBalance lordship = new LordshipBalance();
         public AbsenceBalance absence = new AbsenceBalance();
     }
 
@@ -226,6 +227,7 @@ namespace AshesAndCrowns.Sim
             if (b.morale == null || !(b.morale.routBelow < b.morale.shakenBelow && b.morale.shakenBelow < b.morale.rallyAbove)) errors.Add("morale thresholds must satisfy rout < shaken < rally");
             if (b.service == null || b.service.floggingAbove >= b.service.hangingAbove) errors.Add("service.floggingAbove must be below hangingAbove");
             if (b.siege == null || b.siege.surrenderMoraleBelow <= 0f || b.siege.surrenderMoraleBelow >= 1f) errors.Add("siege.surrenderMoraleBelow must be within (0,1)");
+            if (b.lordship == null || b.lordship.revoltAbove <= b.lordship.revoltCalm || b.lordship.seasonDays <= 0 || b.lordship.courtEveryDays <= 0) errors.Add("lordship: revoltAbove must exceed revoltCalm; seasonDays and courtEveryDays positive");
             if (b.siege != null && (b.siege.ladderVulnerability < 1f || b.siege.wallHalfThickness <= 0f || b.siege.motteDays <= 0 || b.siege.garrisonMin <= 0)) errors.Add("siege layout and castle numbers must be positive");
             if (b.baronage == null || b.baronage.minorLordCount <= 0) errors.Add("baronage.minorLordCount must be positive");
             if (b.baronage != null && b.baronage.knightsMax < b.baronage.knightsMin) errors.Add("baronage.knightsMax must be >= knightsMin");

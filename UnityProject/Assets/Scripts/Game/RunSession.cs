@@ -81,6 +81,14 @@ namespace AshesAndCrowns.Game
         public MinorLord PendingObjector;
         public Settlement PendingNewSettlement;
         public List<string> PendingNotices = new List<string>(4);
+        // Phase 10: lordship and crown
+        public Estate Estate;
+        public LordAllegiance Lordship = new LordAllegiance();
+        public Suit Suit;
+        public RealmState Realm;
+        public int DaysIntoSeason;
+        public Allegiance PendingDemand;
+        public int NextNpcId = 100;
         public MinorLord LordById(int id) { foreach (var l in Baronage) if (l.Id == id) return l; return null; }
         public MercenaryCompany CompanyAt(string settlementId) { foreach (var c in Companies) if (c.BasedAtId == settlementId && c.ContractDaysLeft > 0) return c; return null; }
 
