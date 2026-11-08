@@ -114,7 +114,7 @@ namespace AshesAndCrowns.Game
                         ctx.PendingNotices.Add($"You are lord of {castle.Name}. Nobody licensed it. Someone will mind.");
                     }
                 }
-                foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
+                foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market?.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
                 var here = ctx.Current;
                 if (ctx.Crime != null && here != null && village != null && PendingArrest == null && ctx.Crime.TickDay(here, village.InChurch, rng)) PendingArrest = here;
                 if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && JobBoard.Today(clock.Calendar) > ctx.ActiveJob.DeadlineDay)

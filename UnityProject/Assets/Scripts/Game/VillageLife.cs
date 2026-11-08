@@ -514,7 +514,6 @@ namespace AshesAndCrowns.Game
             if (sv.PatronId != (lord != null ? lord.Id.ToString() : s.Id)) { sv.PatronId = lord != null ? lord.Id.ToString() : s.Id; sv.PatronFavour = 0f; }
             float favour = Mathf.Clamp01(sv.Renown / (float)_balance.service.knighthoodRenown * 0.6f + Mathf.Max(0f, ctx.Reputation.Get(s.Allegiance == Allegiance.Matilda ? Faction.Angevin : Faction.Crown)) * 0.5f + ctx.Standing.Value * 0.2f - (ctx.Crime.Outlawed ? 1f : 0f));
             sv.PatronFavour = Mathf.Max(sv.PatronFavour, favour);
-            if (ctx.Character.Rank >= Rank.Knight) { Dialogue(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are.", ("Leave", null)); return; }
             if (ctx.Character.Rank >= Rank.Knight && siege != null && ctx.Siege == null && sv.PatronFavour >= _balance.service.patronDispositionNeeded && lord != null)
             {
                 var target = NearestHostileCastle(ctx, s.Allegiance == Allegiance.Neutral ? Allegiance.Stephen : s.Allegiance);
@@ -527,6 +526,7 @@ namespace AshesAndCrowns.Game
                     return;
                 }
             }
+            if (ctx.Character.Rank >= Rank.Knight) { Dialogue(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are.", ("Leave", null)); return; }
             bool ok = ServiceRules.KnighthoodCheck(sv, ctx.Inventory, _balance.service, out string missing);
             if (ok)
             {
