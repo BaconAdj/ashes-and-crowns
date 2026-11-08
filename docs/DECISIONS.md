@@ -165,3 +165,10 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 8 summary (what exists, what is stubbed)
 - Built: levy, enlistment, companies, camp days, desertion, grunt mode with banner, shouts, slot ring, discipline, deeds, provost, loot share, capture, knighthood audience, save v7. 7 new tests (127 under .NET).
 - Stubbed: horns and drums (audio stubs only), the player's unit chosen by role (always the first unit), travel to the battle (instant scene change), archers and "LOOSE", purchased titles (Phase 10), warhorse purchase only through the market when a city stocks it.
+
+## 2026-11-08 — Phase 7 review fixes
+- Run-down kill chance is now per attack (1 - exp(-rate * attack interval)) computed once in Setup, not per frame; it was framerate-dependent and about ten times weaker than the balance value.
+- Setup resets morale-side state (named dead lists, morale timer, commander flags, weather) so a second battle in the same process starts clean.
+- A unit wiped out in one morale step now reports its final named dead before being marked Destroyed.
+- Rosters carry a PlayerSide flag and plain unit names ("first spears"); the report lists the player's dead by side instead of sniffing strings.
+- Byte-array codec helper is null-safe; ImportSnapshot raises UnitStanceChanged for restored non-steady units; the 2,000-soldier PlayMode test runs at 4x time scale with a ten-minute timeout.

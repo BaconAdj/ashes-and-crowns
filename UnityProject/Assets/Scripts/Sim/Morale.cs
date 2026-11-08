@@ -111,6 +111,7 @@ namespace AshesAndCrowns.Sim
     public sealed class UnitRoster
     {
         public string UnitName = string.Empty;
+        public bool PlayerSide;
         public string Sergeant = string.Empty;
         public string[] Veterans = new string[0];
         public int NamedAlive;      // sergeant + veterans alive

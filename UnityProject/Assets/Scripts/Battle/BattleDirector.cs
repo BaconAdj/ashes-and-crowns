@@ -87,6 +87,8 @@ namespace AshesAndCrowns.Battle
         {
             Teardown();
             _balance = balance; _names = names; Report = null;
+            _namedDeadScratch.Clear(); _playerDead.Clear(); _moraleTimer = 0f; _commanderCommanding = _commanderFighting = false; _raining = _snowing = false;
+            _runDownChancePerAttack = 1f - math.exp(-balance.morale.runDownKillChancePerSecond * balance.battle.attackCooldownSeconds * 0.5f);
             _rng = rng.Fork(7);
             _params = BattleParams.From(balance.battle, balance.melee);
             _ground = HeightField.FromTerrain(terrain, Allocator.Persistent);
@@ -110,8 +112,9 @@ namespace AshesAndCrowns.Battle
             {
                 _morale[u] = MoraleModel.Fresh(balance.morale, _units[u].SoldierCount, _rng.Chance(0.3f));
                 _lastAlive[u] = _units[u].SoldierCount; _unitStance[u] = (byte)UnitStance.Steady;
-                string unitName = (_units[u].Side == (byte)Side.Player ? "your " : "enemy ") + Ordinal(u % Mathf.Max(1, UnitCount / 2) + 1) + " spears";
+                string unitName = Ordinal(u % Mathf.Max(1, UnitCount / 2) + 1) + " spears";
                 _rosters[u] = nameGen != null ? UnitRoster.Create(unitName, nameGen, _rng.Fork((uint)(200 + u)), 3, false) : new UnitRoster { UnitName = unitName, Sergeant = "the sergeant", Veterans = new string[0], NamedAlive = 1 };
+                _rosters[u].PlayerSide = _units[u].Side == (byte)Side.Player;
             }
             // Place soldiers on their slots immediately so the field is formed at frame 0.
             for (int i = 0; i < SoldierCount; i++)
@@ -235,7 +238,7 @@ namespace AshesAndCrowns.Battle
             var combat = new CombatJob
             {
                 Positions = _positions, Targets = _targets, Alive = _alive, Health = _health, Cooldowns = _cooldowns,
-                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _balance.morale.runDownKillChancePerSecond * dt * 4f, P = _params, PlayerPosition = playerPos, Dt = dt,
+                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _runDownChancePerAttack, P = _params, PlayerPosition = playerPos, Dt = dt,
                 Seed = _rng.NextUInt()
             }.Schedule(move);
             var summary = new UnitSummaryJob { Positions = _positions, Alive = _alive, Units = _units, Centroids = _centroids }.Schedule(combat);
@@ -326,9 +329,9 @@ namespace AshesAndCrowns.Battle
             for (int u = 0; u < UnitCount; u++)
             {
                 UnitState unit = _units[u];
-                if (unit.Alive == 0) { if (_unitStance[u] != (byte)UnitStance.Destroyed) { _unitStance[u] = (byte)UnitStance.Destroyed; UnitStanceChanged?.Invoke(u, UnitStance.Destroyed); } continue; }
                 int lost = Mathf.Max(0, _lastAlive[u] - unit.AliveCount); _lastAlive[u] = unit.AliveCount;
-                if (lost > 0) { _rosters[u].ApplyLosses(lost, unit.AliveCount + lost, _rng, _namedDeadScratch); }
+                if (lost > 0) { _rosters[u].ApplyLosses(lost, unit.AliveCount + lost, _rng, _rosters[u].PlayerSide ? _playerDead : _namedDeadScratch); }
+                if (unit.Alive == 0) { if (_unitStance[u] != (byte)UnitStance.Destroyed) { _unitStance[u] = (byte)UnitStance.Destroyed; UnitStanceChanged?.Invoke(u, UnitStance.Destroyed); } continue; }
                 // Perception: enemy units around this unit's centroid.
                 float3 c = _centroids[u]; float yaw = unit.Yaw; float fx = math.sin(yaw), fz = math.cos(yaw);
                 int front = 0, flank = 0, rear = 0, alliesRouting = 0, enemiesRouting = 0; bool contact = false;
@@ -367,7 +370,9 @@ namespace AshesAndCrowns.Battle
             CheckEnd();
         }
 
-        private readonly List<string> _namedDeadScratch = new List<string>(16);
+        private readonly List<string> _namedDeadScratch = new List<string>(16);   // enemy named dead
+        private readonly List<string> _playerDead = new List<string>(16);
+        private float _runDownChancePerAttack;
 
         private float3 FleePoint(float3 from, int u)
         {
@@ -400,7 +405,7 @@ namespace AshesAndCrowns.Battle
                 PlayerCaptured = Prisoners(Side.Player), EnemyCaptured = Prisoners(Side.Enemy),
                 Weather = _snowing ? "snow" : _raining ? "rain" : "grey"
             };
-            foreach (string n in _namedDeadScratch) if (n.StartsWith("your") || n.Contains("of the your")) r.NamedDead.Add(n);
+            foreach (string n in _playerDead) r.NamedDead.Add(n);
             if (r.NamedDead.Count == 0) foreach (string n in _namedDeadScratch) r.NamedDead.Add(n);
             Report = r;
             BattleEnded?.Invoke(r);
@@ -508,6 +513,7 @@ namespace AshesAndCrowns.Battle
             _positionsSnapshot.CopyFrom(_positions);
             _playerSoldierEnd = b.PlayerSoldierEnd; _elapsed = b.Elapsed; _enemyThinkTimer = b.EnemyThinkTimer; BattleStarted = b.Started; _playerCharacterAlive = b.PlayerCharacterAlive;
             for (int k = 0; k < UnitCount; k++) { if (b.UnitStance != null && k < b.UnitStance.Length) { _unitStance[k] = b.UnitStance[k]; _morale[k].Stance = b.UnitStance[k]; } if (b.UnitMorale != null && k < b.UnitMorale.Length) _morale[k].Value = b.UnitMorale[k]; _lastAlive[k] = _units[k].AliveCount; }
+            for (int k = 0; k < UnitCount; k++) if (_unitStance[k] != (byte)UnitStance.Steady) UnitStanceChanged?.Invoke(k, (UnitStance)_unitStance[k]);
             RecountAndDrift(0f);
             return true;
         }

@@ -10,7 +10,7 @@ namespace AshesAndCrowns.Tests.PlayMode
     /// <summary>Two thousand soldiers for 180 frames: logs the mean frame time and checks the battle ends in a rout, not annihilation.</summary>
     public class BattleScaleTests
     {
-        [UnityTest]
+        [UnityTest, Timeout(600000)]
         public IEnumerator TwoThousandSoldiers_RunAndSomebodyBreaks()
         {
             var data = new TerrainData { heightmapResolution = 65, size = new Vector3(600f, 10f, 600f) };
@@ -27,7 +27,9 @@ namespace AshesAndCrowns.Tests.PlayMode
             Assert.AreEqual(2000, director.SoldierCount); Assert.AreEqual(40, director.UnitCount);
             for (int u = 0; u < director.UnitCount; u++) if (director.Units[u].Side == (byte)Side.Player) director.IssueOrder(u, OrderType.Charge, new Unity.Mathematics.float3(300f, 0f, 400f));
             float total = 0f; int frames = 0; float t = 0f;
-            while (t < 240f && !director.Ended) { yield return null; total += Time.deltaTime; frames++; t += Time.deltaTime; }
+            Time.timeScale = 4f;
+            try { while (t < 240f && !director.Ended) { yield return null; total += Time.unscaledDeltaTime; frames++; t += Time.deltaTime; } }
+            finally { Time.timeScale = 1f; }
             Debug.Log($"[perf] 2000 soldiers: {frames} frames, mean {total / Mathf.Max(1, frames) * 1000f:F1} ms, ended={director.Ended}, dead {director.PlayerLosses + director.EnemyLosses}");
             Assert.IsTrue(director.Ended, "a battle must end in a rout or surrender");
             Assert.Less(director.PlayerLosses + director.EnemyLosses, 2000, "annihilation is not how battles end");

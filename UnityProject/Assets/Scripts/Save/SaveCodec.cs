@@ -291,7 +291,7 @@ namespace AshesAndCrowns.Save
         private const int MaxArray = 4_000_000;
         private static void Floats(BinaryWriter w, float[] a) { a = a ?? new float[0]; w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
         private static void Ints(BinaryWriter w, int[] a) { a = a ?? new int[0]; w.Write(a.Length); for (int i = 0; i < a.Length; i++) w.Write(a[i]); }
-        private static void Bytes(BinaryWriter w, byte[] a) { w.Write(a.Length); w.Write(a); }
+        private static void Bytes(BinaryWriter w, byte[] a) { a = a ?? new byte[0]; w.Write(a.Length); w.Write(a); }
         private static float[] Floats(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > MaxArray) throw new SaveCorruptException("bad array length"); var a = new float[n]; for (int i = 0; i < n; i++) a[i] = r.ReadSingle(); return a; }
         private static int[] Ints(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > MaxArray) throw new SaveCorruptException("bad array length"); var a = new int[n]; for (int i = 0; i < n; i++) a[i] = r.ReadInt32(); return a; }
         private static byte[] Bytes(BinaryReader r) { int n = r.ReadInt32(); if (n < 0 || n > MaxArray) throw new SaveCorruptException("bad array length"); return r.ReadBytes(n); }
