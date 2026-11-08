@@ -84,19 +84,19 @@ namespace AshesAndCrowns.Game
                     ctx.PendingNotices.AddRange(rlog);
                 }
                 // the knife in the dark
-                if (ctx.Plot == null) ctx.Plot = IntrigueRules.Roll(ctx.Character, ctx.Family, ctx.Baronage, ctx.Estate, ctx.Reputation.Notoriety, rng.Fork(5), _balance.intrigue);
+                if (ctx.Plot == null) ctx.Plot = IntrigueRules.Roll(ctx.Character, ctx.Family, ctx.Baronage, ctx.Estate, ctx.Reputation.Notoriety, rng, _balance.intrigue);
                 else
                 {
                     ctx.Plot.DaysUntil--;
-                    string w = IntrigueRules.Warning(ctx.Plot, ctx.Character, rng.Fork(6), _balance.intrigue);
+                    string w = IntrigueRules.Warning(ctx.Plot, ctx.Character, rng, _balance.intrigue);
                     if (w != null && ctx.PendingWhisper == null) ctx.PendingWhisper = w;
                 }
                 // war comes to the village
                 var hereS = ctx.Current;
                 if (hereS != null && ctx.Siege == null && ctx.PendingRaiders == 0)
                 {
-                    var ev = VillageEvents.Roll(hereS, ctx.WarHeat, rng.Fork(7), _balance.villageEvents);
-                    if (ev != VillageEventKind.None) { string t = VillageEvents.Apply(ev, hereS, rng.Fork(8), _balance.villageEvents, out int raiders); ctx.PendingNotices.Add(t); if (raiders > 0) ctx.PendingRaiders = raiders; }
+                    var ev = VillageEvents.Roll(hereS, ctx.WarHeat, rng, _balance.villageEvents);
+                    if (ev != VillageEventKind.None) { string t = VillageEvents.Apply(ev, hereS, rng, _balance.villageEvents, out int raiders); ctx.PendingNotices.Add(t); if (raiders > 0) ctx.PendingRaiders = raiders; }
                 }
                 if (ctx.Castle != null && ctx.Castle.Active && ctx.PendingObjector == null && ctx.Siege == null && ctx.CurrentSettlementId == ctx.Castle.SiteSettlementId)
                 {
@@ -110,7 +110,7 @@ namespace AshesAndCrowns.Game
                         castle.Market = new Market(_balance.economy, ctx.Items);
                         ctx.Settlements.Add(castle); ctx.PendingNewSettlement = castle;
                         ctx.Character.Rank = Rank.Lord; ctx.HomeSettlementId = castle.Id;
-                        if (ctx.Estate == null) { ctx.Estate = EstateRules.Grant(castle, new NameGenerator(ctx.Names, rng.Fork(3)), rng.Fork(4)); if (ctx.Lordship.Declared == Allegiance.Neutral) ctx.Lordship.Declared = ctx.Service.Side; }
+                        if (ctx.Estate == null) { ctx.Estate = EstateRules.Grant(castle, new NameGenerator(ctx.Names, rng), rng); if (ctx.Lordship.Declared == Allegiance.Neutral) ctx.Lordship.Declared = ctx.Service.Side; }
                         ctx.PendingNotices.Add($"You are lord of {castle.Name}. Nobody licensed it. Someone will mind.");
                     }
                 }

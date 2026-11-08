@@ -81,7 +81,7 @@ namespace AshesAndCrowns.Game
                     Show("The night", text, ("...", () => { vitals.Body.Drain(1f, p.Kind == PlotKind.Poison ? "poison, at your own table" : "a knife in the dark"); vitals.NotifyDeadFromBody(); }));
                     return;
                 case PlotOutcome.Wounded:
-                    vitals.TakeHitAt(p.Kind == PlotKind.Poison ? BodyPart.Torso : BodyPart.Torso, p.Kind == PlotKind.Poison ? 0.3f : 0.45f, p.Kind == PlotKind.Poison ? "poison" : "an assassin's knife");
+                    vitals.TakeHitAt(BodyPart.Torso, p.Kind == PlotKind.Poison ? 0.3f : 0.45f, p.Kind == PlotKind.Poison ? "poison" : "an assassin's knife");
                     break;
                 case PlotOutcome.Nothing:   // ambush: fight it out on the road
                     if (encounter != null) { AudioStubs.Play("ambush_riders"); encounter.Ambush(3, Rng(174)); hud.Toast(text); return; }
@@ -103,6 +103,7 @@ namespace AshesAndCrowns.Game
                     ctx.Service.Renown += 2;
                     break;
             }
+            if (vitals.IsDead) return;
             saveManager?.SaveNow(AffairsChoice.None);
             Show("The night", text, ("...", null));
         }
