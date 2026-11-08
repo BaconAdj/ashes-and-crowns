@@ -32,6 +32,7 @@ namespace AshesAndCrowns.Game
         public float useRadius = 4f;
         private SettlementSite _site; private float _nextSiteScan; private string _lastSiteId = string.Empty;
         public SettlementSite CurrentSite => _site;
+        public bool InChurch { get { Transform c = _site != null && _site.church != null ? _site.church : church; return c != null && Vector3.Distance(Body().position, c.position) < 10f; } }
 
         private Balance _balance;
         private string _prompt = string.Empty;
@@ -56,6 +57,7 @@ namespace AshesAndCrowns.Game
             vitals.StaminaRegenScale = (ctx.Needs.Hungry ? 0.4f : 1f) * (ctx.Disease.Current != Sickness.None ? 0.5f : 1f);
             var kb = Keyboard.current; if (kb == null) return;
 
+            if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (_busy)
             {
                 if (_openKind != Open.Dialogue) return; // market and moment have their own controls
@@ -86,6 +88,7 @@ namespace AshesAndCrowns.Game
         {
             _nearest = null; float best = useRadius;
             Check(church, "church", ref best); Check(alehouse, "alehouse", ref best); Check(home, "home", ref best); Check(workplace, "work", ref best);
+            if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(_site.church, "church", ref best); Check(_site.alehouse, "alehouse", ref best); }
             if (mastersRoot != null) foreach (Transform m in mastersRoot) Check(m, "master", ref best);
         }
 
@@ -126,8 +129,7 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             if (s.WantedHere <= 0f && !ctx.Crime.Outlawed) return;
             var rng = GameBootstrap.Instance.Rng.Fork(101); rng.State ^= (ulong)clock.Calendar.TotalHours;
-            bool inChurch = church != null && Vector3.Distance(Body().position, church.position) < 10f;
-            if (ctx.Crime.TickDay(s, inChurch, rng)) Arrest(s);
+            if (ctx.Crime.TickDay(s, InChurch, rng)) Arrest(s);
         }
 
         public void Arrest(Settlement s)
@@ -150,10 +152,8 @@ namespace AshesAndCrowns.Game
                 default: outcome = "Beheaded in the castle yard, as befits your blood."; break;
             }
             clock.SkipHours(sentence == Sentence.Acquitted ? 2f : 24f);
-            Dialogue("Taken by the law", $"Men with cudgels at the alehouse door. You are tried in {s.Name} for {crime} and {CrimeRecord.Describe(sentence)}.\n\n{outcome}", ("...", () =>
-            {
-                if (CrimeRecord.IsExecution(sentence)) { vitals.Body.Drain(1f, sentence == Sentence.Hanging ? "the noose" : "the block"); vitals.NotifyDeadFromBody(); }
-            }));
+            if (CrimeRecord.IsExecution(sentence)) { vitals.Body.Drain(1f, sentence == Sentence.Hanging ? "the noose" : "the block"); }
+            Dialogue("Taken by the law", $"Men with cudgels at the alehouse door. You are tried in {s.Name} for {crime} and {CrimeRecord.Describe(sentence)}.\n\n{outcome}", ("...", () => { if (vitals.Body.IsDead) vitals.NotifyDeadFromBody(); }));
         }
 
         private void Check(Transform t, string kind, ref float best)
@@ -246,11 +246,12 @@ namespace AshesAndCrowns.Game
             }
             var rng = GameBootstrap.Instance.Rng.Fork(103); rng.State ^= (ulong)clock.Calendar.TotalHours;
             int next = ctx.NextJobId;
-            JobBoard.Refresh(s, ctx.Settlements, DataFiles.LoadCoast().mapSideKm, _balance.settlements, _balance.jobs, clock.Calendar, new NameGenerator(ctx.Names, rng.Fork(1)), rng, ref next);
+            JobBoard.Refresh(s, ctx.Settlements, ctx.MapSideKm, _balance.settlements, _balance.jobs, clock.Calendar, new NameGenerator(ctx.Names, rng.Fork(1)), rng, ref next);
             ctx.NextJobId = next;
             var opts = new List<(string, System.Action)>(4);
             foreach (Job j in s.Jobs)
             {
+                if (j.State != JobState.Offered) continue;
                 Job job = j; bool can = JobBoard.CanTake(job, ctx.Character, ctx.Inventory);
                 opts.Add((JobBoard.KindName(job.Kind) + ": " + job.Blurb + (can ? "" : "  [not for you]"), () =>
                 {
@@ -453,31 +454,30 @@ namespace AshesAndCrowns.Game
         private void OpenMarket(bool buying)
         {
             var ctx = RunSession.Context; int month = clock.Calendar.Month; float standing = ctx.Standing.Value;
+            Market market = ctx.Current != null && ctx.Current.Market != null ? ctx.Current.Market : ctx.Market;
             _busy = true; _openKind = Open.Market; _options.Clear();
-            hud.ShowMarket(ctx.Market, ctx.Items, ctx.Inventory, month, standing,
+            hud.ShowMarket(market, ctx.Items, ctx.Inventory, month, standing,
                 onBuy: (id, haggled) =>
                 {
-                    int asking = ctx.Market.BuyPrice(id, month, standing);
+                    int asking = market.BuyPrice(id, month, standing);
                     if (haggled)
                     {
-                        var rng = GameBootstrap.Instance.Rng.Fork(91); rng.State ^= (ulong)(clock.Calendar.TotalHours * 7919) ^ (ulong)StableHash(id);
-                        bool ok = ctx.Market.Haggle(0.8f, true, ctx.Character.Get(Skill.Haggling), standing, rng);
+                        var rng = GameBootstrap.Instance.Rng.Fork(91); rng.State ^= (ulong)(clock.Calendar.TotalHours * 7919) ^ (ulong)MapGeometry.StableHash(id);
+                        bool ok = market.Haggle(0.8f, true, ctx.Character.Get(Skill.Haggling), standing, rng);
                         ctx.Character.Use(Skill.Haggling, _balance.character, ok ? 1f : 0.4f);
-                        if (ok) { int price = Mathf.Max(1, Mathf.RoundToInt(asking * 0.8f)); if (ctx.Character.Coins >= price && ctx.Market.Find(id).Stock >= 1f) { ctx.Character.Coins -= price; ctx.Market.Find(id).Stock -= 1f; ctx.Inventory.Add(id); return "Grudgingly, for " + price + "."; } return "Agreed, but you cannot pay."; }
+                        if (ok) { int price = Mathf.Max(1, Mathf.RoundToInt(asking * 0.8f)); var good = market.Find(id); if (ctx.Character.Coins >= price && good != null && good.Stock >= 1f) { ctx.Character.Coins -= price; good.Stock -= 1f; ctx.Inventory.Add(id); return "Grudgingly, for " + price + "."; } return "Agreed, but you cannot pay."; }
                         return "\"Away with you.\" The price stands.";
                     }
-                    return ctx.Market.Buy(id, 1, month, standing, ctx.Character, ctx.Inventory, out int paid) ? "Bought for " + paid + "." : "You cannot afford it, or there is none.";
+                    return market.Buy(id, 1, month, standing, ctx.Character, ctx.Inventory, out int paid) ? "Bought for " + paid + "." : "You cannot afford it, or there is none.";
                 },
                 onSell: id =>
                 {
-                    return ctx.Market.Sell(id, 1, month, standing, ctx.Character, ctx.Inventory, out int earned) ? "Sold for " + earned + "." : "You have none to sell.";
+                    return market.Sell(id, 1, month, standing, ctx.Character, ctx.Inventory, out int earned) ? "Sold for " + earned + "." : "You have none to sell.";
                 },
                 onClose: () => { _busy = false; _openKind = Open.None; melee?.RefreshLoadout(); saveManager?.SaveNow(AffairsChoice.None); });
         }
 
         // ------------------------------------------------------------------ dialogue
-
-        private static uint StableHash(string s) { uint h = 2166136261; foreach (char c in s) { h ^= c; h *= 16777619; } return h; }
 
         private void Dialogue(string title, string body, params (string label, System.Action act)[] options)
         {

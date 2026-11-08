@@ -333,7 +333,8 @@ namespace AshesAndCrowns.Game
             else if (rc.Settlements.Count == 0)
             {
                 // Older save: build England fresh from the seed.
-                rc.Settlements = EnglandSetup.Generate(_balance, boot.World, DataFiles.LoadCoast(), rc.Items, rc.Baronage, new NameGenerator(rc.Names, boot.Rng.Fork(41)), boot.Rng.Fork(45));
+                var coast = DataFiles.LoadCoast(); rc.MapSideKm = coast.mapSideKm;
+                rc.Settlements = EnglandSetup.Generate(_balance, boot.World, coast, rc.Items, rc.Baronage, new NameGenerator(rc.Names, boot.Rng.Fork(41)), boot.Rng.Fork(45));
                 rc.HomeSettlementId = string.IsNullOrEmpty(rc.SpawnLocationId) ? "ashby_village" : rc.SpawnLocationId;
             }
             var home = rc.Home;

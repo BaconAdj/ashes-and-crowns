@@ -36,6 +36,7 @@ namespace AshesAndCrowns.Game
             ctx.SpawnLocationId = RunSetup.ChooseSpawn(ctx.Character, villages, castles, boot.Rng.Fork(44));
             ctx.EnsureSurvival(balance, DataFiles.LoadItems(), DataFiles.LoadTrades());
             ctx.Names = names;
+            ctx.MapSideKm = coast.mapSideKm;
             ctx.Settlements = EnglandSetup.Generate(balance, world, coast, ctx.Items, ctx.Baronage, nameGen, boot.Rng.Fork(45));
             ctx.EnsureEngland(balance);
             ctx.HomeSettlementId = ctx.SpawnLocationId;

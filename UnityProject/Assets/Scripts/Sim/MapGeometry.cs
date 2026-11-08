@@ -5,6 +5,9 @@ namespace AshesAndCrowns.Sim
     /// <summary>Point-in-polygon and distance over flat coordinate arrays, shared by the terrain builder and the settlement generator.</summary>
     public static class MapGeometry
     {
+        /// <summary>FNV-1a over a string: stable across runtimes, unlike string.GetHashCode.</summary>
+        public static uint StableHash(string s) { uint h = 2166136261; if (s != null) foreach (char c in s) { h ^= c; h *= 16777619; } return h; }
+
         public static bool PointInRing(float[] xs, float[] zs, float x, float z)
         {
             bool inside = false;

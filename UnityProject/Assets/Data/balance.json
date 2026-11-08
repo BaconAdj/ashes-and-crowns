@@ -452,5 +452,27 @@
     "armourPerPoint": 0.01,
     "skillDamageWeight": 0.006,
     "skillParryWindowWeight": 0.0012
+  },
+  "morale": {
+    "start": 0.8,
+    "casualtyWeight": 1.2,
+    "recentLossSpike": 0.35,
+    "flankedPenaltyPerSecond": 0.012,
+    "surroundedPenaltyPerSecond": 0.025,
+    "fatiguePenaltyPerSecond": 0.002,
+    "rainPenalty": 0.03,
+    "snowPenalty": 0.06,
+    "commanderNearBonusPerSecond": 0.01,
+    "commanderFightingBonusPerSecond": 0.006,
+    "commanderRange": 60,
+    "allyRoutingPenaltyPerSecond": 0.008,
+    "enemyRoutingBonusPerSecond": 0.005,
+    "recoveryPerSecond": 0.01,
+    "shakenBelow": 0.45,
+    "routBelow": 0.2,
+    "rallyAbove": 0.5,
+    "surrenderWhenSurroundedBelow": 0.3,
+    "veteranBonus": 0.1,
+    "runDownKillChancePerSecond": 0.25
   }
 }

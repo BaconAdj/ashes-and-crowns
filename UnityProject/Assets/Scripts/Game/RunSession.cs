@@ -50,6 +50,7 @@ namespace AshesAndCrowns.Game
         public string HomeSettlementId = string.Empty;
         public string CurrentSettlementId = string.Empty;   // where the player stands, or empty
         public NamesData Names;
+        public float MapSideKm = 673f;
 
         public Settlement FindSettlement(string id) { foreach (var s in Settlements) if (s.Id == id) return s; return null; }
         public Settlement Current => string.IsNullOrEmpty(CurrentSettlementId) ? null : FindSettlement(CurrentSettlementId);

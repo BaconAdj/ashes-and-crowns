@@ -21,11 +21,15 @@ namespace AshesAndCrowns.Game
         {
             if (_built) return;
             _built = true;
+            // Work on a copy: SetHeights on the saved TerrainData would dent the asset permanently in the editor.
+            var td = Instantiate(assets.terrain.terrainData); td.name = assets.terrain.terrainData.name + " (runtime)";
+            assets.terrain.terrainData = td;
+            var col = assets.terrain.GetComponent<TerrainCollider>(); if (col != null) col.terrainData = td;
             if (fixedSitesRoot != null) foreach (Transform t in fixedSitesRoot) { var site = t.GetComponent<SettlementSite>(); if (site != null) _sites.Add(site); }
             foreach (var s in settlements)
             {
                 if (s.IsFixed) { EnsureFixedSite(s, terrainSize); continue; }
-                BuildVillage(s, terrainSize, rng.Fork((uint)(s.Id.GetHashCode() & 0x7fffffff)));
+                BuildVillage(s, terrainSize, rng.Fork(MapGeometry.StableHash(s.Id)));
             }
         }
 

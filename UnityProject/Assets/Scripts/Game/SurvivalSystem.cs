@@ -19,6 +19,8 @@ namespace AshesAndCrowns.Game
         private bool _subscribed;
         public bool RestingAtHome;  // set by VillageLife while asleep
         public bool InCamp;         // Phase 8
+        /// <summary>Set during the daily tick; VillageLife performs the arrest from its own Update (never inside the clock event).</summary>
+        public Settlement PendingArrest;
 
         private void Start()
         {
@@ -52,7 +54,7 @@ namespace AshesAndCrowns.Game
                 ctx.Reputation?.TickDay();
                 foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
                 var here = ctx.Current;
-                if (ctx.Crime != null && here != null && village != null && ctx.Crime.TickDay(here, false, rng)) { village.Arrest(here); break; }
+                if (ctx.Crime != null && here != null && village != null && PendingArrest == null && ctx.Crime.TickDay(here, village.InChurch, rng)) PendingArrest = here;
                 if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && JobBoard.Today(clock.Calendar) > ctx.ActiveJob.DeadlineDay)
                 { ctx.ActiveJob.State = JobState.Failed; ctx.Standing.DebtDefaulted(); ctx.Reputation.Record(Deed.BrokeContract); ctx.ActiveJob = null; }
             }

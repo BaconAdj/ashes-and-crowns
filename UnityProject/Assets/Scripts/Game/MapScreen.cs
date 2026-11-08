@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AshesAndCrowns.Sim;
 using AshesAndCrowns.UI;
 using UnityEngine;
@@ -30,29 +31,37 @@ namespace AshesAndCrowns.Game
 
         private static Texture2D Draw(CoastData coast)
         {
-            const int size = 512;
+            const int size = 384;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "EnglandMap" };
             float[] xs = new float[coast.mainland.Length], zs = new float[coast.mainland.Length];
             for (int i = 0; i < xs.Length; i++) { xs[i] = coast.mainland[i].x; zs[i] = coast.mainland[i].z; }
-            var sea = new Color(0.16f, 0.17f, 0.19f); var land = new Color(0.58f, 0.52f, 0.40f); var edge = new Color(0.25f, 0.22f, 0.17f);
-            var px = new Color[size * size];
+            var islands = new List<(float[] x, float[] z)>();
+            if (coast.islands != null)
+                foreach (var isl in coast.islands)
+                {
+                    float[] ix = new float[isl.points.Length], iz = new float[isl.points.Length];
+                    for (int k = 0; k < ix.Length; k++) { ix[k] = isl.points[k].x; iz[k] = isl.points[k].z; }
+                    islands.Add((ix, iz));
+                }
+            var inside = new bool[size * size];
             for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
             {
                 float nx = (x + 0.5f) / size, nz = (y + 0.5f) / size;
-                bool inside = MapGeometry.PointInRing(xs, zs, nx, nz);
-                if (!inside && coast.islands != null)
-                    foreach (var isl in coast.islands)
-                    {
-                        float[] ix = new float[isl.points.Length], iz = new float[isl.points.Length];
-                        for (int k = 0; k < ix.Length; k++) { ix[k] = isl.points[k].x; iz[k] = isl.points[k].z; }
-                        if (MapGeometry.PointInRing(ix, iz, nx, nz)) { inside = true; break; }
-                    }
-                Color c = inside ? land : sea;
-                if (inside && MapGeometry.DistanceToRing(xs, zs, nx, nz) < 0.004f) c = edge;
-                px[y * size + x] = c;
+                bool land = MapGeometry.PointInRing(xs, zs, nx, nz);
+                if (!land) foreach (var isl in islands) if (MapGeometry.PointInRing(isl.x, isl.z, nx, nz)) { land = true; break; }
+                inside[y * size + x] = land;
             }
-            // Rivers as faint lines
+            var sea = new Color(0.16f, 0.17f, 0.19f); var land_ = new Color(0.58f, 0.52f, 0.40f); var edge = new Color(0.25f, 0.22f, 0.17f);
+            var px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                int i = y * size + x;
+                if (!inside[i]) { px[i] = sea; continue; }
+                bool coastPixel = (x > 0 && !inside[i - 1]) || (x < size - 1 && !inside[i + 1]) || (y > 0 && !inside[i - size]) || (y < size - 1 && !inside[i + size]);
+                px[i] = coastPixel ? edge : land_;
+            }
             if (coast.rivers != null)
                 foreach (var r in coast.rivers)
                     for (int i = 1; i < r.points.Length; i++)

@@ -124,6 +124,9 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Built: settlement generation, regional markets and trade opportunities, travel maths, job board and contracts, global reputation, crime/arrest/trial/execution, runtime village spawner, settlement sites with arrival toasts, map screen, info panel additions, save v5. 9 new tests (105 under .NET).
 - Stubbed: roads and trade routes as visible paths, caravans and escorts as travelling NPCs (guard and escort jobs pay on arrival with no fight yet), bounties without a target (Phase 6), town interiors and markets as places (a site marker stands in), outlaw hunters, bailiffs as NPCs.
 
+## 2026-11-08 — Phase 5 static review applied
+- No compile errors. Applied: other settlements' alehouses and churches are usable and trading uses the market you stand in (the trade loop works); arrests are deferred out of the clock's day event and an execution kills before its dialogue; runtime village flattening works on an instantiated copy of the terrain data (the asset no longer gets dented); the map draws at 384 with a neighbour-based coastline (no distance pass); sanctuary and the daily law check use whichever church you are in; map side length cached; stable string hash in Sim.
+
 ## 2026-11-08 — Phase 6 personal melee
 - One fight model for everyone (`FighterState`): windup, strike, recover, guard with a parry window at its start, dodge with invulnerable frames, stagger, yield, down. Stamina gates swings, guards and dodges; an empty guard breaks. Timings and costs in `balance.duel`.
 - Direction: four lines (high, left, right, low) chosen by the mouse's motion as you press. A guard in the same line blocks; a shield also covers the other side. High blows find the head more often, low blows the legs; armour per region from the items carried (mail, gambeson, helm, shield).
