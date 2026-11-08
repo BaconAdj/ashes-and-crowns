@@ -170,6 +170,7 @@ namespace AshesAndCrowns.Sim
         public MeleeRulesBalance duel = new MeleeRulesBalance();
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
+        public SiegeBalance siege = new SiegeBalance();
         public AbsenceBalance absence = new AbsenceBalance();
     }
 
@@ -224,6 +225,8 @@ namespace AshesAndCrowns.Sim
             if (b.duel == null || b.duel.windupSeconds <= 0f || b.duel.parryWindowSeconds <= 0f) errors.Add("duel timings must be positive");
             if (b.morale == null || !(b.morale.routBelow < b.morale.shakenBelow && b.morale.shakenBelow < b.morale.rallyAbove)) errors.Add("morale thresholds must satisfy rout < shaken < rally");
             if (b.service == null || b.service.floggingAbove >= b.service.hangingAbove) errors.Add("service.floggingAbove must be below hangingAbove");
+            if (b.siege == null || b.siege.surrenderMoraleBelow <= 0f || b.siege.surrenderMoraleBelow >= 1f) errors.Add("siege.surrenderMoraleBelow must be within (0,1)");
+            if (b.siege != null && (b.siege.ladderVulnerability < 1f || b.siege.wallHalfThickness <= 0f || b.siege.motteDays <= 0 || b.siege.garrisonMin <= 0)) errors.Add("siege layout and castle numbers must be positive");
             if (b.baronage == null || b.baronage.minorLordCount <= 0) errors.Add("baronage.minorLordCount must be positive");
             if (b.baronage != null && b.baronage.knightsMax < b.baronage.knightsMin) errors.Add("baronage.knightsMax must be >= knightsMin");
             if (b.weather == null) errors.Add("weather missing");

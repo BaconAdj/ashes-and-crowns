@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 7;
+        public const int CurrentVersion = 8;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -65,6 +65,13 @@ namespace AshesAndCrowns.Save
         public byte ServiceRole, ServiceSide; public string ServiceCompany = "", ServiceCaptain = "", ServicePatron = ""; public int ServiceWage, ServiceDays, ServiceOwed, ServiceBattles, ServiceRenown, ServiceKills, ServiceLines;
         public float ServiceInfractions, ServicePatronFavour; public bool ServiceDeserter, ServiceInCamp;
         public CompanySnapshot[] Companies = new CompanySnapshot[0];
+
+        // Version 8: sieges and castles
+        public bool HasSiege; public string SiegeTargetId = "", SiegeTargetName = ""; public byte SiegeBesieger, SiegeOutcome; public bool SiegePlayerAttacking, SiegePlayerCommands, SiegeRamBuilt, SiegeTowerBuilt, SiegeGateBroken, SiegeInAssault;
+        public int SiegeDay, SiegeAttackers, SiegeDefenders, SiegeCoinSpent, SiegeLadders, SiegeRamDays, SiegeTowerDays, SiegeAssaults, SiegeLordId, SiegeAttDead, SiegeDefDead;
+        public float SiegeFood, SiegeDefSick, SiegeAttSick, SiegeDefMorale, SiegeRelief;
+        public bool HasCastle; public string CastleName = "", CastleSiteId = ""; public float CastleNx, CastleNz; public byte CastleStage; public int CastleDays, CastleCoin, CastleObjector;
+        public int Garrison;
     }
 
     public sealed class CompanySnapshot { public string Name = "", Captain = "", BasedAtId = ""; public byte Employer; public int Size, ContractDaysLeft; public float Reputation; }
@@ -90,6 +97,7 @@ namespace AshesAndCrowns.Save
         public int SoldierCount, UnitCount, PlayerSoldierEnd;
         public float Elapsed, EnemyThinkTimer;
         public bool Started, PlayerCharacterAlive;
+        public bool SiegeGateOpen; public float RamSeconds;   // v8
         public float[] Positions = new float[0];   // xyz per soldier
         public float[] Yaws = new float[0];
         public float[] Health = new float[0];

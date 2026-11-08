@@ -130,6 +130,9 @@ namespace AshesAndCrowns.EditorTools
             enc.banditMaterial = SceneKit.Mat("Bandit", SceneKit.LitShader, new Color(0.22f, 0.2f, 0.17f), 0f, 0.9f); enc.steelMaterial = steel;
             life.encounter = enc; life.melee = melee;
             save.melee = melee;
+            var siege = sceneGo.AddComponent<SiegeDirector>();
+            siege.clock = clock; siege.hud = hud; siege.saveManager = save; siege.village = life; siege.vitals = vitals; siege.spawner = spawnerComp;
+            life.siege = siege;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

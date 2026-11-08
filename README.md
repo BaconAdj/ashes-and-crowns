@@ -38,6 +38,9 @@ Dawn bells wake you. At the bench behind your hut, E works the day: a short hand
 ## Serving in the ranks
 Armed men may come for you with a quota: go, pay, or run. In towns a mercenary company may take you on. At the muster you march to battle as a body in a line: a ring marks your place, the banner and the sergeant tell you what to do, and you do not command. Break ranks and the provost hears of it; hold the line and the sergeant names you. Lose, and you may be ransomed, let go, or killed where you kneel. Deeds, a warhorse and mail, and a lord who likes you make a knight.
 
+## Sieges
+A castle is starved or stormed. Outside the walls the days cost silver and men to fever; inside, bread runs out and morale with it. Ladders go up one a day, the ram in five. When you storm, the field has a wall across it: men cross only at the ladders or through the broken gate, and a man on a ladder dies twice as easily. Take a castle and hold it, garrison it, or let the men loose. Or dig your own motte on a village's land and see who objects.
+
 ## Battles
 Units have morale. Losses, being flanked or surrounded, fatigue, rain and snow, and friends running all erode it; a commander on the hill or in the line, and enemies seen running, restore it. Below a threshold a unit is shaken; lower still it routs, flees the nearest enemy and hears no orders. Men who catch runners cut them down. A shaken unit that is surrounded surrenders and becomes prisoners. Battles end when one side has nothing steady left; the report names the dead the sergeants knew.
 

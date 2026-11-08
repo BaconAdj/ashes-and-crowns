@@ -56,6 +56,21 @@ namespace AshesAndCrowns.Game
                 foreach (var co in ctx.Companies) if (co.ContractDaysLeft > 0) co.ContractDaysLeft--;
                 var homeS = ctx.Home;
                 if (ctx.PendingLevyAt == null && ctx.Service != null && !ctx.Service.Active && !ctx.Service.Deserter && ctx.Character.Rank <= Rank.Warrior && homeS != null && ctx.CurrentSettlementId == homeS.Id && rng.Chance(_balance.service.levyDemandChancePerDay)) ctx.PendingLevyAt = homeS;
+                if (ctx.Castle != null && ctx.Castle.Active && ctx.PendingObjector == null && ctx.Siege == null && ctx.CurrentSettlementId == ctx.Castle.SiteSettlementId)
+                {
+                    string built = CastleRules.BuildDay(ctx.Castle, ctx.Character, ctx.Service.Side, ctx.Baronage, rng, _balance.siege, out MinorLord objector);
+                    if (!string.IsNullOrEmpty(built)) ctx.PendingNotices.Add(built);
+                    if (objector != null) ctx.PendingObjector = objector;
+                    if (ctx.Castle.Stage == CastleStage.Done)
+                    {
+                        var site = ctx.FindSettlement(ctx.Castle.SiteSettlementId);
+                        var castle = CastleRules.Complete(ctx.Castle, ctx.Service.Side, site != null ? site.Region : string.Empty);
+                        castle.Market = new Market(_balance.economy, ctx.Items);
+                        ctx.Settlements.Add(castle); ctx.PendingNewSettlement = castle;
+                        ctx.Character.Rank = Rank.Lord; ctx.HomeSettlementId = castle.Id;
+                        ctx.PendingNotices.Add($"You are lord of {castle.Name}. Nobody licensed it. Someone will mind.");
+                    }
+                }
                 foreach (var s in ctx.Settlements) { if (s.Market != ctx.Market) s.Market.TickDay(); s.Outbreak = Mathf.Max(0f, s.Outbreak - _balance.disease.settlementOutbreakDecayPerDay); if (s.WantedHere > 0f) s.WantedHere = Mathf.Max(0f, s.WantedHere - _balance.crime.wantedDecayPerDay); }
                 var here = ctx.Current;
                 if (ctx.Crime != null && here != null && village != null && PendingArrest == null && ctx.Crime.TickDay(here, village.InChurch, rng)) PendingArrest = here;

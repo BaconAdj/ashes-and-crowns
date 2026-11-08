@@ -134,6 +134,15 @@ namespace AshesAndCrowns.Save
                 var cos = s.Companies ?? new CompanySnapshot[0]; w.Write(cos.Length);
                 foreach (var c in cos) { w.Write(c.Name ?? ""); w.Write(c.Captain ?? ""); w.Write(c.BasedAtId ?? ""); w.Write(c.Employer); w.Write(c.Size); w.Write(c.ContractDaysLeft); w.Write(c.Reputation); }
             }
+            if (version >= 8)
+            {
+                w.Write(s.HasSiege); w.Write(s.SiegeTargetId ?? ""); w.Write(s.SiegeTargetName ?? ""); w.Write(s.SiegeBesieger); w.Write(s.SiegeOutcome);
+                w.Write(s.SiegePlayerAttacking); w.Write(s.SiegePlayerCommands); w.Write(s.SiegeRamBuilt); w.Write(s.SiegeTowerBuilt); w.Write(s.SiegeGateBroken); w.Write(s.SiegeInAssault);
+                w.Write(s.SiegeDay); w.Write(s.SiegeAttackers); w.Write(s.SiegeDefenders); w.Write(s.SiegeCoinSpent); w.Write(s.SiegeLadders); w.Write(s.SiegeRamDays); w.Write(s.SiegeTowerDays); w.Write(s.SiegeAssaults); w.Write(s.SiegeLordId); w.Write(s.SiegeAttDead); w.Write(s.SiegeDefDead);
+                w.Write(s.SiegeFood); w.Write(s.SiegeDefSick); w.Write(s.SiegeAttSick); w.Write(s.SiegeDefMorale); w.Write(s.SiegeRelief);
+                w.Write(s.HasCastle); w.Write(s.CastleName ?? ""); w.Write(s.CastleSiteId ?? ""); w.Write(s.CastleNx); w.Write(s.CastleNz); w.Write(s.CastleStage); w.Write(s.CastleDays); w.Write(s.CastleCoin); w.Write(s.CastleObjector);
+                w.Write(s.Garrison);
+            }
         }
 
         private static void WriteJob(BinaryWriter w, JobSnapshot j)
@@ -257,6 +266,15 @@ namespace AshesAndCrowns.Save
                 s.Companies = new CompanySnapshot[nc];
                 for (int i = 0; i < nc; i++) s.Companies[i] = new CompanySnapshot { Name = r.ReadString(), Captain = r.ReadString(), BasedAtId = r.ReadString(), Employer = r.ReadByte(), Size = r.ReadInt32(), ContractDaysLeft = r.ReadInt32(), Reputation = r.ReadSingle() };
             }
+            if (version >= 8)
+            {
+                s.HasSiege = r.ReadBoolean(); s.SiegeTargetId = r.ReadString(); s.SiegeTargetName = r.ReadString(); s.SiegeBesieger = r.ReadByte(); s.SiegeOutcome = r.ReadByte();
+                s.SiegePlayerAttacking = r.ReadBoolean(); s.SiegePlayerCommands = r.ReadBoolean(); s.SiegeRamBuilt = r.ReadBoolean(); s.SiegeTowerBuilt = r.ReadBoolean(); s.SiegeGateBroken = r.ReadBoolean(); s.SiegeInAssault = r.ReadBoolean();
+                s.SiegeDay = r.ReadInt32(); s.SiegeAttackers = r.ReadInt32(); s.SiegeDefenders = r.ReadInt32(); s.SiegeCoinSpent = r.ReadInt32(); s.SiegeLadders = r.ReadInt32(); s.SiegeRamDays = r.ReadInt32(); s.SiegeTowerDays = r.ReadInt32(); s.SiegeAssaults = r.ReadInt32(); s.SiegeLordId = r.ReadInt32(); s.SiegeAttDead = r.ReadInt32(); s.SiegeDefDead = r.ReadInt32();
+                s.SiegeFood = r.ReadSingle(); s.SiegeDefSick = r.ReadSingle(); s.SiegeAttSick = r.ReadSingle(); s.SiegeDefMorale = r.ReadSingle(); s.SiegeRelief = r.ReadSingle();
+                s.HasCastle = r.ReadBoolean(); s.CastleName = r.ReadString(); s.CastleSiteId = r.ReadString(); s.CastleNx = r.ReadSingle(); s.CastleNz = r.ReadSingle(); s.CastleStage = r.ReadByte(); s.CastleDays = r.ReadInt32(); s.CastleCoin = r.ReadInt32(); s.CastleObjector = r.ReadInt32();
+                s.Garrison = r.ReadInt32();
+            }
             return s;
         }
 
@@ -269,6 +287,7 @@ namespace AshesAndCrowns.Save
             Ints(w, b.UnitStart); Ints(w, b.UnitCount_); Ints(w, b.UnitAliveCount);
             Floats(w, b.UnitAnchor); Floats(w, b.UnitYaw); Floats(w, b.UnitTarget);
             if (version >= 6) { Bytes(w, b.UnitStance); Floats(w, b.UnitMorale); }
+            if (version >= 8) { w.Write(b.SiegeGateOpen); w.Write(b.RamSeconds); }
         }
 
         private static BattleSnapshot ReadBattle(BinaryReader r, int version)
@@ -285,6 +304,7 @@ namespace AshesAndCrowns.Save
             b.UnitStart = Ints(r); b.UnitCount_ = Ints(r); b.UnitAliveCount = Ints(r);
             b.UnitAnchor = Floats(r); b.UnitYaw = Floats(r); b.UnitTarget = Floats(r);
             if (version >= 6) { b.UnitStance = Bytes(r); b.UnitMorale = Floats(r); }
+            if (version >= 8) { b.SiegeGateOpen = r.ReadBoolean(); b.RamSeconds = r.ReadSingle(); }
             return b;
         }
 

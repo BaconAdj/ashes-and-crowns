@@ -27,6 +27,10 @@ namespace AshesAndCrowns.Game
         public Light sun;
         public PerfProbe perf;
         public GruntMode grunt;
+        public SiegeField siegeField;   // only in the siege scene
+
+        private bool _ended, _waitingReturn;
+        private Sim.BattleReport _report;
 
         private void Start()
         {
@@ -39,17 +43,47 @@ namespace AshesAndCrowns.Game
             var playerCentre = new Vector3(field.playerArmyCentre.x, 0f, field.playerArmyCentre.z);
             var enemyCentre = new Vector3(field.enemyArmyCentre.x, 0f, field.enemyArmyCentre.z);
             director.playerCharacter = player.transform;
-            director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames());
-            director.BattleEnded += OnBattleEnded;
             var ctx = RunSession.Context;
-            bool asGrunt = (RunSession.PendingBattle != null && RunSession.PendingBattle.AsGrunt) || (ctx != null && ctx.Service.Active && ctx.Service.Role != ServiceRole.Commander);
+            var launch = RunSession.PendingBattle;
+            var siege = ctx != null ? ctx.Siege : null;
+            bool siegeBattle = siegeField != null && siege != null && ((launch != null && launch.Siege) || siege.InAssault);
+            SiegeLayout layout = default; int playerCount = -1, enemyCount = -1;
+            if (siegeBattle)
+            {
+                var sb = balance.siege;
+                layout = new SiegeLayout
+                {
+                    Active = 1, AttackersArePlayer = (byte)(siege.PlayerAttacking ? 1 : 0), GateOpen = (byte)(siege.GateBroken ? 1 : 0), HasRam = (byte)(siege.RamBuilt ? 1 : 0),
+                    WallZ = sb.wallZ, WallHalf = sb.wallHalfThickness, GateX = sb.gateX, GateHalf = sb.gateHalfWidth, LadderHalf = sb.ladderHalfWidth, LadderSpacing = sb.ladderSpacing,
+                    LadderCount = Mathf.Min(sb.maxLadders + 2, siege.Ladders + (siege.TowerBuilt ? 2 : 0)), LadderVulnerability = sb.ladderVulnerability
+                };
+                var attackers = new Vector3(sb.gateX, 0f, sb.attackerCentreZ); var defenders = new Vector3(sb.gateX, 0f, sb.defenderCentreZ);
+                playerCentre = siege.PlayerAttacking ? attackers : defenders; enemyCentre = siege.PlayerAttacking ? defenders : attackers;
+                playerCount = siege.PlayerAttacking ? siege.Attackers : siege.Defenders; enemyCount = siege.PlayerAttacking ? siege.Defenders : siege.Attackers;
+                siege.InAssault = true;
+            }
+            director.Setup(balance, boot.Rng, terrain, playerCentre, enemyCentre, DataFiles.LoadNames(), playerCount, enemyCount, layout);
+            director.BattleEnded += OnBattleEnded;
+            if (siegeBattle) { siegeField.Show(layout, terrain); director.GateBroken += siegeField.OnGateBroken; }
+            bool asGrunt = launch != null ? launch.AsGrunt : (ctx != null && ctx.Service.Active && ctx.Service.Role != ServiceRole.Commander && !(siege != null && siege.PlayerCommands));
             if (asGrunt && grunt != null) { grunt.enabled = true; director.AiCommandsPlayerSide = true; }
             else if (grunt != null) grunt.enabled = false;
             banners.Build();
             command.Init(balance);
 
-            Place(player.transform, field.playerSpawn.x, field.playerSpawn.z, 0.2f);
-            Place(horse.transform, field.horseSpawn.x, field.horseSpawn.z, 0.2f);
+            if (siegeBattle && !siege.PlayerAttacking)
+            {
+                // Defending your own walls: you and the vantage stand inside the castle.
+                float wz = balance.siege.wallZ, gx = balance.siege.gateX;
+                Place(player.transform, gx - 6f, wz + 14f, 0.2f); Place(horse.transform, gx + 8f, wz + 24f, 0.2f);
+                player.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                if (command.vantage != null) { command.vantage.position = new Vector3(gx, terrain.SampleHeight(new Vector3(gx, 0f, wz + 30f)) + terrain.transform.position.y, wz + 30f); command.vantage.rotation = Quaternion.Euler(0f, 180f, 0f); }
+            }
+            else
+            {
+                Place(player.transform, field.playerSpawn.x, field.playerSpawn.z, 0.2f);
+                Place(horse.transform, field.horseSpawn.x, field.horseSpawn.z, 0.2f);
+            }
             horse.transform.rotation = Quaternion.Euler(0f, 20f, 0f);
 
             vitals.Init(balance, boot.Rng);
@@ -65,7 +99,37 @@ namespace AshesAndCrowns.Game
 
         private void OnBattleEnded(Sim.BattleReport report)
         {
-            if (grunt == null || !grunt.enabled) hud.ShowBattleReport(report);
+            var ctx = RunSession.Context;
+            if (ctx != null && ctx.Siege != null && ctx.Siege.InAssault)
+            {
+                var s = ctx.Siege;
+                bool attackersWon = s.PlayerAttacking ? report.PlayerWon : (!report.PlayerWon && !report.Draw);
+                int attDead = s.PlayerAttacking ? report.PlayerDead : report.EnemyDead, defDead = s.PlayerAttacking ? report.EnemyDead : report.PlayerDead;
+                s.GateBroken |= director.Siege.GateOpen == 1;
+                SiegeRules.ResolveStorm(s, attackersWon, attDead, defDead);
+                if (s.Outcome == SiegeOutcome.Stormed && s.PlayerAttacking && s.PlayerCommands) ctx.Service.Renown += GameBootstrap.Instance.Balance.siege.renownForStorm;
+            }
+            if (grunt == null || !grunt.enabled)
+            {
+                hud.ShowBattleReport(report);
+                _report = report; _ended = true;
+                if (ctx != null) { _waitingReturn = true; hud.SetOrderBanner(string.Empty, "Press R to march home."); }
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (!_waitingReturn || vitals.IsDead) return;
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb == null || !kb.rKey.wasPressedThisFrame) return;
+            _waitingReturn = false;
+            var ctx = RunSession.Context;
+            var lines = new System.Collections.Generic.List<string>(4);
+            if (_report != null) lines.Add(_report.Summary());
+            if (ctx != null && ctx.Siege != null) lines.Add(ctx.Siege.Outcome == SiegeOutcome.Stormed ? "The walls are taken." : ctx.Siege.Active ? "The storm failed. Back to the lines." : "The siege is over.");
+            RunSession.ReturnChronicle = lines;
+            if (vitals.Body != null) RunSession.CarriedBody = vitals.Body.Export();
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Phase1_England");
         }
 
         private void Place(Transform t, float x, float z, float lift)

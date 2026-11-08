@@ -33,6 +33,9 @@ namespace AshesAndCrowns.Game
             }
         }
 
+        /// <summary>A settlement that appears after the scene started (an adulterine castle).</summary>
+        public void AddSite(Settlement s, float size) { if (_built) EnsureFixedSite(s, size); }
+
         private void EnsureFixedSite(Settlement s, float size)
         {
             foreach (var site in _sites) if (site.settlementId == s.Id) return;

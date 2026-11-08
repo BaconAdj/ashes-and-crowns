@@ -7,7 +7,7 @@ namespace AshesAndCrowns.Sim
     public enum Deed : byte
     {
         FoughtForStephen, FoughtForMatilda, KilledSurrendered, RanDownRouters, AttendedMass, DesecratedChurch, RobbedTraveller,
-        PaidTithe, HelpedRefugees, Deserted, HonouredContract, BrokeContract, GaveAlms, Murder, Theft
+        PaidTithe, HelpedRefugees, Deserted, HonouredContract, BrokeContract, GaveAlms, Murder, Theft, Sacked
     }
 
     [Serializable] public sealed class ReputationBalance
@@ -48,6 +48,7 @@ namespace AshesAndCrowns.Sim
                 case Deed.GaveAlms: Add(Faction.Church, 0.02f); Add(Faction.Commons, 0.02f); break;
                 case Deed.Murder: Add(Faction.Commons, -0.1f); Add(Faction.Church, -0.06f); Notoriety = Math.Min(1f, Notoriety + 0.15f); break;
                 case Deed.Theft: Add(Faction.Commons, -0.03f); Notoriety = Math.Min(1f, Notoriety + 0.04f); break;
+                case Deed.Sacked: Add(Faction.Commons, -0.12f); Add(Faction.Church, -0.1f); Notoriety = Math.Min(1f, Notoriety + 0.1f); break;
             }
         }
 

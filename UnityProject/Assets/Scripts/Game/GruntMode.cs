@@ -34,6 +34,7 @@ namespace AshesAndCrowns.Game
         private readonly List<string> _chronicle = new List<string>(8);
 
         private int _companySize = 60, _lastInfractionToast;
+        private bool _siegeBattle;
 
         public void Init(Balance balance, bool placeBody = true)
         {
@@ -44,6 +45,7 @@ namespace AshesAndCrowns.Game
             unitIndex = 0; slotIndex = Mathf.Min(director.Units[0].SoldierCount - 1, FormationMath.LineRankWidth - 1);
             if (modes != null) { modes.commandAllowed = false; }
             if (RunSession.PendingBattle != null) _companySize = RunSession.PendingBattle.CompanySize;
+            _siegeBattle = director.Siege.Active == 1;
             Vector3 slot = director.SlotWorldPosition(unitIndex, slotIndex);
             if (placeBody)
             {
@@ -107,7 +109,8 @@ namespace AshesAndCrowns.Game
             _chronicle.Clear();
             _chronicle.Add(report.Summary());
             bool won = report.PlayerWon;
-            if (won)
+            if (_siegeBattle && ctx.Siege != null) _chronicle.Add(ctx.Siege.Outcome == Sim.SiegeOutcome.Stormed ? "The walls are taken. What happens inside is the captain's business now." : ctx.Siege.Active ? "The storm failed. Back to the lines, and the sergeant counting the missing." : "The siege is over.");
+            if (won && !_siegeBattle)
             {
                 int loot = ServiceRules.LootShare(report.EnemyDead, _companySize, b, _rng);
                 ctx.Character.Coins += loot; _chronicle.Add($"Loot divided by the fire: {loot} pennies to you.");
@@ -117,7 +120,7 @@ namespace AshesAndCrowns.Game
             _chronicle.Add(provostText);
             if (verdict == ProvostVerdict.Flogging) vitals.TakeHitAt(BodyPart.Torso, 0.18f, "the provost's lash");
             if (verdict == ProvostVerdict.Hanging) { vitals.Body.Drain(1f, "the provost's rope"); }
-            if (!won && !vitals.IsDead)
+            if (!won && !vitals.IsDead && !_siegeBattle)
             {
                 UnitStance st = director.StanceOf(unitIndex);
                 bool caught = st == UnitStance.Surrendered || (st == UnitStance.Routing && director.CountWithin(player.transform.position, 15f, Side.Enemy) > 0 && _rng.Chance(0.5f));

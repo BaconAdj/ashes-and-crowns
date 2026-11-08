@@ -14,5 +14,6 @@ namespace AshesAndCrowns.EditorTools
         public const string Theme = UiFolder + "/AshesTheme.tss";
         public const string Phase0Scene = Scenes + "/Phase0_Battlefield.unity";
         public const string Phase1Scene = Scenes + "/Phase1_England.unity";
+        public const string Phase9Scene = Scenes + "/Phase9_Siege.unity";
     }
 }

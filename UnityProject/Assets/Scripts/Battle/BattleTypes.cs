@@ -32,6 +32,24 @@ namespace AshesAndCrowns.Battle
     }
 
     /// <summary>Blittable copy of the battle numbers from balance.json, passed by value into jobs.</summary>
+    /// <summary>A curtain wall across the field: attackers (low z) cross only at ladders, or at the gate once it is broken.</summary>
+    public struct SiegeLayout
+    {
+        public byte Active, AttackersArePlayer, GateOpen, HasRam;
+        public float WallZ, WallHalf, GateX, GateHalf, LadderHalf, LadderSpacing, LadderVulnerability;
+        public int LadderCount;
+
+        public float LadderX(int k) { int m = (k >> 1) + 1; return GateX + (((k & 1) == 0) ? m : -m) * LadderSpacing; }
+        public bool InBand(float z) => z >= WallZ - WallHalf && z <= WallZ + WallHalf;
+        public bool OnLadderSide(float z) => z >= WallZ - WallHalf && z < WallZ;   // the climb: lower half of the band
+        public bool NearLadderOrGate(float x)
+        {
+            if (GateOpen == 1 && math.abs(x - GateX) <= GateHalf) return true;
+            for (int k = 0; k < LadderCount; k++) if (math.abs(x - LadderX(k)) <= LadderHalf) return true;
+            return false;
+        }
+    }
+
     public struct BattleParams
     {
         public float FormationSpacing, ShieldwallSpacing;

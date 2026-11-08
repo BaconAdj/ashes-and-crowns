@@ -119,6 +119,8 @@ namespace AshesAndCrowns.Battle
         [ReadOnly] public NativeArray<byte> UnitStance;
         public HeightField Ground;
         public BattleParams P;
+        public SiegeLayout Siege;
+        public int PlayerSoldierEnd;
         public float3 PlayerPosition;
         public float Dt;
 
@@ -169,6 +171,23 @@ namespace AshesAndCrowns.Battle
             {
                 yaw = LerpAngle(yaw, math.atan2(to.x, to.z), math.saturate(P.TurnRate * Dt));
             }
+            if (Siege.Active == 1)
+            {
+                bool attacker = (i < PlayerSoldierEnd) == (Siege.AttackersArePlayer == 1);
+                float3 old = Positions[i];
+                if (attacker)
+                {
+                    if (Siege.InBand(p.z) && !Siege.NearLadderOrGate(p.x))
+                    {
+                        p.x = old.x;
+                        p.z = old.z < Siege.WallZ ? Siege.WallZ - Siege.WallHalf - 0.05f : Siege.WallZ + Siege.WallHalf + 0.05f;
+                    }
+                }
+                else if (p.z < Siege.WallZ && !(Siege.GateOpen == 1 && math.abs(p.x - Siege.GateX) <= Siege.GateHalf))
+                {
+                    p.z = Siege.WallZ + 0.05f;   // defenders keep the wall; they do not climb down to meet the ladders
+                }
+            }
             p.y = Ground.Sample(p.x, p.z);
             Positions[i] = p;
             Yaws[i] = yaw;
@@ -200,6 +219,8 @@ namespace AshesAndCrowns.Battle
         [ReadOnly] public NativeArray<byte> UnitStance;
         public float RunDownKillChance;        // per attack against a routing man
         public BattleParams P;
+        public SiegeLayout Siege;
+        public int PlayerSoldierEnd;
         public float3 PlayerPosition;
         public float Dt;
         public uint Seed;
@@ -240,6 +261,13 @@ namespace AshesAndCrowns.Battle
                     continue;
                 }
                 float dmg = CombatMath.Damage(P.BaseDamage, P.DamageVariance, rng.NextFloat(), P.Armour);
+                if (Siege.Active == 1)
+                {
+                    // A man on a ladder fights with one hand and a shield over his head.
+                    bool tAtt = (t < PlayerSoldierEnd) == (Siege.AttackersArePlayer == 1), iAtt = (i < PlayerSoldierEnd) == (Siege.AttackersArePlayer == 1);
+                    if (tAtt && Siege.OnLadderSide(Positions[t].z)) dmg *= Siege.LadderVulnerability;
+                    if (iAtt && Siege.OnLadderSide(Positions[i].z)) dmg /= Siege.LadderVulnerability;
+                }
                 float h = Health[t] - dmg;
                 Health[t] = h;
                 if (h <= 0f) { Alive[t] = 0; kills++; }

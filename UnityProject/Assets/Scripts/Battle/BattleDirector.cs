@@ -83,7 +83,7 @@ namespace AshesAndCrowns.Battle
 
         // ------------------------------------------------------------------ setup
 
-        public void Setup(Balance balance, DeterministicRng rng, Terrain terrain, Vector3 playerArmyCentre, Vector3 enemyArmyCentre, NamesData names = null)
+        public void Setup(Balance balance, DeterministicRng rng, Terrain terrain, Vector3 playerArmyCentre, Vector3 enemyArmyCentre, NamesData names = null, int playerCount = -1, int enemyCount = -1, SiegeLayout siege = default)
         {
             Teardown();
             _balance = balance; _names = names; Report = null;
@@ -92,27 +92,35 @@ namespace AshesAndCrowns.Battle
             _rng = rng.Fork(7);
             _params = BattleParams.From(balance.battle, balance.melee);
             _ground = HeightField.FromTerrain(terrain, Allocator.Persistent);
+            _siege = siege; _ramSeconds = 0f;
+            _fieldWidth = terrain != null && terrain.terrainData != null ? terrain.terrainData.size.x * 0.65f : 260f;
 
-            int perSide = Mathf.Max(1, balance.battle.soldiersPerSide / Mathf.Max(1, balance.battle.soldiersPerUnit));
-            int unitSize = Mathf.Clamp(balance.battle.unitSize, 1, perSide);
-            int unitsPerSide = (perSide + unitSize - 1) / unitSize;
-            SoldierCount = perSide * 2;
-            UnitCount = unitsPerSide * 2;
-            _playerSoldierEnd = perSide;
+            int perUnitMen = Mathf.Max(1, balance.battle.soldiersPerUnit);
+            int perPlayer = Mathf.Max(1, (playerCount > 0 ? playerCount : balance.battle.soldiersPerSide) / perUnitMen);
+            int perEnemy = Mathf.Max(1, (enemyCount > 0 ? enemyCount : balance.battle.soldiersPerSide) / perUnitMen);
+            int unitSize = Mathf.Clamp(balance.battle.unitSize, 1, Mathf.Min(perPlayer, perEnemy));
+            int unitsPlayer = (perPlayer + unitSize - 1) / unitSize, unitsEnemy = (perEnemy + unitSize - 1) / unitSize;
+            SoldierCount = perPlayer + perEnemy;
+            UnitCount = unitsPlayer + unitsEnemy;
+            _playerSoldierEnd = perPlayer; _unitsPlayer = unitsPlayer;
+            bool playerDefendsWall = siege.Active == 1 && siege.AttackersArePlayer == 0;
+            float playerYaw = playerDefendsWall ? math.PI : 0f, enemyYaw = playerDefendsWall ? 0f : math.PI;
+            FormationType playerForm = playerDefendsWall ? FormationType.Shieldwall : FormationType.Line;
+            FormationType enemyForm = siege.Active == 1 && !playerDefendsWall ? FormationType.Shieldwall : FormationType.Line;
 
             Allocate(SoldierCount, UnitCount);
             _morale = new UnitMorale[UnitCount]; _lastAlive = new int[UnitCount]; _rosters = new UnitRoster[UnitCount];
 
             int soldier = 0, unit = 0;
-            SpawnSide(Side.Player, perSide, unitSize, unitsPerSide, playerArmyCentre, 0f, ref soldier, ref unit);
-            SpawnSide(Side.Enemy, perSide, unitSize, unitsPerSide, enemyArmyCentre, math.PI, ref soldier, ref unit);
+            SpawnSide(Side.Player, perPlayer, unitSize, unitsPlayer, playerArmyCentre, playerYaw, playerForm, ref soldier, ref unit);
+            SpawnSide(Side.Enemy, perEnemy, unitSize, unitsEnemy, enemyArmyCentre, enemyYaw, enemyForm, ref soldier, ref unit);
 
             var nameGen = _names != null ? new NameGenerator(_names, _rng.Fork(3)) : null;
             for (int u = 0; u < UnitCount; u++)
             {
                 _morale[u] = MoraleModel.Fresh(balance.morale, _units[u].SoldierCount, _rng.Chance(0.3f));
                 _lastAlive[u] = _units[u].SoldierCount; _unitStance[u] = (byte)UnitStance.Steady;
-                string unitName = Ordinal(u % Mathf.Max(1, UnitCount / 2) + 1) + " spears";
+                string unitName = Ordinal((u < _unitsPlayer ? u : u - _unitsPlayer) + 1) + " spears";
                 _rosters[u] = nameGen != null ? UnitRoster.Create(unitName, nameGen, _rng.Fork((uint)(200 + u)), 3, false) : new UnitRoster { UnitName = unitName, Sergeant = "the sergeant", Veterans = new string[0], NamedAlive = 1 };
                 _rosters[u].PlayerSide = _units[u].Side == (byte)Side.Player;
             }
@@ -136,19 +144,23 @@ namespace AshesAndCrowns.Battle
             _ready = true;
         }
 
-        private void SpawnSide(Side side, int perSide, int unitSize, int unitsPerSide, Vector3 centre, float yaw, ref int soldier, ref int unit)
+        private void SpawnSide(Side side, int perSide, int unitSize, int unitsPerSide, Vector3 centre, float yaw, FormationType formation, ref int soldier, ref int unit)
         {
-            float frontage = FormationMath.Frontage(FormationType.Line, unitSize, _params.FormationSpacing, _params.ShieldwallSpacing) + 4f;
+            float frontage = FormationMath.Frontage(formation, unitSize, _params.FormationSpacing, _params.ShieldwallSpacing) + 4f;
             float right = math.cos(yaw), fwd = -math.sin(yaw); // unit-local +x in world
+            float faceX = math.sin(yaw), faceZ = math.cos(yaw);  // the way the line faces
+            int cols = Mathf.Clamp(Mathf.FloorToInt(_fieldWidth / frontage), 1, unitsPerSide);
+            float depth = Mathf.CeilToInt(unitSize / (float)FormationMath.LineRankWidth) * _params.FormationSpacing + 8f;
             for (int u = 0; u < unitsPerSide; u++)
             {
                 int count = Mathf.Min(unitSize, perSide - u * unitSize);
-                float lateral = (u - (unitsPerSide - 1) * 0.5f) * frontage;
-                var anchor = new float3(centre.x + lateral * right, 0f, centre.z + lateral * fwd);
+                int row = u / cols, col = u % cols, inRow = Mathf.Min(cols, unitsPerSide - row * cols);
+                float lateral = (col - (inRow - 1) * 0.5f) * frontage, back = row * depth;
+                var anchor = new float3(centre.x + lateral * right - back * faceX, 0f, centre.z + lateral * fwd - back * faceZ);
                 anchor.y = _ground.Sample(anchor.x, anchor.z);
                 _units[unit] = new UnitState
                 {
-                    Side = (byte)side, Formation = (byte)FormationType.Line, Order = (byte)OrderType.Hold, Alive = 1,
+                    Side = (byte)side, Formation = (byte)formation, Order = (byte)OrderType.Hold, Alive = 1,
                     SoldierStart = soldier, SoldierCount = count, Anchor = anchor, Yaw = yaw, Target = anchor, AliveCount = count
                 };
                 for (int k = 0; k < count; k++)
@@ -219,6 +231,7 @@ namespace AshesAndCrowns.Battle
             float3 playerPos = playerCharacter != null ? (float3)playerCharacter.position : new float3(-9999f, 0f, -9999f);
 
             EnemyCommanderThink(dt);
+            StepRam(dt);
 
             _grid.Clear();
             _positionsSnapshot.CopyFrom(_positions);
@@ -233,12 +246,12 @@ namespace AshesAndCrowns.Battle
             var move = new MoveJob
             {
                 Positions = _positions, Yaws = _yaws, Alive = _alive, UnitOf = _unitOf, SlotOf = _slotOf, Targets = _targets, Units = _units,
-                TargetPositionsSnapshot = _positionsSnapshot, UnitStance = _unitStance, Ground = _ground, P = _params, PlayerPosition = playerPos, Dt = dt
+                TargetPositionsSnapshot = _positionsSnapshot, UnitStance = _unitStance, Ground = _ground, P = _params, PlayerPosition = playerPos, Dt = dt, Siege = _siege, PlayerSoldierEnd = _playerSoldierEnd
             }.Schedule(SoldierCount, 64, target);
             var combat = new CombatJob
             {
                 Positions = _positions, Targets = _targets, Alive = _alive, Health = _health, Cooldowns = _cooldowns,
-                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _runDownChancePerAttack, P = _params, PlayerPosition = playerPos, Dt = dt,
+                PlayerAttackFlags = _playerAttackFlags, KillsThisFrame = _kills, UnitOf = _unitOf, UnitStance = _unitStance, RunDownKillChance = _runDownChancePerAttack, P = _params, PlayerPosition = playerPos, Dt = dt, Siege = _siege, PlayerSoldierEnd = _playerSoldierEnd,
                 Seed = _rng.NextUInt()
             }.Schedule(move);
             var summary = new UnitSummaryJob { Positions = _positions, Alive = _alive, Units = _units, Centroids = _centroids }.Schedule(combat);
@@ -370,6 +383,22 @@ namespace AshesAndCrowns.Battle
             CheckEnd();
         }
 
+        private SiegeLayout _siege; private float _ramSeconds, _fieldWidth; private int _unitsPlayer;
+        public SiegeLayout Siege => _siege;
+        public float RamProgress => _balance != null && _balance.siege.ramSecondsToBreak > 0f ? _ramSeconds / _balance.siege.ramSecondsToBreak : 0f;
+        public event Action GateBroken;
+
+        /// <summary>Enough attackers at the gate foot swing the ram; the gate gives after a while.</summary>
+        private void StepRam(float dt)
+        {
+            if (_siege.Active != 1 || _siege.GateOpen == 1 || _siege.HasRam != 1 || Ended) return;
+            Side att = _siege.AttackersArePlayer == 1 ? Side.Player : Side.Enemy;
+            int crew = CountWithin(new Vector3(_siege.GateX, 0f, _siege.WallZ - _siege.WallHalf - 2f), 5f, att);
+            if (crew < _balance.siege.ramCrew) return;
+            _ramSeconds += dt;
+            if (_ramSeconds >= _balance.siege.ramSecondsToBreak) { _siege.GateOpen = 1; GateBroken?.Invoke(); }
+        }
+
         private readonly List<string> _namedDeadScratch = new List<string>(16);   // enemy named dead
         private readonly List<string> _playerDead = new List<string>(16);
         private float _runDownChancePerAttack;
@@ -429,7 +458,32 @@ namespace AshesAndCrowns.Battle
                 UnitState unit = _units[u];
                 bool aiSide = unit.Side == (byte)Side.Enemy || (AiCommandsPlayerSide && unit.Side == (byte)Side.Player);
                 if (!aiSide || unit.Alive == 0 || _unitStance[u] >= (byte)UnitStance.Routing) continue;
-                int nearest = NearestLivingUnit(unit.Side == (byte)Side.Enemy ? Side.Player : Side.Enemy, _centroids[u]);
+                Side opp = unit.Side == (byte)Side.Enemy ? Side.Player : Side.Enemy;
+                if (_siege.Active == 1)
+                {
+                    bool attackerUnit = (unit.Side == (byte)Side.Player) == (_siege.AttackersArePlayer == 1);
+                    if (!attackerUnit)
+                    {
+                        // Hold the wall unless they are already inside.
+                        int n = NearestLivingUnit(opp, _centroids[u]);
+                        bool inside = n >= 0 && _centroids[n].z > _siege.WallZ + _siege.WallHalf;
+                        if (!inside) { unit.Order = (byte)OrderType.Hold; _units[u] = unit; continue; }
+                    }
+                    else
+                    {
+                        int lanes = _siege.LadderCount + (_siege.GateOpen == 1 ? 1 : 0);
+                        bool ramCrew = _siege.HasRam == 1 && _siege.GateOpen == 0 && (lanes == 0 || u % 3 == 0);
+                        float3 g;
+                        if (ramCrew) g = new float3(_siege.GateX, 0f, _siege.WallZ - _siege.WallHalf - 2f);
+                        else if (lanes == 0) { unit.Order = (byte)OrderType.Hold; _units[u] = unit; continue; }
+                        else { int lane = u % lanes; float lx = _siege.GateOpen == 1 && lane == lanes - 1 ? _siege.GateX : _siege.LadderX(lane); g = new float3(lx, 0f, _siege.WallZ + _siege.WallHalf + 6f); }
+                        g.y = _ground.Sample(g.x, g.z);
+                        unit.Target = g;
+                        unit.Order = math.distance(g, _centroids[u]) < _balance.battle.enemyChargeDistance ? (byte)OrderType.Charge : (byte)OrderType.Move;
+                        _units[u] = unit; continue;
+                    }
+                }
+                int nearest = NearestLivingUnit(opp, _centroids[u]);
                 if (nearest < 0) { unit.Order = (byte)OrderType.Hold; _units[u] = unit; continue; }
                 float3 goal = _centroids[nearest];
                 float dist = math.distance(goal, _centroids[u]);
@@ -459,7 +513,7 @@ namespace AshesAndCrowns.Battle
             if (!_ready) return null;
             var b = new BattleSnapshot
             {
-                SoldierCount = SoldierCount, UnitCount = UnitCount, PlayerSoldierEnd = _playerSoldierEnd, Elapsed = _elapsed, EnemyThinkTimer = _enemyThinkTimer,
+                SoldierCount = SoldierCount, UnitCount = UnitCount, PlayerSoldierEnd = _playerSoldierEnd, Elapsed = _elapsed, EnemyThinkTimer = _enemyThinkTimer, SiegeGateOpen = _siege.GateOpen == 1, RamSeconds = _ramSeconds,
                 Started = BattleStarted, PlayerCharacterAlive = _playerCharacterAlive,
                 Positions = new float[SoldierCount * 3], Yaws = _yaws.ToArray(), Health = _health.ToArray(), Cooldowns = _cooldowns.ToArray(),
                 Alive = _alive.ToArray(), Side = _side.ToArray(), UnitOf = _unitOf.ToArray(), SlotOf = _slotOf.ToArray(), Targets = _targets.ToArray(),
@@ -512,6 +566,7 @@ namespace AshesAndCrowns.Battle
             }
             _positionsSnapshot.CopyFrom(_positions);
             _playerSoldierEnd = b.PlayerSoldierEnd; _elapsed = b.Elapsed; _enemyThinkTimer = b.EnemyThinkTimer; BattleStarted = b.Started; _playerCharacterAlive = b.PlayerCharacterAlive;
+            _ramSeconds = b.RamSeconds; if (b.SiegeGateOpen && _siege.Active == 1) { _siege.GateOpen = 1; GateBroken?.Invoke(); }
             for (int k = 0; k < UnitCount; k++) { if (b.UnitStance != null && k < b.UnitStance.Length) { _unitStance[k] = b.UnitStance[k]; _morale[k].Stance = b.UnitStance[k]; } if (b.UnitMorale != null && k < b.UnitMorale.Length) _morale[k].Value = b.UnitMorale[k]; _lastAlive[k] = _units[k].AliveCount; }
             for (int k = 0; k < UnitCount; k++) if (_unitStance[k] != (byte)UnitStance.Steady) UnitStanceChanged?.Invoke(k, (UnitStance)_unitStance[k]);
             RecountAndDrift(0f);

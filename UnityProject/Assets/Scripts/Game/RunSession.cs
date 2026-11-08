@@ -30,6 +30,8 @@ namespace AshesAndCrowns.Game
 
     public sealed class BattleLaunch
     {
+        public bool Siege;            // storm the walls (the siege scene)
+        public bool PlayerAttacking = true;
         public bool AsGrunt;
         public Allegiance Side;
         public string CompanyName = string.Empty;
@@ -72,6 +74,14 @@ namespace AshesAndCrowns.Game
         public ServiceRecord Service = new ServiceRecord();
         public List<MercenaryCompany> Companies = new List<MercenaryCompany>();
         public Settlement PendingLevyAt;
+        // Phase 9: sieges and castles
+        public SiegeState Siege;
+        public CastleBuild Castle;
+        public int Garrison;
+        public MinorLord PendingObjector;
+        public Settlement PendingNewSettlement;
+        public List<string> PendingNotices = new List<string>(4);
+        public MinorLord LordById(int id) { foreach (var l in Baronage) if (l.Id == id) return l; return null; }
         public MercenaryCompany CompanyAt(string settlementId) { foreach (var c in Companies) if (c.BasedAtId == settlementId && c.ContractDaysLeft > 0) return c; return null; }
 
         public Settlement FindSettlement(string id) { foreach (var s in Settlements) if (s.Id == id) return s; return null; }

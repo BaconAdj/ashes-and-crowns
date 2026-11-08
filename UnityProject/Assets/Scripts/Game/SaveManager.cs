@@ -199,6 +199,17 @@ namespace AshesAndCrowns.Game
                 s.ServiceBattles = sv.BattlesFought; s.ServiceRenown = sv.Renown; s.ServiceInfractions = sv.Infractions; s.ServiceDeserter = sv.Deserter; s.ServiceInCamp = sv.InCamp; s.ServiceKills = sv.WitnessedKills; s.ServiceLines = sv.LinesHeld; s.ServicePatron = sv.PatronId; s.ServicePatronFavour = sv.PatronFavour;
                 s.Companies = new CompanySnapshot[ctx.Companies.Count];
                 for (int i = 0; i < s.Companies.Length; i++) { var co = ctx.Companies[i]; s.Companies[i] = new CompanySnapshot { Name = co.Name, Captain = co.Captain, Employer = (byte)co.Employer, Size = co.Size, Reputation = co.Reputation, BasedAtId = co.BasedAtId, ContractDaysLeft = co.ContractDaysLeft }; }
+                var sg = ctx.Siege;
+                if (sg != null)
+                {
+                    s.HasSiege = true; s.SiegeTargetId = sg.TargetId; s.SiegeTargetName = sg.TargetName; s.SiegeBesieger = (byte)sg.Besieger; s.SiegeOutcome = (byte)sg.Outcome;
+                    s.SiegePlayerAttacking = sg.PlayerAttacking; s.SiegePlayerCommands = sg.PlayerCommands; s.SiegeRamBuilt = sg.RamBuilt; s.SiegeTowerBuilt = sg.TowerBuilt; s.SiegeGateBroken = sg.GateBroken; s.SiegeInAssault = sg.InAssault;
+                    s.SiegeDay = sg.Day; s.SiegeAttackers = sg.Attackers; s.SiegeDefenders = sg.Defenders; s.SiegeCoinSpent = sg.CoinSpent; s.SiegeLadders = sg.Ladders; s.SiegeRamDays = sg.RamDays; s.SiegeTowerDays = sg.TowerDays; s.SiegeAssaults = sg.Assaults; s.SiegeLordId = sg.LordId; s.SiegeAttDead = sg.AttackerDeadInAssaults; s.SiegeDefDead = sg.DefenderDeadInAssaults;
+                    s.SiegeFood = sg.DefenderFoodDays; s.SiegeDefSick = sg.DefenderSickness; s.SiegeAttSick = sg.AttackerSickness; s.SiegeDefMorale = sg.DefenderMorale; s.SiegeRelief = sg.ReliefStrength;
+                }
+                var cb = ctx.Castle;
+                if (cb != null && cb.Stage != CastleStage.None) { s.HasCastle = true; s.CastleName = cb.Name; s.CastleSiteId = cb.SiteSettlementId; s.CastleNx = cb.Nx; s.CastleNz = cb.Nz; s.CastleStage = (byte)cb.Stage; s.CastleDays = cb.DaysIntoStage; s.CastleCoin = cb.CoinSpent; s.CastleObjector = cb.ObjectorLordId; }
+                s.Garrison = ctx.Garrison;
             }
             if (clock != null && clock.IsReady)
             {
@@ -254,6 +265,18 @@ namespace AshesAndCrowns.Game
                 rc.Companies.Clear();
                 foreach (var co in s.Companies ?? new CompanySnapshot[0]) rc.Companies.Add(new MercenaryCompany { Name = co.Name, Captain = co.Captain, Employer = (Allegiance)co.Employer, Size = co.Size, Reputation = co.Reputation, BasedAtId = co.BasedAtId, ContractDaysLeft = co.ContractDaysLeft });
             }
+            if (s.Version >= 8)
+            {
+                rc.Siege = !s.HasSiege ? null : new SiegeState
+                {
+                    TargetId = s.SiegeTargetId ?? string.Empty, TargetName = s.SiegeTargetName ?? string.Empty, Besieger = (Allegiance)s.SiegeBesieger, Outcome = (SiegeOutcome)s.SiegeOutcome,
+                    PlayerAttacking = s.SiegePlayerAttacking, PlayerCommands = s.SiegePlayerCommands, RamBuilt = s.SiegeRamBuilt, TowerBuilt = s.SiegeTowerBuilt, GateBroken = s.SiegeGateBroken, InAssault = s.SiegeInAssault,
+                    Day = s.SiegeDay, Attackers = s.SiegeAttackers, Defenders = s.SiegeDefenders, CoinSpent = s.SiegeCoinSpent, Ladders = s.SiegeLadders, RamDays = s.SiegeRamDays, TowerDays = s.SiegeTowerDays, Assaults = s.SiegeAssaults, LordId = s.SiegeLordId, AttackerDeadInAssaults = s.SiegeAttDead, DefenderDeadInAssaults = s.SiegeDefDead,
+                    DefenderFoodDays = s.SiegeFood, DefenderSickness = s.SiegeDefSick, AttackerSickness = s.SiegeAttSick, DefenderMorale = s.SiegeDefMorale, ReliefStrength = s.SiegeRelief
+                };
+                rc.Castle = !s.HasCastle ? null : new CastleBuild { Name = s.CastleName ?? string.Empty, SiteSettlementId = s.CastleSiteId ?? string.Empty, Nx = s.CastleNx, Nz = s.CastleNz, Stage = (CastleStage)s.CastleStage, DaysIntoStage = s.CastleDays, CoinSpent = s.CastleCoin, ObjectorLordId = s.CastleObjector };
+                rc.Garrison = s.Garrison;
+            }
             if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
             var cc = player.GetComponent<CharacterController>();
@@ -271,7 +294,7 @@ namespace AshesAndCrowns.Game
             }
             _lastMounted = horse.Mounted;
             if (director != null && director.IsReady && s.Battle != null) director.ImportSnapshot(s.Battle);
-            if (director != null && grunt != null && !grunt.enabled && rc.Service.Active && rc.Service.Role != ServiceRole.Commander) { grunt.enabled = true; director.AiCommandsPlayerSide = true; grunt.Init(_balance, placeBody: false); }
+            if (director != null && grunt != null && !grunt.enabled && rc.Service.Active && rc.Service.Role != ServiceRole.Commander && !(rc.Siege != null && rc.Siege.PlayerCommands)) { grunt.enabled = true; director.AiCommandsPlayerSide = true; grunt.Init(_balance, placeBody: false); }
             if (modes != null) modes.RefreshAfterResume();
             if (englandScene != null) englandScene.RefreshAfterResume();
 

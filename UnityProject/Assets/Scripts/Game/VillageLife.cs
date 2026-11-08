@@ -27,6 +27,7 @@ namespace AshesAndCrowns.Game
         public OpeningNarration narration;  // optional: no village keys while it plays
         public EncounterDirector encounter; // optional: melees and bounties
         public MeleeController melee;       // optional: loadout refresh after trading
+        public SiegeDirector siege;         // optional: sieges and castles
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -57,6 +58,7 @@ namespace AshesAndCrowns.Game
             vitals.StaminaRegenScale = (ctx.Needs.Hungry ? 0.4f : 1f) * (ctx.Disease.Current != Sickness.None ? 0.5f : 1f);
             var kb = Keyboard.current; if (kb == null) return;
 
+            if (siege != null && siege.IsOpen) return;
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)
@@ -232,7 +234,15 @@ namespace AshesAndCrowns.Game
             if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) opts.Add(("Enter the festival melee (stake 1 penny)", () => encounter.FestivalMelee(1)));
             var company = s != null && s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
             if (company != null && !ctx.Service.Active) opts.Add(($"Sign with {company.Name} ({company.Captain}, for {company.Employer}, {_balance.service.mercenaryWagePerDay}d a day)", () => Enlist(company)));
-            if (ctx.Service.Active) { opts.Add(($"Report to the muster of {ctx.Service.CompanyName}: march to battle", MarchToBattle)); opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", Desert)); }
+            if (ctx.Service.Active && ctx.Siege == null)
+            {
+                opts.Add(($"Report to the muster of {ctx.Service.CompanyName}: march to battle", MarchToBattle));
+                var hostile = NearestHostileCastle(ctx, ctx.Service.Side);
+                if (hostile != null && siege != null && ctx.Service.Role != ServiceRole.Household) opts.Add(($"Report to the muster: the company marches to besiege {hostile.Name}", () => siege.BeginAsGrunt(hostile)));
+                opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", DesertService));
+            }
+            if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
+            if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) opts.Add(($"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies} pennies)", HireGarrison));
             if (s != null && (s.Type == SettlementType.Castle || s.Type == SettlementType.City || s.Type == SettlementType.Town)) opts.Add(("Seek an audience with the lord", Audience));
             opts.Add(("Lift a purse while nobody looks", Steal));
             opts.Add(("Leave", null));
@@ -311,6 +321,36 @@ namespace AshesAndCrowns.Game
             Dialogue("A purse", $"{take} pennies. " + (wanted > 0f ? "Someone saw. The room goes quiet." : "Nobody saw."), ("Leave quickly", () => { if (wanted > 0f && s != null) LawCheck(s); }));
         }
 
+        public static Settlement NearestHostileCastle(RunContext ctx, Allegiance side)
+        {
+            Settlement best = null; float bestD = float.MaxValue; var here = ctx.Current;
+            foreach (var t in ctx.Settlements)
+            {
+                if (t.Type != SettlementType.Castle || t.Allegiance == Allegiance.Neutral || t.Allegiance == side || t.LordId == CastleRules.PlayerLordId) continue;
+                float d = here != null ? (t.Nx - here.Nx) * (t.Nx - here.Nx) + (t.Nz - here.Nz) * (t.Nz - here.Nz) : 0f;
+                if (d < bestD) { bestD = d; best = t; }
+            }
+            return best;
+        }
+
+        private void RaiseCastle()
+        {
+            var ctx = RunSession.Context; var s = ctx.Current;
+            if (!CastleRules.CanStart(ctx.Character, s, ctx.Castle, _balance.siege, out string why)) { Dialogue("The ditch", why, ("...", null)); return; }
+            string name = ctx.Character.Name + "'s Tower";
+            Dialogue("A castle", $"A motte here, a palisade, a tower: {_balance.siege.motteCost + _balance.siege.palisadeCost + _balance.siege.towerCost} pennies over two months, if nobody objects. Nobody will license it. You must be here to see it dug.",
+                ($"Dig. Call it {name}", () => { ctx.Castle = CastleRules.Start(name, s); hud.Toast("The first spade goes in."); saveManager?.SaveNow(AffairsChoice.None); }),
+                ("Not yet", null));
+        }
+
+        private void HireGarrison()
+        {
+            var ctx = RunSession.Context; int cost = 10 * _balance.siege.garrisonHirePennies;
+            if (ctx.Character.Coins < cost) { hud.Toast("Not enough silver."); return; }
+            ctx.Character.Coins -= cost; ctx.Garrison += 10; hud.Toast($"Ten men with spears and no questions. Garrison: {ctx.Garrison}.");
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
         private MercenaryCompany EnsureCompany(Settlement s)
         {
             var ctx = RunSession.Context;
@@ -344,7 +384,7 @@ namespace AshesAndCrowns.Game
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
-        private void Desert()
+        public void DesertService()
         {
             var ctx = RunSession.Context; var s = ctx.Current;
             var rng = GameBootstrap.Instance.Rng.Fork(123); rng.State ^= (ulong)clock.Calendar.TotalHours;
@@ -404,6 +444,18 @@ namespace AshesAndCrowns.Game
             float favour = Mathf.Clamp01(sv.Renown / (float)_balance.service.knighthoodRenown * 0.6f + Mathf.Max(0f, ctx.Reputation.Get(s.Allegiance == Allegiance.Matilda ? Faction.Angevin : Faction.Crown)) * 0.5f + ctx.Standing.Value * 0.2f - (ctx.Crime.Outlawed ? 1f : 0f));
             sv.PatronFavour = Mathf.Max(sv.PatronFavour, favour);
             if (ctx.Character.Rank >= Rank.Knight) { Dialogue(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are.", ("Leave", null)); return; }
+            if (ctx.Character.Rank >= Rank.Knight && siege != null && ctx.Siege == null && sv.PatronFavour >= _balance.service.patronDispositionNeeded && lord != null)
+            {
+                var target = NearestHostileCastle(ctx, s.Allegiance == Allegiance.Neutral ? Allegiance.Stephen : s.Allegiance);
+                if (target != null)
+                {
+                    int men = _balance.siege.commandBaseMen + lord.Knights * _balance.siege.commandMenPerKnight;
+                    Dialogue(lordName, $"\"Sir. {target.Name} sits on my road and flies the wrong banner. Take {men} men and bring me its keys. Starve it or storm it; I want it before the harvest.\"",
+                        ("Take the command", () => { sv.PatronId = lord.Id.ToString(); siege.BeginAsCommander(target, s.Allegiance == Allegiance.Neutral ? Allegiance.Stephen : s.Allegiance, men); hud.Toast($"You command {men} men."); }),
+                        ("Decline", () => { sv.PatronFavour = Mathf.Max(0f, sv.PatronFavour - 0.1f); }));
+                    return;
+                }
+            }
             bool ok = ServiceRules.KnighthoodCheck(sv, ctx.Inventory, _balance.service, out string missing);
             if (ok)
             {

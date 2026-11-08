@@ -25,7 +25,10 @@ namespace AshesAndCrowns.EditorTools
         private const string UnlitShader = SceneKit.UnlitShader;
         private const string TerrainShader = SceneKit.TerrainShader;
 
-        public static void Build()
+        public static void Build() => Build(false);
+
+        /// <summary>siege: the same field with a curtain wall across it (Phase 9), saved as its own scene.</summary>
+        public static void Build(bool siege)
         {
             Balance balance = DataFiles.LoadBalance();
             WorldData world = DataFiles.LoadWorld();
@@ -63,7 +66,7 @@ namespace AshesAndCrowns.EditorTools
             RenderSettings.fogDensity = balance.look.fogDensity; RenderSettings.fogColor = SceneKit.Col(balance.look.fogColor);
 
             // ---- terrain
-            Terrain terrain = BuildTerrain(field, mud);
+            Terrain terrain = BuildTerrain(field, mud, siege ? balance.siege : null);
 
             // ---- post-processing volume
             SceneKit.BuildVolume(balance, Paths.VolumeProfile);
@@ -87,7 +90,7 @@ namespace AshesAndCrowns.EditorTools
             // ---- bootstrap + scene driver
             var bootGo = new GameObject("GameBootstrap");
             bootGo.AddComponent<GameBootstrap>();
-            var sceneGo = new GameObject("Phase0Scene");
+            var sceneGo = new GameObject(siege ? "Phase9Scene" : "Phase0Scene");
             var driver = sceneGo.AddComponent<Phase0Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
 
@@ -129,11 +132,12 @@ namespace AshesAndCrowns.EditorTools
             SceneKit.Primitive(PrimitiveType.Cube, "Standard", vantageGo.transform, new Vector3(0.8f, 4.9f, 0f), new Vector3(1.6f, 1.0f, 0.04f), bannerPlayer);
             var ringLr = vantageGo.AddComponent<LineRenderer>();
             ringLr.loop = true; ringLr.positionCount = 64; ringLr.startWidth = ringLr.endWidth = 0.2f; ringLr.material = ring; ringLr.shadowCastingMode = ShadowCastingMode.Off;
+            ringLr.useWorldSpace = false;   // the siege scene moves the vantage inside the walls at play time
             for (int i = 0; i < 64; i++)
             {
                 float a = i / 64f * Mathf.PI * 2f;
                 float x = vx + Mathf.Cos(a) * balance.command.vantageRadius, z = vz + Mathf.Sin(a) * balance.command.vantageRadius;
-                ringLr.SetPosition(i, new Vector3(x, terrain.SampleHeight(new Vector3(x, 0f, z)) + 0.2f, z));
+                ringLr.SetPosition(i, vantageGo.transform.InverseTransformPoint(new Vector3(x, terrain.SampleHeight(new Vector3(x, 0f, z)) + 0.2f, z)));
             }
 
             // ---- battle
@@ -181,6 +185,7 @@ namespace AshesAndCrowns.EditorTools
             var grunt = sceneGo.AddComponent<GruntMode>();
             grunt.director = director; grunt.modes = modes; grunt.player = pc; grunt.horse = horse; grunt.vitals = vitals; grunt.melee = melee; grunt.hud = hud; grunt.ringMaterial = ring; grunt.enabled = false;
             driver.grunt = grunt; save.grunt = grunt;
+            if (siege) driver.siegeField = BuildWalls(terrain, balance.siege, stone, darkWood);
 
             // Initial placement so the scene view is not empty before play.
             playerGo.transform.position = new Vector3(field.playerSpawn.x, terrain.SampleHeight(new Vector3(field.playerSpawn.x, 0f, field.playerSpawn.z)) + 0.2f, field.playerSpawn.z);
@@ -188,14 +193,39 @@ namespace AshesAndCrowns.EditorTools
             camGo.transform.position = playerGo.transform.position + new Vector3(0f, 2.5f, -6f);
             camGo.transform.LookAt(playerGo.transform.position + Vector3.up * 1.5f);
 
-            EditorSceneManager.SaveScene(scene, Paths.Phase0Scene);
+            string scenePath = siege ? Paths.Phase9Scene : Paths.Phase0Scene;
+            EditorSceneManager.SaveScene(scene, scenePath);
             AssetDatabase.SaveAssets();
-            Debug.Log("[Ashes and Crowns] Phase 0 scene built at " + Paths.Phase0Scene);
+            Debug.Log("[Ashes and Crowns] " + (siege ? "siege" : "Phase 0") + " scene built at " + scenePath);
+        }
+
+        // ------------------------------------------------------------------ curtain wall
+        private static SiegeField BuildWalls(Terrain terrain, SiegeBalance sb, Material stone, Material darkWood)
+        {
+            var root = new GameObject("CurtainWall");
+            var sf = root.AddComponent<SiegeField>();
+            sf.wallHeight = sb.wallHeight; sf.ladderMaterial = darkWood;
+            float size = terrain.terrainData.size.x;
+            float topY = terrain.SampleHeight(new Vector3(sb.gateX, 0f, sb.wallZ + sb.wallHalfThickness + 2f)) + terrain.transform.position.y;
+            float footY = terrain.SampleHeight(new Vector3(sb.gateX, 0f, sb.wallZ - sb.wallHalfThickness - 1f)) + terrain.transform.position.y;
+            // parapet along the plateau edge, in two halves so the gate stays open
+            float left = 40f, right = size - 40f, gl = sb.gateX - sb.gateHalfWidth - 3f, gr = sb.gateX + sb.gateHalfWidth + 3f;
+            SceneKit.Primitive(PrimitiveType.Cube, "ParapetWest", root.transform, new Vector3((left + gl) * 0.5f, topY + 0.9f, sb.wallZ + 0.6f), new Vector3(gl - left, 1.8f, 1.2f), stone);
+            SceneKit.Primitive(PrimitiveType.Cube, "ParapetEast", root.transform, new Vector3((gr + right) * 0.5f, topY + 0.9f, sb.wallZ + 0.6f), new Vector3(right - gr, 1.8f, 1.2f), stone);
+            // the cliff face of the terrain ramp is the wall; stone cladding so it reads as masonry
+            SceneKit.Primitive(PrimitiveType.Cube, "FaceWest", root.transform, new Vector3((left + gl) * 0.5f, footY + sb.wallHeight * 0.5f, sb.wallZ - sb.wallHalfThickness * 0.5f), new Vector3(gl - left, sb.wallHeight, 0.6f), stone);
+            SceneKit.Primitive(PrimitiveType.Cube, "FaceEast", root.transform, new Vector3((gr + right) * 0.5f, footY + sb.wallHeight * 0.5f, sb.wallZ - sb.wallHalfThickness * 0.5f), new Vector3(right - gr, sb.wallHeight, 0.6f), stone);
+            SceneKit.Primitive(PrimitiveType.Cube, "TowerWest", root.transform, new Vector3(gl - 1f, footY + (sb.wallHeight + 4f) * 0.5f, sb.wallZ), new Vector3(6f, sb.wallHeight + 4f, 7f), stone);
+            SceneKit.Primitive(PrimitiveType.Cube, "TowerEast", root.transform, new Vector3(gr + 1f, footY + (sb.wallHeight + 4f) * 0.5f, sb.wallZ), new Vector3(6f, sb.wallHeight + 4f, 7f), stone);
+            var gate = SceneKit.Primitive(PrimitiveType.Cube, "Gate", root.transform, new Vector3(sb.gateX, footY + sb.wallHeight * 0.45f, sb.wallZ - sb.wallHalfThickness), new Vector3(sb.gateHalfWidth * 2f + 1f, sb.wallHeight * 0.9f, 0.5f), darkWood);
+            sf.gate = gate;
+            var ladders = new GameObject("Ladders"); ladders.transform.SetParent(root.transform, false); sf.ladderRoot = ladders.transform;
+            return sf;
         }
 
         // ------------------------------------------------------------------ terrain
 
-        private static Terrain BuildTerrain(Phase0Battlefield field, Material groundMaterial)
+        private static Terrain BuildTerrain(Phase0Battlefield field, Material groundMaterial, SiegeBalance siege)
         {
             const int res = 257;
             float size = field.terrainSize, maxH = field.terrainHeight;
@@ -211,6 +241,11 @@ namespace AshesAndCrowns.EditorTools
                 h += (Mathf.PerlinNoise(ox + wx * 0.07f, oz + wz * 0.07f) - 0.5f) * 0.6f;        // ruts and clods
                 float dx = wx - field.vantageHill.x, dz = wz - field.vantageHill.z;
                 h += field.vantageHill.height * Mathf.Exp(-(dx * dx + dz * dz) / (2f * field.vantageHill.radius * field.vantageHill.radius * 0.35f));
+                if (siege != null)                                                             // the castle plateau: a steep ramp over the wall band, flat behind it
+                {
+                    float t = Mathf.InverseLerp(siege.wallZ - siege.wallHalfThickness, siege.wallZ, wz);
+                    h += Mathf.SmoothStep(0f, 1f, t) * siege.wallHeight;
+                }
                 float edge = Mathf.Min(Mathf.Min(wx, size - wx), Mathf.Min(wz, size - wz));     // ridge fence so the edge is never seen
                 if (edge < 60f) h += Mathf.SmoothStep(0f, 1f, (60f - edge) / 60f) * 22f;
                 heights[z, x] = Mathf.Clamp01(h / maxH);
@@ -225,8 +260,9 @@ namespace AshesAndCrowns.EditorTools
             Texture2D tex = SceneKit.NoiseTexture(Paths.Generated + "/MudAlbedo.png", new Color(0.21f, 0.19f, 0.15f), new Color(0.33f, 0.31f, 0.24f), 5f, 19f, 256, 4.2f);
             TerrainLayer layer = SceneKit.Layer(Paths.Generated + "/Mud.terrainlayer", tex, 6f);
             data.terrainLayers = new[] { layer };
-            AssetDatabase.DeleteAsset(Paths.Generated + "/Phase0Terrain.asset");
-            AssetDatabase.CreateAsset(data, Paths.Generated + "/Phase0Terrain.asset");
+            string terrainAsset = Paths.Generated + (siege != null ? "/Phase9Terrain.asset" : "/Phase0Terrain.asset");
+            AssetDatabase.DeleteAsset(terrainAsset);
+            AssetDatabase.CreateAsset(data, terrainAsset);
 
             GameObject terrainGo = Terrain.CreateTerrainGameObject(data);
             terrainGo.name = "Terrain";

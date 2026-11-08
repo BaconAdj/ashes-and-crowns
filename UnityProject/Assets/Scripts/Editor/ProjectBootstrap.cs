@@ -65,6 +65,14 @@ namespace AshesAndCrowns.EditorTools
             RegisterScenes();
         }
 
+        [MenuItem("Ashes and Crowns/Rebuild/Siege Scene", priority = 22)]
+        public static void RebuildSiegeSceneMenu()
+        {
+            EnsureProjectSettings();
+            Phase0SceneBuilder.Build(siege: true);
+            RegisterScenes();
+        }
+
         /// <summary>Batch-mode entry point: unity run ... -executeMethod AshesAndCrowns.EditorTools.ProjectBootstrap.SetupHeadless</summary>
         public static void SetupHeadless()
         {
@@ -78,6 +86,7 @@ namespace AshesAndCrowns.EditorTools
             bool built = false;
             if (!File.Exists(Paths.Phase0Scene)) { Phase0SceneBuilder.Build(); built = true; }
             if (!File.Exists(Paths.Phase1Scene)) { Phase1SceneBuilder.Build(); built = true; }
+            if (!File.Exists(Paths.Phase9Scene)) { Phase0SceneBuilder.Build(siege: true); built = true; }
             RegisterScenes();
             if (openScene && !Application.isBatchMode && File.Exists(Paths.Phase1Scene) && EditorSceneManager.GetActiveScene().path != Paths.Phase1Scene)
                 EditorSceneManager.OpenScene(Paths.Phase1Scene);
@@ -185,6 +194,7 @@ namespace AshesAndCrowns.EditorTools
             var list = new System.Collections.Generic.List<EditorBuildSettingsScene>();
             if (File.Exists(Paths.Phase1Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase1Scene, true));
             if (File.Exists(Paths.Phase0Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase0Scene, true));
+            if (File.Exists(Paths.Phase9Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase9Scene, true));
             EditorBuildSettings.scenes = list.ToArray();
         }
     }
