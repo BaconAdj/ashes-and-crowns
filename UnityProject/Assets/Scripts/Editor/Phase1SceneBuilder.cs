@@ -39,7 +39,9 @@ namespace AshesAndCrowns.EditorTools
             SceneKit.BuildVolume(balance, Paths.VolumeProfile);
             EditorUtility.DisplayProgressBar("Ashes and Crowns", "Rasterising England...", 0.2f);
             EnglandTerrainBuilder.Result land;
-            try { land = EnglandTerrainBuilder.Build(world, coast, balance, sea, new[] { villageXZ }, balance.village.flattenRadiusMetres); }
+            var flatten = new System.Collections.Generic.List<Vector2> { villageXZ };
+            foreach (Location l in world.locations) if (l.type != "village") flatten.Add(new Vector2(l.nx * size, l.nz * size));
+            try { land = EnglandTerrainBuilder.Build(world, coast, balance, sea, flatten.ToArray(), balance.village.flattenRadiusMetres); }
             finally { EditorUtility.ClearProgressBar(); }
             Terrain terrain = land.Terrain;
 
@@ -70,10 +72,34 @@ namespace AshesAndCrowns.EditorTools
             cam.transform.position = playerGo.transform.position + new Vector3(0f, 2.5f, -6f);
             cam.transform.LookAt(playerGo.transform.position + Vector3.up * 1.5f);
 
+            // ---- castle and city stubs with spawn points (Phase 5 replaces these with real settlements)
+            Material stoneMat = SceneKit.Mat("KeepStone", SceneKit.LitShader, new Color(0.40f, 0.39f, 0.36f), 0f, 0.95f);
+            var spawnRoot = new GameObject("SpawnPoints").transform;
+            var villageSpawn = new GameObject(village.id).transform; villageSpawn.SetParent(spawnRoot, true);
+            villageSpawn.position = centre + new Vector3(-6f, 0f, -8f); villageSpawn.rotation = Quaternion.LookRotation(new Vector3(6f, 0f, 8f));
+            Mesh keepMesh = AssetDatabase.LoadAssetAtPath<Mesh>(Paths.Generated + "/Keep_Procedural.asset");
+            if (keepMesh == null) { keepMesh = ProceduralBuildings.Keep(12f, 18f, 22f, 6f); AssetDatabase.CreateAsset(keepMesh, Paths.Generated + "/Keep_Procedural.asset"); }
+            var stubsRoot = new GameObject("Strongholds").transform;
+            foreach (Location l in world.locations)
+            {
+                if (l.type == "village") continue;
+                var pos = new Vector3(l.nx * size, 0f, l.nz * size); pos.y = SceneKit.GroundY(terrain, pos) - 0.2f;
+                var go = new GameObject("Keep_" + l.id); go.transform.SetParent(stubsRoot, true); go.transform.position = pos; go.isStatic = true;
+                var mf = go.AddComponent<MeshFilter>(); mf.sharedMesh = keepMesh;
+                var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterials = new[] { stoneMat, stoneMat };
+                var mc = go.AddComponent<MeshCollider>(); mc.sharedMesh = keepMesh;
+                var sp = new GameObject(l.id).transform; sp.SetParent(spawnRoot, true);
+                sp.position = pos + new Vector3(0f, 0.4f, 30f); sp.rotation = Quaternion.LookRotation(Vector3.back);
+            }
+
             HudController hud = SceneKit.BuildHud(panel);
+            var creation = hud.gameObject.AddComponent<CharacterCreationUI>();
             var sceneGo = new GameObject("Phase1Scene");
             var driver = sceneGo.AddComponent<Phase1Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
+            var narration = sceneGo.AddComponent<OpeningNarration>(); narration.hud = hud; narration.gameplayCamera = cam;
+            var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
+            var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse;
             driver.terrain = terrain; driver.clock = clock; driver.dayNight = dayNight; driver.weather = weather; driver.bells = bells;
             driver.rainMaterial = rainMat; driver.snowMaterial = snowMat; driver.player = pc; driver.horse = horse; driver.vitals = vitals;
             driver.thirdPersonCamera = tpc; driver.hud = hud; driver.perf = perf; driver.spawnPoint = spawn; driver.horseSpawnPoint = horseSpawn;
@@ -81,7 +107,9 @@ namespace AshesAndCrowns.EditorTools
             var saveGo = new GameObject("SaveManager");
             var save = saveGo.AddComponent<SaveManager>();
             save.clock = clock; save.player = pc; save.horse = horse; save.vitals = vitals; save.hud = hud; save.home = vill.Root; save.englandScene = driver;
+            save.creation = creation; save.narration = narration; save.appearance = appearance; save.spawnPoints = spawnRoot;
             driver.saveManager = save;
+            var info = sceneGo.AddComponent<InfoPanels>(); info.hud = hud; info.saveManager = save;
 
             EditorSceneManager.SaveScene(scene, Paths.Phase1Scene);
             AssetDatabase.SaveAssets();

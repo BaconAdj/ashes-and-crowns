@@ -32,6 +32,10 @@ namespace AshesAndCrowns.Game
         public Transform home;               // where "sleep at home" is possible; optional
         public ModeManager modes;            // optional (battlefield)
         public Phase1Scene englandScene;     // optional (England)
+        public CharacterCreationUI creation; // optional; without it a default character is created silently
+        public OpeningNarration narration;   // optional
+        public PlayerAppearance appearance;  // optional
+        public Transform spawnPoints;        // optional: children named by location id
 
         private Balance _balance;
         private SaveStore _store;
@@ -41,12 +45,13 @@ namespace AshesAndCrowns.Game
         private bool _quitScreenOpen;
         private bool _chronicleOpen;
         private bool _quitting;
+        private bool _creationOpen;
         private double _hoursSurvivedAtLoad;
         private int _battles, _peakWealth;
         private readonly List<string> _lines = new List<string>(8);
         private readonly List<AffairsChoice> _quitOptions = new List<AffairsChoice>(4);
 
-        public bool IsQuitScreenOpen => _quitScreenOpen || _chronicleOpen;
+        public bool IsQuitScreenOpen => _quitScreenOpen || _chronicleOpen || _creationOpen;
         public SaveStore Store => _store;
 
         /// <summary>Override for tests. Defaults to persistentDataPath/saves.</summary>
@@ -92,11 +97,12 @@ namespace AshesAndCrowns.Game
                 }
                 if (r.MainError != null && r.MainError != "no main save") Debug.LogWarning("[save] no usable save: " + r.MainError + " / " + r.BackupError);
             }
-            SaveNow(AffairsChoice.None); // a run exists from its first frame
+            StartNewCharacter();
         }
 
         private void Update()
         {
+            if (_creationOpen) return;
             if (_dead)
             {
                 if (GameBootstrap.Instance.Input.Restart.WasPressedThisFrame()) BeginAgain();
@@ -143,6 +149,13 @@ namespace AshesAndCrowns.Game
                 PlayerName = "A nameless rider", Mounted = horse.Mounted, Body = vitals.Body.Export(), Stamina = vitals.Stamina,
                 Kills = melee != null ? melee.Kills : 0, MenLost = director != null ? director.PlayerLosses : 0, Battles = _battles, PeakWealth = _peakWealth
             };
+            RunContext ctx = RunSession.Context;
+            if (ctx != null && ctx.Character != null)
+            {
+                s.HasCharacter = true; s.Character = ctx.Character; s.PlayerName = ctx.Character.Name;
+                s.Family = ctx.Family.ToArray(); s.Baronage = ctx.Baronage.ToArray(); s.SpawnLocationId = ctx.SpawnLocationId; s.OpeningSeen = ctx.OpeningSeen;
+                if (ctx.Character.Coins > _peakWealth) { _peakWealth = ctx.Character.Coins; s.PeakWealth = _peakWealth; }
+            }
             if (clock != null && clock.IsReady)
             {
                 s.CalendarTotalHours = clock.Calendar.TotalHours; s.Weather = clock.Weather.Export(); s.WeatherRngState = clock.Weather.RngState;
@@ -164,6 +177,19 @@ namespace AshesAndCrowns.Game
             if (clock != null && clock.IsReady) clock.Resume(s.CalendarTotalHours, s.Weather, s.WeatherRngState);
             vitals.Body.Import(s.Body);
             vitals.SetStamina(s.Stamina);
+            if (s.HasCharacter && s.Character != null)
+            {
+                RunSession.Context = new RunContext { Character = s.Character, Figures = DataFiles.LoadFigures(), SpawnLocationId = s.SpawnLocationId, OpeningSeen = s.OpeningSeen };
+                RunSession.Context.Family.AddRange(s.Family ?? new Npc[0]);
+                RunSession.Context.Baronage.AddRange(s.Baronage ?? new MinorLord[0]);
+            }
+            else if (RunSession.Context == null)
+            {
+                // A save from before characters existed: give it a default one so the run goes on.
+                RunSession.Context = RunFactory.CreateDefault(null);
+                RunSession.Context.OpeningSeen = true;
+            }
+            if (appearance != null) appearance.Apply(RunSession.Context.Character);
             var cc = player.GetComponent<CharacterController>();
             if (horse.Mounted && !s.Mounted) horse.Dismount(player.transform);
             horse.transform.SetPositionAndRotation(new Vector3(s.HorseX, s.HorseY, s.HorseZ), Quaternion.Euler(0f, s.HorseYaw, 0f));
@@ -207,6 +233,81 @@ namespace AshesAndCrowns.Game
                 Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             }
             SaveNow(AffairsChoice.None);
+        }
+
+        // ------------------------------------------------------------------ new character
+
+        private void StartNewCharacter()
+        {
+            if (creation != null)
+            {
+                _creationOpen = true;
+                SetBodyControl(false);
+                creation.Show(DataFiles.LoadBackgrounds(), OnCharacterChosen);
+                return;
+            }
+            RunSession.Context = RunFactory.CreateDefault(vitals);
+            RunSession.Context.OpeningSeen = true;
+            if (appearance != null) appearance.Apply(RunSession.Context.Character);
+            SaveNow(AffairsChoice.None); // a run exists from its first frame
+        }
+
+        private void OnCharacterChosen(CharacterFactory.Choice choice)
+        {
+            RunContext ctx;
+            try { ctx = RunFactory.Create(choice, vitals); }
+            catch (Exception e) { Debug.LogError("[run] could not create the character: " + e.Message); _creationOpen = false; SetBodyControl(true); return; }
+            RunSession.Context = ctx;
+            if (appearance != null) appearance.Apply(ctx.Character);
+            Transform spawn = FindSpawn(ctx.SpawnLocationId);
+            if (spawn != null) PlaceBody(spawn.position, spawn.rotation);
+            Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+            string[] lines = RunSetup.OpeningNarration(ctx.Character, clock != null && clock.IsReady ? clock.Calendar : null);
+            if (narration != null) narration.Play(lines, player.transform, FinishOpening);
+            else FinishOpening();
+        }
+
+        private void FinishOpening()
+        {
+            if (RunSession.Context != null) RunSession.Context.OpeningSeen = true;
+            _creationOpen = false;
+            SetBodyControl(true);
+            Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+            SaveNow(AffairsChoice.None);
+        }
+
+        private void SetBodyControl(bool on)
+        {
+            if (player != null) player.enabled = on && !horse.Mounted;
+            if (horse != null) horse.enabled = on;
+        }
+
+        private Transform FindSpawn(string locationId)
+        {
+            if (spawnPoints == null || string.IsNullOrEmpty(locationId)) return null;
+            Transform t = spawnPoints.Find(locationId);
+            if (t == null) Debug.LogWarning("[run] no spawn point for " + locationId + "; staying put");
+            return t;
+        }
+
+        private void PlaceBody(Vector3 position, Quaternion rotation)
+        {
+            var cc = player.GetComponent<CharacterController>();
+            if (horse.Mounted) horse.Dismount(player.transform);
+            if (cc != null) cc.enabled = false;
+            player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, rotation.eulerAngles.y, 0f));
+            if (cc != null) cc.enabled = true;
+            var hcc = horse.GetComponent<CharacterController>();
+            if (hcc != null) hcc.enabled = false;
+            horse.transform.SetPositionAndRotation(position + rotation * new Vector3(3f, 0f, -2f), Quaternion.Euler(0f, rotation.eulerAngles.y + 20f, 0f));
+            if (hcc != null) hcc.enabled = true;
+            if (Terrain.activeTerrain != null)
+            {
+                Vector3 p = player.transform.position; p.y = Terrain.activeTerrain.SampleHeight(p) + Terrain.activeTerrain.transform.position.y + 0.2f;
+                if (cc != null) cc.enabled = false; player.transform.position = p; if (cc != null) cc.enabled = true;
+                Vector3 h = horse.transform.position; h.y = Terrain.activeTerrain.SampleHeight(h) + Terrain.activeTerrain.transform.position.y + 0.2f;
+                if (hcc != null) hcc.enabled = false; horse.transform.position = h; if (hcc != null) hcc.enabled = true;
+            }
         }
 
         // ------------------------------------------------------------------ save / quit / death

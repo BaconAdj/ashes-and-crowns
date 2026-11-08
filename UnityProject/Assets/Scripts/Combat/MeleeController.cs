@@ -33,6 +33,7 @@ namespace AshesAndCrowns.Combat
         public int Kills => _kills;
         public int Blocked => _blocked;
         public float TimeSinceHitTaken => Time.time - _lastHitFlash;
+        public event System.Action Swung;
 
         public void Init(Balance balance, DeterministicRng rng)
         {
@@ -75,6 +76,7 @@ namespace AshesAndCrowns.Combat
         {
             float dmg = CombatMath.Damage(_balance.melee.baseDamage, _balance.melee.damageVariance, _rng.NextFloat(), 0f);
             director.StrikeArc(facingSource.position, facingSource.forward, _balance.melee.reach, _balance.melee.arcDegrees, dmg, Side.Player);
+            Swung?.Invoke();
         }
 
         private void OnEnemyStrikes(int soldierIndex)

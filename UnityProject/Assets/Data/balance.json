@@ -292,5 +292,27 @@
     "hostilityCountry": 0.35,
     "hostilityBattlefield": 0.7,
     "homeRadiusMetres": 150
+  },
+  "character": {
+    "skillGainBase": 0.6,
+    "skillGainAttributeWeight": 0.15,
+    "skillGainDiminish": 0.012,
+    "skillCap": 100,
+    "adultAge": 15,
+    "oldAge": 50,
+    "ancientAge": 70,
+    "agingAttributeLossPerYearAfterOld": 0.15
+  },
+  "baronage": {
+    "minorLordCount": 14,
+    "westMatildaBias": 0.65,
+    "eastStephenBias": 0.7,
+    "divideNx": 0.47,
+    "neutralShare": 0.2,
+    "doubleDealerChance": 0.22,
+    "feudChance": 0.35,
+    "knightsMin": 5,
+    "knightsMax": 40,
+    "seatScatterKm": 18
   }
 }

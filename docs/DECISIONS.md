@@ -75,3 +75,17 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 ## Phase 2 summary (what exists, what is stubbed)
 - Built: Save assembly (RunState, codec, store) with 15 EditMode tests; AbsenceResolver with 7 tests; snapshots for rng, weather, body; BattleDirector export/import; SaveManager (autosave, resume across scenes, death deletion, quit screen, chronicle, Begin Again with a fresh seed); HUD chronicle and quit overlays; 3 PlayMode tests. 71 tests run under .NET, plus 5 PlayMode in Unity.
 - Stubbed: coins (robbery reports pennies but no wallet exists yet), steward/guards/fortify choices (need rank), named character, peak wealth, titles, "how history diverged" on the death screen.
+
+## 2026-11-08 — Phase 3 run start
+- Character creation is one UI Toolkit screen inside the England scene, shown by the SaveManager when no save exists. The battlefield test scene creates a default warrior silently.
+- Backgrounds live in `backgrounds.json` as parallel key/value arrays (JsonUtility cannot read dictionaries). Attribute budget: base 4 in each of four attributes plus 10 free points, each between 3 and 9. Background bonuses add on top.
+- Skills (18) grow with use through `CharacterSheet.Use`; the governing attribute scales the gain and gains diminish with level. Riding and one-handed are hooked up now; trades come with Phase 4. Aging erodes attributes past 50; maiming costs a point.
+- Family is generated from the background's template words; relations, ages and two traits each. In-run only.
+- The minor baronage (14 by default) is regenerated per run from `names.json`: house, seat, traits, declared and secret allegiance (west of the divide leans Matilda, east leans Stephen), loyalty, ambition, knights, mutual feuds. Major figures stay fixed from `figures.json`.
+- Spawn: peasants and warriors in a village (only Ashby exists), knights and lords at a castle stub (Wallingford, Oxford, Lincoln, or a town), monarchs at London (Stephen), Gloucester (Matilda) or Bristol (the claimant). Every non-village location now has a procedural keep stub and a spawn point; Phase 5 replaces the stubs.
+- Save format bumped to version 2 (character, family, baronage, spawn, opening seen). Version 1 files still load and get a default character.
+- Opening: four narration lines over a slow push-in, skippable. Audio stubs are logged by name.
+
+## Phase 3 summary (what exists, what is stubbed)
+- Built: creation screen (name, sex, rank, background, attributes, presets and sliders), run factory, appearance applied to the placeholder body, narrated opening, info panels (C character, F family, B baronage), skill growth hooks, castle stubs and spawn points, save v2, 10 new tests (81 under .NET) plus an editor test that validates every committed JSON file through JsonUtility.
+- Stubbed: real character model, NPC bodies for family and lords (they are records only), castle interiors, monarch court, coins as a usable wallet.

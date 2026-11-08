@@ -5,7 +5,7 @@ namespace AshesAndCrowns.Save
     /// <summary>Everything a run needs to resume exactly. Plain fields; the codec writes them in a fixed order.</summary>
     public sealed class RunState
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public int Version = CurrentVersion;
         public long Seed;
@@ -36,6 +36,14 @@ namespace AshesAndCrowns.Save
 
         // Battle (optional)
         public BattleSnapshot Battle;
+
+        // Version 2: the character, family and baronage
+        public bool HasCharacter;
+        public CharacterSheet Character;
+        public Npc[] Family = new Npc[0];
+        public MinorLord[] Baronage = new MinorLord[0];
+        public string SpawnLocationId = string.Empty;
+        public bool OpeningSeen;
     }
 
     /// <summary>Flat arrays mirroring BattleDirector's structure-of-arrays.</summary>

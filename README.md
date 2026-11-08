@@ -18,9 +18,13 @@ Unity 6 (URP). Design document: `docs/GDD.md`.
 | Ride | W/S speed, A/D steer, Shift gallop |
 | Swing / block | Left mouse / hold right mouse |
 | Command (only inside the ring on the hill) | LMB select unit banner, RMB move, C charge, H hold, 1–4 formation, arrows pan, wheel zoom |
+| Character / family / baronage | C / F / B |
 | Leave your affairs (quit) | Esc, then 1 to 3 or click |
 | Begin again after death | R |
 | Debug time (England scene) | `]` skips an hour, `[` skips a day |
+
+## Starting a life
+With no save on disk the England scene opens on character creation: name, sex, one of five ranks (the only difficulty setting), a background, ten attribute points, and a few appearance presets. A short narration follows, then the world. Peasants and warriors wake in the village; knights and lords at a castle; Stephen in London, Matilda in Gloucester, the claimant in Bristol.
 
 ## The world clock
 Church bells are the clock: Prime, Terce, Sext, None, Vespers and Compline ring from the village tower and the HUD names the next bell. A game day lasts 36 real minutes. The sun follows real solar geometry for southern England; weather changes in spells of a few hours, with rain, snow and fog by season.

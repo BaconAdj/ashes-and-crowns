@@ -33,6 +33,9 @@ namespace AshesAndCrowns.Game
 
         public static WorldData LoadWorld() => JsonUtility.FromJson<WorldData>(ReadText("world.json"));
         public static CoastData LoadCoast() => JsonUtility.FromJson<CoastData>(ReadText("england_coast.json"));
+        public static BackgroundsData LoadBackgrounds() => JsonUtility.FromJson<BackgroundsData>(ReadText("backgrounds.json"));
+        public static NamesData LoadNames() => JsonUtility.FromJson<NamesData>(ReadText("names.json"));
+        public static FiguresData LoadFigures() => JsonUtility.FromJson<FiguresData>(ReadText("figures.json"));
     }
 
     [System.Serializable] public sealed class Point2 { public float x, z; }

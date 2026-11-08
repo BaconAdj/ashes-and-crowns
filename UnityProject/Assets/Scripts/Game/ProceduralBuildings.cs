@@ -88,6 +88,26 @@ namespace AshesAndCrowns.Game
             return b.ToMesh("Alehouse");
         }
 
+        /// <summary>A stub castle: square keep on a motte-less platform with a low curtain wall. Phase 9 replaces it.</summary>
+        public static Mesh Keep(float keepSide, float keepHeight, float wallRadius, float wallHeight)
+        {
+            var b = new Builder();
+            b.Box(b.Walls, 0f, 0f, 0f, keepSide, keepHeight, keepSide);
+            b.Box(b.Walls, 0f, 0f, keepHeight, keepSide + 0.6f, 0.8f, keepSide + 0.6f);
+            for (int i = 0; i < 4; i++)
+            {
+                float a = i * Mathf.PI * 0.5f;
+                float cx = Mathf.Cos(a) * wallRadius, cz = Mathf.Sin(a) * wallRadius;
+                bool alongX = i % 2 == 1;
+                b.Box(b.Walls, cx, cz, 0f, alongX ? wallRadius * 2f : 1.2f, wallHeight, alongX ? 1.2f : wallRadius * 2f);
+                float tx = Mathf.Cos(a + Mathf.PI * 0.25f) * wallRadius * 1.414f, tz = Mathf.Sin(a + Mathf.PI * 0.25f) * wallRadius * 1.414f;
+                b.Box(b.Walls, tx, tz, 0f, 3f, wallHeight * 1.4f, 3f);
+            }
+            // gate opening on the +Z wall: a lintel block and two posts (visual only)
+            b.Box(b.Roof, 0f, wallRadius, wallHeight - 1.2f, 4f, 1.2f, 1.6f);
+            return b.ToMesh("Keep");
+        }
+
         /// <summary>Norman parish church: nave with gable roof, lower chancel, square west tower. Front (+Z) is east.</summary>
         public static Mesh Church(float naveWidth, float naveWallHeight, float naveLength, float towerHeight)
         {

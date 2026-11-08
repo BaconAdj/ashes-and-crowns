@@ -25,7 +25,8 @@ namespace AshesAndCrowns.UI
         private BattleDirector _director;
         private CommandController _command;
 
-        private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death, _chronicle, _quit;
+        private VisualElement _root, _bloodFill, _staminaFill, _hitFlash, _death, _chronicle, _quit, _narration, _info;
+        private Label _narrationText, _infoTitle, _infoBody;
         private Label _chronicleTitle, _chronicleBody, _quitTitle;
         private VisualElement _quitButtons;
         private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast;
@@ -129,6 +130,25 @@ namespace AshesAndCrowns.UI
             _quit.style.display = DisplayStyle.Flex;
         }
 
+        public void ShowNarration(string line, float blackness)
+        {
+            if (_narration == null) return;
+            _narration.style.display = DisplayStyle.Flex;
+            _narration.style.backgroundColor = new Color(0f, 0f, 0f, Mathf.Clamp01(0.25f + blackness * 0.75f));
+            _narrationText.text = line;
+        }
+
+        public void HideNarration() { if (_narration != null) _narration.style.display = DisplayStyle.None; }
+
+        public void ShowInfoPanel(string title, string body)
+        {
+            if (_info == null) return;
+            _infoTitle.text = title; _infoBody.text = body;
+            _info.style.display = DisplayStyle.Flex;
+        }
+
+        public void HideInfoPanel() { if (_info != null) _info.style.display = DisplayStyle.None; }
+
         public void HideQuitScreen() { if (_quit != null) _quit.style.display = DisplayStyle.None; }
 
         private void Build()
@@ -206,6 +226,24 @@ namespace AshesAndCrowns.UI
             _quitButtons = new VisualElement(); _quitButtons.style.width = 560;
             _quit.Add(_quitTitle); _quit.Add(quitHint); _quit.Add(_quitButtons);
             _root.Add(_quit);
+
+            // Narration band (opening)
+            _narration = MakeOverlay(0.9f);
+            _narration.style.justifyContent = Justify.FlexEnd; _narration.style.paddingBottom = 90;
+            _narrationText = MakeLabel(string.Empty, 22, Parchment); _narrationText.style.whiteSpace = WhiteSpace.Normal; _narrationText.style.maxWidth = 900; _narrationText.style.unityTextAlign = TextAnchor.MiddleCenter; _narrationText.style.unityFontStyleAndWeight = FontStyle.Italic;
+            _narration.Add(_narrationText);
+            _root.Add(_narration);
+
+            // Info panel (character / family / baronage)
+            _info = MakePanel(70, null, null, null, 760);
+            _info.style.left = new Length(50, LengthUnit.Percent); _info.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
+            _info.style.maxHeight = new Length(75, LengthUnit.Percent);
+            _info.style.display = DisplayStyle.None;
+            _infoTitle = MakeLabel(string.Empty, 18, Parchment); _infoTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _infoBody = MakeLabel(string.Empty, 13, Parchment); _infoBody.style.whiteSpace = WhiteSpace.Normal;
+            var scroll = new ScrollView(); scroll.style.maxHeight = 520; scroll.Add(_infoBody);
+            _info.Add(_infoTitle); _info.Add(scroll);
+            _root.Add(_info);
 
             ApplyModeText();
             _vitals.Wounded += (_, severity) => _hitFlash.style.backgroundColor = new Color(0.5f, 0f, 0f, Mathf.Clamp01(0.25f + severity * 2f));

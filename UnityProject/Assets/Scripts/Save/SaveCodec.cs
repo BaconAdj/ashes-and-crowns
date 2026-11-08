@@ -23,13 +23,14 @@ namespace AshesAndCrowns.Save
             using (var ms = new MemoryStream(4096))
             using (var w = new BinaryWriter(ms, Encoding.UTF8))
             {
-                WritePayload(w, s);
+                WritePayload(w, s, s.Version < 1 || s.Version > RunState.CurrentVersion ? RunState.CurrentVersion : s.Version);
                 w.Flush();
                 payload = ms.ToArray();
             }
             var result = new byte[HeaderBytes + payload.Length];
             Buffer.BlockCopy(Magic, 0, result, 0, 4);
-            BitConverter.GetBytes(RunState.CurrentVersion).CopyTo(result, 4);
+            int version = s.Version < 1 || s.Version > RunState.CurrentVersion ? RunState.CurrentVersion : s.Version;
+            BitConverter.GetBytes(version).CopyTo(result, 4);
             BitConverter.GetBytes(payload.Length).CopyTo(result, 8);
             BitConverter.GetBytes(Fnv1a64(payload, 0, payload.Length)).CopyTo(result, 12);
             Buffer.BlockCopy(payload, 0, result, HeaderBytes, payload.Length);
@@ -63,7 +64,7 @@ namespace AshesAndCrowns.Save
 
         // ------------------------------------------------------------ payload
 
-        private static void WritePayload(BinaryWriter w, RunState s)
+        private static void WritePayload(BinaryWriter w, RunState s, int version)
         {
             w.Write(s.Seed); w.Write(s.RngState); w.Write(s.SceneId ?? string.Empty); w.Write(s.SavedAtUtcTicks);
             w.Write((byte)s.Affairs); w.Write(s.Hostility); w.Write(s.EnemiesNearby); w.Write(s.InBattle);
@@ -82,6 +83,47 @@ namespace AshesAndCrowns.Save
             w.Write(s.HoursSurvived); w.Write(s.Kills); w.Write(s.MenLost); w.Write(s.Battles); w.Write(s.PeakWealth);
             w.Write(s.Battle != null);
             if (s.Battle != null) WriteBattle(w, s.Battle);
+            if (version >= 2)
+            {
+                w.Write(s.HasCharacter && s.Character != null);
+                if (s.HasCharacter && s.Character != null) WriteCharacter(w, s.Character);
+                var fam = s.Family ?? new Npc[0];
+                w.Write(fam.Length);
+                foreach (Npc n in fam) { w.Write(n.Id); w.Write(n.Name ?? ""); w.Write(n.Female); w.Write(n.Age); w.Write((byte)n.Relation); w.Write(n.Alive); w.Write(n.TraitA ?? ""); w.Write(n.TraitB ?? ""); w.Write(n.Disposition); w.Write(n.Note ?? ""); }
+                var lords = s.Baronage ?? new MinorLord[0];
+                w.Write(lords.Length);
+                foreach (MinorLord l in lords)
+                {
+                    w.Write(l.Id); w.Write(l.GivenName ?? ""); w.Write(l.House ?? ""); w.Write(l.Epithet ?? ""); w.Write(l.Age); w.Write(l.TraitA ?? ""); w.Write(l.TraitB ?? "");
+                    w.Write((byte)l.Declared); w.Write((byte)l.Secret); w.Write(l.Loyalty); w.Write(l.Ambition); w.Write(l.Knights); w.Write(l.SeatName ?? ""); w.Write(l.NearLocationId ?? "");
+                    w.Write(l.Nx); w.Write(l.Nz); w.Write(l.FeudWith); w.Write(l.Alive);
+                }
+                w.Write(s.SpawnLocationId ?? ""); w.Write(s.OpeningSeen);
+            }
+        }
+
+        private static void WriteCharacter(BinaryWriter w, CharacterSheet c)
+        {
+            w.Write(c.Name ?? ""); w.Write(c.Female); w.Write(c.AgeYears); w.Write((byte)c.Rank); w.Write(c.BackgroundId ?? ""); w.Write(c.Trade ?? ""); w.Write(c.FixedFigureId ?? "");
+            w.Write(c.Coins); w.Write(c.Wanted); w.Write(c.AppearancePreset); w.Write(c.Height); w.Write(c.Build); w.Write(c.SkinTone); w.Write(c.HairTone);
+            w.Write(4); for (int i = 0; i < 4; i++) w.Write(c.Attributes[i]);
+            w.Write(Skills.Count); for (int i = 0; i < Skills.Count; i++) w.Write(c.SkillLevels[i]);
+            w.Write(c.AttributeErosion);
+        }
+
+        private static CharacterSheet ReadCharacter(BinaryReader r)
+        {
+            var c = new CharacterSheet
+            {
+                Name = r.ReadString(), Female = r.ReadBoolean(), AgeYears = r.ReadInt32(), Rank = (Rank)r.ReadByte(), BackgroundId = r.ReadString(), Trade = r.ReadString(), FixedFigureId = r.ReadString(),
+                Coins = r.ReadInt32(), Wanted = r.ReadBoolean(), AppearancePreset = r.ReadInt32(), Height = r.ReadSingle(), Build = r.ReadSingle(), SkinTone = r.ReadSingle(), HairTone = r.ReadSingle()
+            };
+            int na = r.ReadInt32(); if (na < 0 || na > 16) throw new SaveCorruptException("bad attribute count");
+            for (int i = 0; i < na; i++) { int v = r.ReadInt32(); if (i < 4) c.Attributes[i] = v; }
+            int ns = r.ReadInt32(); if (ns < 0 || ns > 256) throw new SaveCorruptException("bad skill count");
+            for (int i = 0; i < ns; i++) { float v = r.ReadSingle(); if (i < Skills.Count) c.SkillLevels[i] = v; }
+            c.AttributeErosion = r.ReadSingle();
+            return c;
         }
 
         private static RunState ReadPayload(BinaryReader r, int version)
@@ -107,6 +149,25 @@ namespace AshesAndCrowns.Save
             s.Stamina = r.ReadSingle();
             s.HoursSurvived = r.ReadDouble(); s.Kills = r.ReadInt32(); s.MenLost = r.ReadInt32(); s.Battles = r.ReadInt32(); s.PeakWealth = r.ReadInt32();
             if (r.ReadBoolean()) s.Battle = ReadBattle(r);
+            if (version >= 2)
+            {
+                s.HasCharacter = r.ReadBoolean();
+                if (s.HasCharacter) s.Character = ReadCharacter(r);
+                int nf = r.ReadInt32(); if (nf < 0 || nf > 1000) throw new SaveCorruptException("bad family count");
+                s.Family = new Npc[nf];
+                for (int i = 0; i < nf; i++)
+                    s.Family[i] = new Npc { Id = r.ReadInt32(), Name = r.ReadString(), Female = r.ReadBoolean(), Age = r.ReadInt32(), Relation = (Relation)r.ReadByte(), Alive = r.ReadBoolean(), TraitA = r.ReadString(), TraitB = r.ReadString(), Disposition = r.ReadSingle(), Note = r.ReadString() };
+                int nl = r.ReadInt32(); if (nl < 0 || nl > 10000) throw new SaveCorruptException("bad baronage count");
+                s.Baronage = new MinorLord[nl];
+                for (int i = 0; i < nl; i++)
+                    s.Baronage[i] = new MinorLord
+                    {
+                        Id = r.ReadInt32(), GivenName = r.ReadString(), House = r.ReadString(), Epithet = r.ReadString(), Age = r.ReadInt32(), TraitA = r.ReadString(), TraitB = r.ReadString(),
+                        Declared = (Allegiance)r.ReadByte(), Secret = (Allegiance)r.ReadByte(), Loyalty = r.ReadSingle(), Ambition = r.ReadSingle(), Knights = r.ReadInt32(), SeatName = r.ReadString(), NearLocationId = r.ReadString(),
+                        Nx = r.ReadSingle(), Nz = r.ReadSingle(), FeudWith = r.ReadInt32(), Alive = r.ReadBoolean()
+                    };
+                s.SpawnLocationId = r.ReadString(); s.OpeningSeen = r.ReadBoolean();
+            }
             return s;
         }
 

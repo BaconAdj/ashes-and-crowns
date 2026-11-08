@@ -152,6 +152,8 @@ namespace AshesAndCrowns.Sim
         public WeatherBalance weather = new WeatherBalance();
         public VillageBalance village = new VillageBalance();
         public SaveBalance save = new SaveBalance();
+        public CharacterBalance character = new CharacterBalance();
+        public BaronageBalance baronage = new BaronageBalance();
         public AbsenceBalance absence = new AbsenceBalance();
     }
 
@@ -197,6 +199,9 @@ namespace AshesAndCrowns.Sim
                 if (Math.Abs(b.absence.attackShare + b.absence.feverShare + b.absence.robberyShare - 1f) > 0.01f) errors.Add("absence shares must sum to 1");
             }
             if (b.simulation.maxCatchUpGameDays <= 0) errors.Add("simulation.maxCatchUpGameDays must be positive");
+            if (b.character == null || b.character.skillCap <= 0f) errors.Add("character.skillCap must be positive");
+            if (b.baronage == null || b.baronage.minorLordCount <= 0) errors.Add("baronage.minorLordCount must be positive");
+            if (b.baronage != null && b.baronage.knightsMax < b.baronage.knightsMin) errors.Add("baronage.knightsMax must be >= knightsMin");
             if (b.weather == null) errors.Add("weather missing");
             else
             {
