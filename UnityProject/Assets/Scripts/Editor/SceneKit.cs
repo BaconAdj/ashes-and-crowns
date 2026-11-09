@@ -37,15 +37,57 @@ namespace AshesAndCrowns.EditorTools
         }
 
         /// <summary>A material with a tiling texture (for buildings and ground). Cached by name.</summary>
-        public static Material TexturedMat(string name, Texture2D tex, Color tint, float roughness)
+        public static Material TexturedMat(string name, Texture2D tex, Color tint, float roughness, Texture2D normal = null, float bumpScale = 1f)
         {
             string path = Paths.Palette + "/" + name + ".mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null) return existing;
-            var m = new Material(Shader.Find(LitShader)) { name = name };
-            m.SetColor("_BaseColor", tint); m.SetTexture("_BaseMap", tex); m.SetFloat("_Smoothness", 1f - roughness); m.SetFloat("_Metallic", 0f);
-            AssetDatabase.CreateAsset(m, path);
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                m = new Material(Shader.Find(LitShader)) { name = name };
+                m.SetColor("_BaseColor", tint); m.SetTexture("_BaseMap", tex); m.SetFloat("_Smoothness", 1f - roughness); m.SetFloat("_Metallic", 0f);
+                AssetDatabase.CreateAsset(m, path);
+            }
+            if (normal != null && m.GetTexture("_BumpMap") != normal)   // older generated materials pick the normal map up on rebuild
+            {
+                m.SetTexture("_BumpMap", normal); m.SetFloat("_BumpScale", bumpScale); m.EnableKeyword("_NORMALMAP");
+                EditorUtility.SetDirty(m);
+            }
             return m;
+        }
+
+        /// <summary>Tangent-space normal map from the same tileable noise NoiseTexture uses, so albedo and relief line up.</summary>
+        public static Texture2D NormalTexture(string assetPath, float scale1, float scale2, float seedOffset, float strength, int size = 256)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (existing != null) return existing;
+            var h = new float[size * size];
+            for (int i = 0; i < h.Length; i++)
+            {
+                float u = (i % size) / (float)size, v = (i / size) / (float)size;
+                float n1 = Mathf.PerlinNoise(seedOffset + u * scale1, seedOffset + v * scale1);
+                float n2 = Mathf.PerlinNoise(seedOffset + 3.1f + u * scale2, seedOffset + 7.7f + v * scale2);
+                float n = n1 * 0.65f + n2 * 0.35f;
+                float ex = Mathf.Min(u, 1f - u) * 2f, ey = Mathf.Min(v, 1f - v) * 2f;
+                h[i] = Mathf.Lerp(0.5f, n, Mathf.SmoothStep(0f, 1f, Mathf.Min(1f, Mathf.Min(ex, ey) * 3f)));
+            }
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
+            var px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float l = h[y * size + (x + size - 1) % size], r = h[y * size + (x + 1) % size];
+                float d = h[((y + size - 1) % size) * size + x], up = h[((y + 1) % size) * size + x];
+                var nrm = new Vector3((l - r) * strength, (d - up) * strength, 1f).normalized;
+                px[y * size + x] = new Color(nrm.x * 0.5f + 0.5f, nrm.y * 0.5f + 0.5f, nrm.z * 0.5f + 0.5f, 1f);
+            }
+            tex.SetPixels(px); tex.Apply();
+            File.WriteAllBytes(assetPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(assetPath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+            importer.textureType = TextureImporterType.NormalMap; importer.wrapMode = TextureWrapMode.Repeat; importer.mipmapEnabled = true; importer.anisoLevel = 4;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
         }
 
         /// <summary>Transparent soft particle material for rain or snow.</summary>
@@ -126,12 +168,15 @@ namespace AshesAndCrowns.EditorTools
             return AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
         }
 
-        public static TerrainLayer Layer(string assetPath, Texture2D tex, float tileMetres)
+        public static TerrainLayer Layer(string assetPath, Texture2D tex, float tileMetres, Texture2D normal = null)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<TerrainLayer>(assetPath);
-            if (existing != null) return existing;
-            var layer = new TerrainLayer { diffuseTexture = tex, tileSize = new Vector2(tileMetres, tileMetres), smoothness = 0f, metallic = 0f, specular = Color.black };
-            AssetDatabase.CreateAsset(layer, assetPath);
+            var layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(assetPath);
+            if (layer == null)
+            {
+                layer = new TerrainLayer { diffuseTexture = tex, tileSize = new Vector2(tileMetres, tileMetres), smoothness = 0f, metallic = 0f, specular = Color.black };
+                AssetDatabase.CreateAsset(layer, assetPath);
+            }
+            if (normal != null && layer.normalMapTexture != normal) { layer.normalMapTexture = normal; layer.normalScale = 1f; EditorUtility.SetDirty(layer); }
             return layer;
         }
 
@@ -196,20 +241,17 @@ namespace AshesAndCrowns.EditorTools
         public static void BuildVolume(Balance balance, string profilePath)
         {
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(profilePath);
-            if (profile == null)
-            {
-                profile = ScriptableObject.CreateInstance<VolumeProfile>();
-                AssetDatabase.CreateAsset(profile, profilePath);
-                T Add<T>() where T : VolumeComponent { var c = profile.Add<T>(true); AssetDatabase.AddObjectToAsset(c, profile); return c; }
-                var tone = Add<Tonemapping>(); tone.mode.Override(TonemappingMode.ACES);
-                var ca = Add<ColorAdjustments>();
-                ca.saturation.Override(balance.look.saturation); ca.contrast.Override(balance.look.contrast); ca.postExposure.Override(balance.look.postExposure);
-                ca.colorFilter.Override(new Color(0.86f, 0.90f, 1.0f));
-                var vig = Add<Vignette>(); vig.intensity.Override(balance.look.vignette); vig.smoothness.Override(0.5f);
-                var grain = Add<FilmGrain>(); grain.type.Override(FilmGrainLookup.Medium2); grain.intensity.Override(balance.look.filmGrain); grain.response.Override(0.8f);
-                var bloom = Add<Bloom>(); bloom.intensity.Override(0.15f); bloom.threshold.Override(1.2f);
-                EditorUtility.SetDirty(profile);
-            }
+            if (profile == null) { profile = ScriptableObject.CreateInstance<VolumeProfile>(); AssetDatabase.CreateAsset(profile, profilePath); }
+            T Get<T>() where T : VolumeComponent { if (profile.TryGet(out T c)) return c; c = profile.Add<T>(true); AssetDatabase.AddObjectToAsset(c, profile); return c; }
+            // Re-applied on every rebuild so balance.json stays the source of truth for the grade.
+            var tone = Get<Tonemapping>(); tone.mode.Override(TonemappingMode.ACES);
+            var ca = Get<ColorAdjustments>();
+            ca.saturation.Override(balance.look.saturation); ca.contrast.Override(balance.look.contrast); ca.postExposure.Override(balance.look.postExposure);
+            ca.colorFilter.Override(new Color(0.90f, 0.93f, 1.0f));
+            var vig = Get<Vignette>(); vig.intensity.Override(balance.look.vignette); vig.smoothness.Override(0.5f);
+            var grain = Get<FilmGrain>(); grain.type.Override(FilmGrainLookup.Medium2); grain.intensity.Override(balance.look.filmGrain); grain.response.Override(0.8f);
+            var bloom = Get<Bloom>(); bloom.intensity.Override(0.15f); bloom.threshold.Override(1.2f);
+            EditorUtility.SetDirty(profile);
             var volGo = new GameObject("GlobalVolume_GrimLook");
             var vol = volGo.AddComponent<Volume>();
             vol.isGlobal = true; vol.sharedProfile = profile;

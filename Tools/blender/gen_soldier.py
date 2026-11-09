@@ -1,30 +1,29 @@
-"""Foot soldier, 1.75 m: a blocky man in a gambeson with a kettle helm, round shield on the left arm, spear in the right.
-Instanced a thousand times, so it stays under 300 triangles. Slot 1 (Walls) = cloth and skin, slot 2 (Roof) = iron."""
+"""Foot soldier, 1.75 m: gambeson, kettle helm, round shield on the left arm, spear in the right.
+Instanced a thousand times, so it stays near 600 triangles. Slot 1 (Walls) = cloth and skin, slot 2 (Roof) = iron."""
 import os, sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from common import *
+
+from body import *
 
 out = parse_out("UnityProject/Assets/Art/Characters/Soldier.fbx")
 reset_scene()
 cloth = material("Walls", (0.36, 0.30, 0.22)); iron = material("Roof", (0.45, 0.47, 0.50))
 b = MeshBuilder("Soldier")
-# legs
-for x in (-0.11, 0.11):
-    b.box(x, 0.0, 0.0, 0.16, 0.2, 0.85)
-# torso (gambeson) and belt
-b.box(0, 0, 0.85, 0.44, 0.26, 0.62)
-b.box(0, 0, 1.10, 0.46, 0.28, 0.06, roof=True)
-# arms
-b.box(-0.30, 0.0, 0.90, 0.13, 0.15, 0.55)
-b.box(0.30, 0.0, 0.90, 0.13, 0.15, 0.55)
-# head and kettle helm
-b.box(0, 0, 1.47, 0.20, 0.22, 0.24)
-b.pyramid(0, 0, 1.68, 0.34, 0.12)
-b.box(0, 0, 1.66, 0.34, 0.36, 0.03, roof=True)
-# shield on the left arm, slightly forward
-b.box(-0.40, 0.14, 0.78, 0.06, 0.62, 0.62, roof=True)
-# spear in the right hand, 2.4 m, leaning a little forward
-b.box(0.34, 0.12, 0.0, 0.04, 0.04, 2.4)
-b.pyramid(0.34, 0.12, 2.4, 0.07, 0.22)
-obj = b.finish(cloth, iron)
-export_fbx(obj, out)
+legs_and_tunic(b, bulk=1.08, skin_slot=False)
+for z in (0.90, 1.00, 1.20, 1.30):                                              # quilting rows on the gambeson
+    b.box(0, 0, z, 0.47, 0.30, 0.025)
+head(b, skin_slot=False)
+# left arm holds the shield forward, right arm grips the spear
+arm(b, -1, (-0.25, 0.0, 1.43), (-0.33, 0.10, 1.18), (-0.34, 0.16, 1.00), skin_slot=False)
+arm(b, +1, (0.25, 0.0, 1.43), (0.31, 0.06, 1.17), (0.33, 0.14, 1.12), skin_slot=False)
+# kettle helm: brim and cone
+b.tube((0, 0, 1.70), (0, 0, 1.73), 0.19, 0.19, n=12, roof=True)
+b.cone(0, 0, 1.73, 0.13, 0.11, n=10, roof=True)
+# round shield, boss in the middle, hung on the left forearm
+b.tube((-0.40, 0.18, 1.00), (-0.37, 0.18, 1.00), 0.33, 0.33, n=14, roof=True)
+b.ellipsoid(-0.41, 0.18, 1.00, 0.04, 0.08, 0.08, seg=6, rings=3, roof=True)
+# spear, 2.4 m
+b.tube((0.33, 0.14, 0.0), (0.33, 0.14, 2.3), 0.02, 0.02, n=6)
+b.cone(0.33, 0.14, 2.3, 0.04, 0.25, n=6, roof=True)
+export_fbx(b.finish(cloth, iron), out)

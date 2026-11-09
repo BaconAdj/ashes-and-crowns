@@ -1,4 +1,5 @@
-"""Peasant hut: wattle-and-daub box, thatched gable roof. Mirrors ProceduralBuildings.Hut (5.5 x 4.0 m, walls 2.2 m, roof 2.4 m)."""
+"""Peasant hut: stone footing, battered wattle walls with posts, a steep thatched roof hanging to head height, a door frame.
+Mirrors ProceduralBuildings.Hut (5.5 x 4.0 m, walls 2.2 m, roof 2.4 m). Front (door) is +Y."""
 import os, sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from common import *
@@ -8,9 +9,20 @@ reset_scene()
 walls = material("Walls", (0.52, 0.46, 0.36)); roof = material("Roof", (0.36, 0.30, 0.18))
 b = MeshBuilder("Hut")
 W, D, H, R = 5.5, 4.0, 2.2, 2.4
-b.box(0, 0, 0, W, D, H)
-b.gable(0, 0, H, W, D, R, 0.45)
-b.box(0, D / 2 + 0.05, 0, 1.0, 0.1, 1.7)          # door frame bump on the front (+Y)
-b.box(-W / 2 - 0.1, -0.6, 0, 0.2, 0.9, 1.2)        # a low wood pile / lean-to on the side
-obj = b.finish(walls, roof)
-export_fbx(obj, out)
+b.box(0, 0, 0.0, W + 0.3, D + 0.3, 0.3)                           # footing
+b.frustum(0, 0, 0.3, W, D, W - 0.15, D - 0.12, H - 0.3)            # daub walls, slightly battered
+for x in (-W / 2, 0.0, W / 2):
+    for y in (-D / 2, D / 2):
+        b.box(x, y, 0.25, 0.2, 0.2, H)                             # posts
+for y in (0.0,):
+    b.box(-W / 2, y, 0.25, 0.2, 0.2, H); b.box(W / 2, y, 0.25, 0.2, 0.2, H)
+b.box(0, D / 2 + 0.05, 0.3, 1.1, 0.12, 1.75, roof=True)            # door leaf (dark)
+for x in (-0.62, 0.62):
+    b.box(x, D / 2 + 0.08, 0.3, 0.14, 0.16, 1.85)                   # door posts
+b.box(0, D / 2 + 0.08, 2.12, 1.4, 0.16, 0.14)                       # lintel
+b.box(W / 2 + 0.04, 0.9, 1.3, 0.1, 0.6, 0.5, roof=True)             # shuttered window, side
+b.gable(0, 0, H, W, D, R, 0.6, drop=0.35)                           # thatch, eaves at 1.85 m
+b.box(0, 0, H + R - 0.1, 0.3, D + 1.1, 0.22, roof=True)             # ridge cap
+for i, (y, r) in enumerate(((-0.9, 0.16), (-0.5, 0.14), (-0.7, 0.13))):
+    b.tube((-W / 2 - 0.5, y - 0.6, 0.15 + 0.3 * (i // 2)), (-W / 2 - 0.5, y + 0.6, 0.15 + 0.3 * (i // 2)), r, r, n=6)   # woodpile
+export_fbx(b.finish(walls, roof), out)

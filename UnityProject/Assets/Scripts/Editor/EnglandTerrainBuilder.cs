@@ -121,6 +121,8 @@ namespace AshesAndCrowns.EditorTools
 
             var data = new TerrainData { heightmapResolution = res, size = new Vector3(size, maxH, size) };
             data.SetHeights(0, 0, heights);
+            AssetDatabase.DeleteAsset(Paths.Generated + "/EnglandTerrain.asset");
+            AssetDatabase.CreateAsset(data, Paths.Generated + "/EnglandTerrain.asset");   // must exist as an asset before layers are assigned, or the alpha maps are dropped
 
             // ---- layers and splat
             Texture2D grassTex = SceneKit.NoiseTexture(Paths.Generated + "/GrassAlbedo.png", new Color(0.24f, 0.27f, 0.16f), new Color(0.36f, 0.37f, 0.22f), 6f, 23f, 256, 1.3f);
@@ -128,9 +130,9 @@ namespace AshesAndCrowns.EditorTools
             Texture2D rockTex = SceneKit.NoiseTexture(Paths.Generated + "/RockAlbedo.png", new Color(0.30f, 0.30f, 0.29f), new Color(0.46f, 0.45f, 0.42f), 4f, 17f, 256, 8.8f);
             var layers = new[]
             {
-                SceneKit.Layer(Paths.Generated + "/Grass.terrainlayer", grassTex, 9f),
-                SceneKit.Layer(Paths.Generated + "/Mud.terrainlayer", mudTex, 6f),
-                SceneKit.Layer(Paths.Generated + "/Rock.terrainlayer", rockTex, 12f),
+                SceneKit.Layer(Paths.Generated + "/Grass.terrainlayer", grassTex, 9f, SceneKit.NormalTexture(Paths.Generated + "/GrassNormal.png", 6f, 23f, 1.3f, 1.6f)),
+                SceneKit.Layer(Paths.Generated + "/Mud.terrainlayer", mudTex, 6f, SceneKit.NormalTexture(Paths.Generated + "/MudNormal.png", 5f, 19f, 4.2f, 2.2f)),
+                SceneKit.Layer(Paths.Generated + "/Rock.terrainlayer", rockTex, 12f, SceneKit.NormalTexture(Paths.Generated + "/RockNormal.png", 4f, 17f, 8.8f, 3.0f)),
             };
             data.terrainLayers = layers;
             int ares = 1025;
@@ -150,7 +152,7 @@ namespace AshesAndCrowns.EditorTools
                 alphas[z, x, 0] = grass / sum; alphas[z, x, 1] = mud / sum; alphas[z, x, 2] = rock / sum;
             }
             data.SetAlphamaps(0, 0, alphas);
-            AssetDatabase.CreateAsset(data, Paths.Generated + "/EnglandTerrain.asset");
+            EditorUtility.SetDirty(data);
 
             GameObject terrainGo = Terrain.CreateTerrainGameObject(data);
             terrainGo.name = "England";

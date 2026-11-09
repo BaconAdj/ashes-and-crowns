@@ -278,17 +278,18 @@ namespace AshesAndCrowns.EditorTools
             }
             var data = new TerrainData { heightmapResolution = res, size = new Vector3(size, maxH, size) };
             data.SetHeights(0, 0, heights);
+            string terrainAsset = Paths.Generated + (siege != null ? "/Phase9Terrain.asset" : "/Phase0Terrain.asset");
+            AssetDatabase.DeleteAsset(terrainAsset);
+            AssetDatabase.CreateAsset(data, terrainAsset);   // before layers, or Unity 6 drops the alpha maps
 
             // Phase 0 shipped a Texture2D saved as .asset, which rendered the ground white; replace it with the PNG layer.
             AssetDatabase.DeleteAsset(Paths.Generated + "/MudAlbedo.asset");
             var staleLayer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(Paths.Generated + "/Mud.terrainlayer");
             if (staleLayer != null && (staleLayer.diffuseTexture == null || !AssetDatabase.GetAssetPath(staleLayer.diffuseTexture).EndsWith(".png"))) AssetDatabase.DeleteAsset(Paths.Generated + "/Mud.terrainlayer");
             Texture2D tex = SceneKit.NoiseTexture(Paths.Generated + "/MudAlbedo.png", new Color(0.21f, 0.19f, 0.15f), new Color(0.33f, 0.31f, 0.24f), 5f, 19f, 256, 4.2f);
-            TerrainLayer layer = SceneKit.Layer(Paths.Generated + "/Mud.terrainlayer", tex, 6f);
+            TerrainLayer layer = SceneKit.Layer(Paths.Generated + "/Mud.terrainlayer", tex, 6f, SceneKit.NormalTexture(Paths.Generated + "/MudNormal.png", 5f, 19f, 4.2f, 2.2f));
             data.terrainLayers = new[] { layer };
-            string terrainAsset = Paths.Generated + (siege != null ? "/Phase9Terrain.asset" : "/Phase0Terrain.asset");
-            AssetDatabase.DeleteAsset(terrainAsset);
-            AssetDatabase.CreateAsset(data, terrainAsset);
+            EditorUtility.SetDirty(data);
 
             GameObject terrainGo = Terrain.CreateTerrainGameObject(data);
             terrainGo.name = "Terrain";

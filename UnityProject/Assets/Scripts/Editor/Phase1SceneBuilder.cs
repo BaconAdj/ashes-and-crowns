@@ -121,7 +121,7 @@ namespace AshesAndCrowns.EditorTools
             var ashbySite = vill.Root.GetComponent<SettlementSite>(); if (ashbySite != null) ashbySite.transform.SetParent(fixedSites, true);
             var assets = sceneGo.AddComponent<WorldAssets>();
             assets.wattle = vill.Wattle; assets.thatch = vill.Thatch; assets.stone = vill.Stone; assets.slate = vill.Slate; assets.darkWood = vill.DarkWood; assets.hut = vill.HutMesh; assets.alehouse = vill.AlehouseMesh; assets.church = vill.ChurchMesh; assets.terrain = terrain;
-            assets.oak = SceneKit.ArtMesh("Nature/Oak.fbx"); assets.keep = SceneKit.ArtMesh("Buildings/Keep.fbx"); assets.bark = vill.DarkWood; assets.leaf = SceneKit.Mat("Leaf", SceneKit.LitShader, new Color(0.22f, 0.27f, 0.17f), 0f, 0.95f);
+            assets.oak = SceneKit.ArtMesh("Nature/Oak.fbx"); assets.keep = SceneKit.ArtMesh("Buildings/Keep.fbx"); assets.bark = vill.Bark; assets.leaf = SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f);
             var spawnerGo = new GameObject("Settlements");
             var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
             save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life; save.villageLife = life; life.narration = narration;

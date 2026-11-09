@@ -12,6 +12,7 @@ namespace AshesAndCrowns.Game
         private ParticleSystem _rain, _snow;
         private ParticleSystem.EmissionModule _rainEmit, _snowEmit;
         private string _lastKind = string.Empty;
+        private float _lastRain = -1f, _lastSnow = -1f;
 
         public string Description { get; private set; } = string.Empty;
 
@@ -36,7 +37,7 @@ namespace AshesAndCrowns.Game
             var shape = ps.shape; shape.shapeType = ParticleSystemShapeType.Box; shape.scale = new Vector3(40f, 1f, 40f); shape.position = new Vector3(0f, 18f, 0f);
             var vel = ps.velocityOverLifetime; vel.enabled = true; vel.space = ParticleSystemSimulationSpace.World;
             vel.x = new ParticleSystem.MinMaxCurve(velocity.x - noise, velocity.x + noise);
-            vel.y = new ParticleSystem.MinMaxCurve(velocity.y);
+            vel.y = new ParticleSystem.MinMaxCurve(velocity.y, velocity.y);   // same mode as x and z or Unity warns every frame
             vel.z = new ParticleSystem.MinMaxCurve(velocity.z - noise, velocity.z + noise);
             var emission = ps.emission; emission.rateOverTime = 0f;
             var r = ps.GetComponent<ParticleSystemRenderer>();
@@ -54,8 +55,9 @@ namespace AshesAndCrowns.Game
             var w = clock.Weather;
             float p = w.Precipitation;
             bool snow = w.Current == WeatherKind.Snow;
-            _rainEmit.rateOverTime = snow ? 0f : p * _balance.look.rainParticlesPerSecond;
-            _snowEmit.rateOverTime = snow ? p * _balance.look.snowParticlesPerSecond : 0f;
+            float rain = snow ? 0f : p * _balance.look.rainParticlesPerSecond, snowRate = snow ? p * _balance.look.snowParticlesPerSecond : 0f;
+            if (rain != _lastRain) { _rainEmit.rateOverTime = rain; _lastRain = rain; }
+            if (snowRate != _lastSnow) { _snowEmit.rateOverTime = snowRate; _lastSnow = snowRate; }
             string kind = w.Current.ToString();
             if (kind != _lastKind) { _lastKind = kind; Description = Describe(w.Current); }
         }

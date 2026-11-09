@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood; public Mesh HutMesh, AlehouseMesh, ChurchMesh; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark; public Mesh HutMesh, AlehouseMesh, ChurchMesh; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -23,11 +23,12 @@ namespace AshesAndCrowns.EditorTools
             Texture2D thatchTex = SceneKit.NoiseTexture(Paths.Generated + "/ThatchAlbedo.png", new Color(0.36f, 0.30f, 0.18f), new Color(0.50f, 0.42f, 0.26f), 3f, 40f, 256, 5.5f);
             Texture2D stoneTex = SceneKit.NoiseTexture(Paths.Generated + "/StoneAlbedo.png", new Color(0.42f, 0.41f, 0.38f), new Color(0.56f, 0.54f, 0.50f), 10f, 29f, 256, 9.1f);
             Texture2D slateTex = SceneKit.NoiseTexture(Paths.Generated + "/SlateAlbedo.png", new Color(0.20f, 0.21f, 0.24f), new Color(0.30f, 0.31f, 0.34f), 12f, 36f, 256, 12.4f);
-            Material wattle = SceneKit.TexturedMat("Wattle", wattleTex, Color.white, 0.95f);
-            Material thatch = SceneKit.TexturedMat("Thatch", thatchTex, Color.white, 0.98f);
-            Material stone = SceneKit.TexturedMat("ChurchStone", stoneTex, Color.white, 0.92f);
-            Material slate = SceneKit.TexturedMat("Slate", slateTex, Color.white, 0.75f);
+            Material wattle = SceneKit.TexturedMat("Wattle", wattleTex, Color.white, 0.95f, SceneKit.NormalTexture(Paths.Generated + "/WattleNormal.png", 8f, 31f, 2.6f, 2.5f));
+            Material thatch = SceneKit.TexturedMat("Thatch", thatchTex, Color.white, 0.98f, SceneKit.NormalTexture(Paths.Generated + "/ThatchNormal.png", 3f, 40f, 5.5f, 3.5f));
+            Material stone = SceneKit.TexturedMat("ChurchStone", stoneTex, Color.white, 0.92f, SceneKit.NormalTexture(Paths.Generated + "/StoneNormal.png", 10f, 29f, 9.1f, 3.0f));
+            Material slate = SceneKit.TexturedMat("Slate", slateTex, Color.white, 0.75f, SceneKit.NormalTexture(Paths.Generated + "/SlateNormal.png", 12f, 36f, 12.4f, 2.0f));
             Material darkWood = SceneKit.Mat("DarkWood", SceneKit.LitShader, new Color(0.18f, 0.14f, 0.10f), 0f, 0.9f);
+            Material bark = SceneKit.Mat("Bark", SceneKit.LitShader, new Color(0.33f, 0.27f, 0.20f), 0f, 0.95f);
 
             Mesh hutMesh = LoadOrMake("Hut", () => ProceduralBuildings.Hut(v.hutFootprintMetres[0], v.hutFootprintMetres[1], v.hutWallHeight, v.hutRoofHeight));
             Mesh aleMesh = LoadOrMake("Alehouse", () => ProceduralBuildings.Alehouse(v.alehouseFootprint[0], v.alehouseFootprint[1], v.alehouseWallHeight));
@@ -73,7 +74,7 @@ namespace AshesAndCrowns.EditorTools
             Material villagerMat = SceneKit.Mat("Villager", SceneKit.LitShader, new Color(0.3f, 0.26f, 0.2f), 0f, 0.9f);
             Material skinMat = SceneKit.Mat("Skin", SceneKit.LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f);
             Mesh manMesh = SceneKit.ArtMesh("Characters/Man.fbx");
-            PlantOaks(root, terrain, centre, green, rng, darkWood);
+            PlantOaks(root, terrain, centre, green, rng, bark);
             int k = 0;
             foreach (string trade in trades)
             {
@@ -97,14 +98,14 @@ namespace AshesAndCrowns.EditorTools
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
             var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
         }
 
         /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>
         private static void PlantOaks(Transform root, Terrain terrain, Vector3 centre, float green, DeterministicRng rng, Material bark)
         {
             Mesh oak = SceneKit.ArtMesh("Nature/Oak.fbx"); if (oak == null) return;
-            Material leaf = SceneKit.Mat("Leaf", SceneKit.LitShader, new Color(0.22f, 0.27f, 0.17f), 0f, 0.95f);
+            Material leaf = SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f);
             var trees = new GameObject("Oaks").transform; trees.SetParent(root, true);
             for (int i = 0; i < 26; i++)
             {
