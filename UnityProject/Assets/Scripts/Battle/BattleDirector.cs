@@ -266,7 +266,7 @@ namespace AshesAndCrowns.Battle
             var summary = new UnitSummaryJob { Positions = _positions, Alive = _alive, Units = _units, Centroids = _centroids }.Schedule(combat);
             var matrices = new BuildMatricesJob
             {
-                Positions = _positions, Yaws = _yaws, Alive = _alive, Matrices = _matrices,
+                Positions = _positions, Yaws = _yaws, Alive = _alive, Matrices = _matrices, PreviousPositions = _positionsSnapshot, Time = _elapsed,
                 UprightScale = _uprightScale, UprightLift = _uprightScale.y, DeadLift = 0.3f
             }.Schedule(SoldierCount, 64, summary);
             matrices.Complete();

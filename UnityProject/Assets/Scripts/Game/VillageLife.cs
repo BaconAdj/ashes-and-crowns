@@ -31,6 +31,7 @@ namespace AshesAndCrowns.Game
         public LordshipDirector lordship;   // optional: the hall
         public IntrigueDirector intrigue;   // optional: the knife in the dark
         public DevCheats cheats;            // optional: F10 testing menu
+        public HouseholdDirector household; // optional: a knight's duties
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -65,6 +66,7 @@ namespace AshesAndCrowns.Game
             if (lordship != null && lordship.IsOpen) return;
             if (intrigue != null && intrigue.IsOpen) return;
             if (cheats != null && cheats.IsOpen) return;
+            if (household != null && household.IsOpen) return;
             if (!_busy && survival != null && survival.PendingArrest != null) { var pending = survival.PendingArrest; survival.PendingArrest = null; Arrest(pending); return; }
             if (!_busy && ctx.PendingLevyAt != null) { var at = ctx.PendingLevyAt; ctx.PendingLevyAt = null; LevyAtTheDoor(at); return; }
             if (_busy)
@@ -128,6 +130,7 @@ namespace AshesAndCrowns.Game
                         if (ctx.ActiveJob.Kind == JobKind.Bounty && encounter != null) encounter.BountyTarget(ctx.ActiveJob); else DeliverJob(s);
                     }
                     LawCheck(s);
+                    household?.OnArrived(s);
                 }
             }
         }
@@ -248,6 +251,7 @@ namespace AshesAndCrowns.Game
                 opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", DesertService));
             }
             if (s != null && lordship != null && ctx.Estate != null && ctx.Estate.SettlementId == s.Id) opts.Add(("Go up to the hall", lordship.Hall));
+            if (household != null && household.AtPatronSeat(ctx, s)) opts.Add((ctx.Duty != null && ctx.Duty.State == DutyState.Given ? "Your orders" : "Report to the hall for duty", household.ReportForDuty));
             if (intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) opts.Add(("Act on your suspicions", intrigue.Suspicions));
             if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
             if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) opts.Add(($"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies} pennies)", HireGarrison));

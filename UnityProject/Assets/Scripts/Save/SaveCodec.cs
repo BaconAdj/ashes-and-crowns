@@ -160,6 +160,10 @@ namespace AshesAndCrowns.Save
                 var wl = s.PlotWarningLines ?? new string[0]; w.Write(wl.Length); foreach (var line in wl) w.Write(line ?? "");
                 w.Write(s.PendingRaiders); w.Write(s.EstateDaysThisMonth); w.Write(s.WarHeat);
             }
+            if (version >= 11)
+            {
+                w.Write(s.HasDuty); w.Write(s.DutyKind); w.Write(s.DutyState); w.Write(s.DutyFromId ?? ""); w.Write(s.DutyToId ?? ""); w.Write(s.DutyToName ?? ""); w.Write(s.DutyText ?? ""); w.Write(s.DutyGivenDay); w.Write(s.DutyDueDay); w.Write(s.DutyPay); w.Write(s.DutyDangerous);
+            }
         }
 
         private static void WriteJob(BinaryWriter w, JobSnapshot j)
@@ -308,6 +312,10 @@ namespace AshesAndCrowns.Save
                 s.HasPlot = r.ReadBoolean(); s.PlotKind = r.ReadByte(); s.PlotterKind = r.ReadByte(); s.PlotterId = r.ReadInt32(); s.PlotDaysUntil = r.ReadInt32(); s.PlotWarnings = r.ReadInt32(); s.PlotterName = r.ReadString(); s.PlotGuarded = r.ReadBoolean(); s.PlotTasted = r.ReadBoolean();
                 int nw = r.ReadInt32(); if (nw < 0 || nw > 100) throw new SaveCorruptException("bad warning count"); s.PlotWarningLines = new string[nw]; for (int i = 0; i < nw; i++) s.PlotWarningLines[i] = r.ReadString();
                 s.PendingRaiders = r.ReadInt32(); s.EstateDaysThisMonth = r.ReadInt32(); s.WarHeat = r.ReadSingle();
+            }
+            if (version >= 11)
+            {
+                s.HasDuty = r.ReadBoolean(); s.DutyKind = r.ReadByte(); s.DutyState = r.ReadByte(); s.DutyFromId = r.ReadString(); s.DutyToId = r.ReadString(); s.DutyToName = r.ReadString(); s.DutyText = r.ReadString(); s.DutyGivenDay = r.ReadInt64(); s.DutyDueDay = r.ReadInt64(); s.DutyPay = r.ReadInt32(); s.DutyDangerous = r.ReadBoolean();
             }
             return s;
         }

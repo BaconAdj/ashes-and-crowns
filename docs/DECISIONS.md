@@ -216,3 +216,12 @@ Short entries, newest at the bottom. Each: date, decision, why, consequences.
 - Attackers below the wall who have a target above it steer to the nearest ladder or the open gate instead of freezing at the stone (`SiegeLayout.NearestCrossingX`); storms no longer stall.
 - Defending your own walls: the besiegers giving up or being driven off by a relieving force now ends the siege instead of re-opening the menu forever; misleading mirrored log lines are filtered.
 - `PendingBattle` is cleared once at battlefield start (`LastBattleLaunch` keeps it for the grunt's company size); an open objection survives save and load; a finished adulterine castle is a fixed site, not a procedural village, on reload.
+
+## 2026-11-09 — Phase 12 the household and bodies that move
+- Household knight duties (`Sim.HouseholdRules`): at your patron's seat you report for duty and roll one of five: escort a merchant to a town within six days, carry a sealed message through hostile country within five, ride the bounds for a day, hold the hall door for a night, stand behind the chair at a feast. Escorts and messages are real rides across England with ambushes on arrival at waypoints and a capture roll at a hostile gate (the Phase 8 capture rule, including the sword). Patrol may turn into a bandit fight; guard duty may surface a plot warning; the feast is a Charisma check against a rival's insult. Done duties raise patron favour and renown and pay; failing or refusing costs favour and marks discipline. Save format v11.
+- Procedural motion: no rigs yet, so `ProceduralGait` bobs and leans the visual child of the player, horse and duelists from measured speed, with a standing breath; the soldier matrices job adds a march bob and sway to men who moved since the last frame. Zero allocations, no animator.
+- Art without Blender: the generator scripts write OBJ when `bpy` is missing; the eleven OBJ twins are committed and the builders accept either extension.
+
+## Phase 12 summary (what exists, what is stubbed)
+- Built: five duty kinds with assignment, completion, failure, refusal and the feast; the household director in England with arrival hooks; procedural gait for bodies and the march bob for the ranks; the F10 shortcut to become a household knight. 3 new tests (159 under .NET).
+- Stubbed: the escorted merchant and his carts are not visible on the road; the feast is text; no rigged animation; the courier's letter has no content that matters to the realm.

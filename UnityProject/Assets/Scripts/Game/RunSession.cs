@@ -97,6 +97,8 @@ namespace AshesAndCrowns.Game
         public string PendingWhisper;
         public int PendingRaiders;
         public float WarHeat;   // 0..1 from the last realm season
+        // Phase 12: the household
+        public Duty Duty;
         public MinorLord LordById(int id) { foreach (var l in Baronage) if (l.Id == id) return l; return null; }
         public MercenaryCompany CompanyAt(string settlementId) { foreach (var c in Companies) if (c.BasedAtId == settlementId && c.ContractDaysLeft > 0) return c; return null; }
 

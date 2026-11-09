@@ -632,5 +632,27 @@
     "raidWealthLoss": 0.2,
     "forageWealthLoss": 0.1,
     "refugeeShock": 0.7
+  },
+  "household": {
+    "dutyChancePerDay": 0.35,
+    "escortPay": 6,
+    "messagePay": 8,
+    "patrolPay": 3,
+    "guardPay": 2,
+    "feastPay": 0,
+    "escortDays": 6,
+    "messageDays": 5,
+    "escortAmbushChance": 0.35,
+    "messageAmbushChance": 0.25,
+    "messageCaptureChanceInHostileTown": 0.3,
+    "patrolBanditChance": 0.4,
+    "guardWhisperChance": 0.5,
+    "favourPerDuty": 0.06,
+    "favourLostOnFailure": 0.12,
+    "favourLostOnRefusal": 0.08,
+    "renownPerDangerousDuty": 2,
+    "infractionsOnRefusal": 5,
+    "feastInsultChance": 0.5,
+    "feastCharismaWeight": 0.05
   }
 }

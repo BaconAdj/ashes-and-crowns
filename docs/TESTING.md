@@ -27,6 +27,7 @@ F10 opens a menu that jumps to late content. Use it to reach each phase quickly:
 - "Make this settlement my estate" then E: "Go up to the hall" (policy, manor court, allegiance, council if monarch).
 - "Raiders in the village now", "A plot against me", "The levy at my door".
 - "Teleport to the nearest town or castle" / "Teleport home".
+- "Make me this lord's household knight" while standing in a lord's castle or town, then E at the alehouse: "Report to the hall for duty" (Phase 12: escort, message, patrol, guard, feast).
 
 ## 4. Battlefield scene (Phases 0, 6, 7)
 - Play `Phase0_Battlefield`: ride to the hill for command, select units, charge; morale and rout; the battle report.

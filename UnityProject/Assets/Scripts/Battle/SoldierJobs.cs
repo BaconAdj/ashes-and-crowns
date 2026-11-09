@@ -297,6 +297,8 @@ namespace AshesAndCrowns.Battle
         public float3 UprightScale;
         public float UprightLift;   // half-height so the capsule stands on the ground
         public float DeadLift;
+        public float Time;                 // seconds, for the march bob
+        [ReadOnly] public NativeArray<float3> PreviousPositions;   // last frame, to tell marching men from standing ones
         public NativeArray<Matrix4x4> Matrices;
 
         public void Execute(int i)
@@ -308,7 +310,13 @@ namespace AshesAndCrowns.Battle
                 rot = math.mul(rot, quaternion.RotateX(math.PI * 0.5f));
                 p.y += DeadLift;
             }
-            else p.y += UprightLift;
+            else
+            {
+                p.y += UprightLift;
+                float moving = math.saturate(math.distancesq(Positions[i], PreviousPositions[i]) * 400f);   // ~0 standing, 1 at walking pace
+                p.y += math.abs(math.sin(Time * 7f + i * 0.7f)) * 0.06f * moving;
+                rot = math.mul(rot, quaternion.RotateZ(math.sin(Time * 3.5f + i * 0.7f) * 0.04f * moving));
+            }
             Matrices[i] = float4x4.TRS(p, rot, UprightScale);
         }
     }

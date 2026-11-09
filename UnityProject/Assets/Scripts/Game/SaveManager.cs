@@ -223,6 +223,7 @@ namespace AshesAndCrowns.Game
                 s.DaysIntoSeason = ctx.DaysIntoSeason; s.NextNpcId = ctx.NextNpcId; s.PendingDemand = (byte)ctx.PendingDemand;
                 var pl = ctx.Plot; if (pl != null) { s.HasPlot = true; s.PlotKind = (byte)pl.Kind; s.PlotterKind = (byte)pl.Plotter; s.PlotterId = pl.PlotterId; s.PlotDaysUntil = pl.DaysUntil; s.PlotWarnings = pl.WarningsGiven; s.PlotterName = pl.PlotterName; s.PlotGuarded = pl.Guarded; s.PlotTasted = pl.Tasted; s.PlotWarningLines = pl.Warnings.ToArray(); }
                 s.PendingRaiders = ctx.PendingRaiders; s.EstateDaysThisMonth = ctx.EstateDaysThisMonth; s.WarHeat = ctx.WarHeat;
+                var du = ctx.Duty; if (du != null) { s.HasDuty = true; s.DutyKind = (byte)du.Kind; s.DutyState = (byte)du.State; s.DutyFromId = du.FromId; s.DutyToId = du.ToId; s.DutyToName = du.ToName; s.DutyText = du.Text; s.DutyGivenDay = du.GivenDay; s.DutyDueDay = du.DueDay; s.DutyPay = du.Pay; s.DutyDangerous = du.Dangerous; }
             }
             if (clock != null && clock.IsReady)
             {
@@ -308,6 +309,10 @@ namespace AshesAndCrowns.Game
             {
                 if (s.HasPlot) { rc.Plot = new Plot { Kind = (PlotKind)s.PlotKind, Plotter = (PlotterKind)s.PlotterKind, PlotterId = s.PlotterId, DaysUntil = s.PlotDaysUntil, WarningsGiven = s.PlotWarnings, PlotterName = s.PlotterName ?? string.Empty, Guarded = s.PlotGuarded, Tasted = s.PlotTasted }; if (s.PlotWarningLines != null) rc.Plot.Warnings.AddRange(s.PlotWarningLines); }
                 rc.PendingRaiders = s.PendingRaiders; rc.EstateDaysThisMonth = s.EstateDaysThisMonth; rc.WarHeat = s.WarHeat;
+            }
+            if (s.Version >= 11 && s.HasDuty)
+            {
+                rc.Duty = new Duty { Kind = (DutyKind)s.DutyKind, State = (DutyState)s.DutyState, FromId = s.DutyFromId ?? string.Empty, ToId = s.DutyToId ?? string.Empty, ToName = s.DutyToName ?? string.Empty, Text = s.DutyText ?? string.Empty, GivenDay = s.DutyGivenDay, DueDay = s.DutyDueDay, Pay = s.DutyPay, Dangerous = s.DutyDangerous };
             }
             if (spawner != null && rc.Settlements.Count > 0) spawner.Build(rc.Settlements, boot.World.overworld.terrainSizeMetres, boot.Rng.Fork(46));
             if (appearance != null) appearance.Apply(RunSession.Context.Character);

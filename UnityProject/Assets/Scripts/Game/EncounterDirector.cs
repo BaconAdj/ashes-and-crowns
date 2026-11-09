@@ -117,6 +117,7 @@ namespace AshesAndCrowns.Game
             var inv = new Inventory(); inv.Add(weapon); if (armour != null) inv.Add(armour);
             d.Init(_balance.duel, _balance.wounds, Loadout.From(inv, ctx.Items, _balance.duel), skill, aggression, read, rng.Fork((uint)name.Length));
             melee.RefreshLoadout();
+            var gait = go.AddComponent<ProceduralGait>(); gait.visual = body.transform; gait.fullSpeed = 4f;
             melee.RegisterDuelist(d);
             _active.Add(d);
             return d;

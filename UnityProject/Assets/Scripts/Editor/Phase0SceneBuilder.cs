@@ -188,6 +188,8 @@ namespace AshesAndCrowns.EditorTools
             var grunt = sceneGo.AddComponent<GruntMode>();
             grunt.director = director; grunt.modes = modes; grunt.player = pc; grunt.horse = horse; grunt.vitals = vitals; grunt.melee = melee; grunt.hud = hud; grunt.ringMaterial = ring; grunt.enabled = false;
             driver.grunt = grunt; save.grunt = grunt;
+            var gaitP = playerGo.AddComponent<ProceduralGait>(); gaitP.fullSpeed = balance.player.sprintSpeed;
+            var gaitH = horseGo.AddComponent<ProceduralGait>(); gaitH.horse = true; gaitH.fullSpeed = balance.horse.gallopSpeed; gaitH.bobMetres = 0.07f; gaitH.strideHz = 1.8f;
             if (siege) driver.siegeField = BuildWalls(terrain, balance.siege, stone, darkWood);
 
             // Initial placement so the scene view is not empty before play.

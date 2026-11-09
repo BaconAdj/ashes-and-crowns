@@ -143,6 +143,11 @@ namespace AshesAndCrowns.EditorTools
             var cheats = sceneGo.AddComponent<DevCheats>();
             cheats.clock = clock; cheats.hud = hud; cheats.saveManager = save; cheats.village = life; cheats.siege = siege; cheats.lordship = lordship; cheats.spawner = spawnerComp; cheats.player = pc; cheats.horse = horse; cheats.vitals = vitals;
             life.cheats = cheats;
+            var household = sceneGo.AddComponent<HouseholdDirector>();
+            household.clock = clock; household.hud = hud; household.saveManager = save; household.village = life; household.encounter = enc; household.vitals = vitals;
+            life.household = household;
+            var gaitP = playerGo.AddComponent<ProceduralGait>(); gaitP.fullSpeed = balance.player.sprintSpeed;
+            var gaitH = horseGo.AddComponent<ProceduralGait>(); gaitH.horse = true; gaitH.fullSpeed = balance.horse.gallopSpeed; gaitH.bobMetres = 0.07f; gaitH.strideHz = 1.8f;
             var blood = sceneGo.AddComponent<BloodDecals>(); blood.vitals = vitals; blood.melee = melee; blood.player = playerGo.transform;
             blood.material = SceneKit.Mat("Blood", SceneKit.LitShader, new Color(0.22f, 0.04f, 0.03f), 0f, 0.6f, instancing: true);
 
