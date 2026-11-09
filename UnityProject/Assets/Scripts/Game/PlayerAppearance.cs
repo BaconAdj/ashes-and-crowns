@@ -6,8 +6,8 @@ namespace AshesAndCrowns.Game
     /// <summary>Applies the character's presets to the placeholder body: height, build, skin and hair tints. Phase 6 brings a real rig.</summary>
     public sealed class PlayerAppearance : MonoBehaviour
     {
-        public Transform body;     // capsule
-        public Transform head;     // sphere
+        public Transform body;     // the modelled figure (Art/Characters/Man) or the placeholder capsule
+        public Transform head;     // placeholder sphere; null when a modelled figure is used
         private MaterialPropertyBlock _block;
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
@@ -16,7 +16,14 @@ namespace AshesAndCrowns.Game
             if (c == null) return;
             float h = Mathf.Clamp(c.Height, 1.5f, 1.95f) / 1.72f;
             float w = Mathf.Lerp(0.85f, 1.2f, Mathf.Clamp01(c.Build));
-            if (body != null) { body.localScale = new Vector3(0.55f * w, 0.75f * h, 0.55f * w); body.localPosition = new Vector3(0f, 0.95f * h, 0f); }
+            bool meshBody = body != null && body.GetComponent<MeshFilter>() != null && head == null;
+            if (meshBody)
+            {
+                // A modelled figure stands on its own feet at the origin: scale it, never lift it.
+                body.localScale = new Vector3(Mathf.Lerp(0.95f, 1.08f, Mathf.Clamp01(c.Build)), h, Mathf.Lerp(0.95f, 1.08f, Mathf.Clamp01(c.Build)));
+                body.localPosition = Vector3.zero;
+            }
+            else if (body != null) { body.localScale = new Vector3(0.55f * w, 0.75f * h, 0.55f * w); body.localPosition = new Vector3(0f, 0.95f * h, 0f); }
             if (head != null) head.localPosition = new Vector3(0f, 1.78f * h, 0f);
             var gait = GetComponent<ProceduralGait>(); if (gait != null) gait.CaptureRest();
             var cc = GetComponent<CharacterController>();

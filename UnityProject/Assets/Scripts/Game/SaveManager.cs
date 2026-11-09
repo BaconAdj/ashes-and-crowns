@@ -118,7 +118,17 @@ namespace AshesAndCrowns.Game
 
         private void Update()
         {
-            if (_creationOpen) return;
+            if (_creationOpen)
+            {
+                // Watchdog: if the creation overlay was lost (another screen rebuilt the shared document) the run
+                // would otherwise hang with no UI and no body control. Show it again.
+                if (creation != null && RunSession.Context == null && !creation.IsOpen && (narration == null || !narration.Running))
+                {
+                    Debug.LogWarning("[run] the character screen was not on the panel; showing it again");
+                    creation.Show(DataFiles.LoadBackgrounds(), OnCharacterChosen);
+                }
+                return;
+            }
             if (_dead)
             {
                 if (GameBootstrap.Instance.Input.Restart.WasPressedThisFrame()) BeginAgain();
@@ -459,6 +469,7 @@ namespace AshesAndCrowns.Game
             if (spawn != null) PlaceBody(spawn.position, spawn.rotation);
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
             string[] lines = RunSetup.OpeningNarration(ctx.Character, clock != null && clock.IsReady ? clock.Calendar : null);
+            Debug.Log("[run] " + ctx.Character.Name + " begins. Opening narration: press any key or click to skip.");
             if (narration != null) narration.Play(lines, player.transform, FinishOpening);
             else FinishOpening();
         }
@@ -469,6 +480,7 @@ namespace AshesAndCrowns.Game
             _creationOpen = false;
             SetBodyControl(true);
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
+            Debug.Log("[run] you have control: WASD to walk, mouse to look, Shift to run, E to talk and work, M for the map, Esc for the menu.");
             SaveNow(AffairsChoice.None);
         }
 
@@ -525,6 +537,7 @@ namespace AshesAndCrowns.Game
             if (!gone) Debug.LogError("[save] could not delete the save after death");
             double days = (clock != null && clock.IsReady ? clock.Calendar.TotalHours : _hoursSurvivedAtLoad) / 24.0;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            Debug.Log("[run] dead: " + (vitals.CauseOfDeath ?? "unknown") + ". Press R to begin again.");
             hud.ShowDeath(vitals.CauseOfDeath ?? "unknown", days, melee != null ? melee.Kills : 0, director != null ? director.PlayerLosses : 0, RunSession.ReturnChronicle, neverWoke: false);
         }
 

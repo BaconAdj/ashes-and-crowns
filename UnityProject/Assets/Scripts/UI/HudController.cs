@@ -311,10 +311,16 @@ namespace AshesAndCrowns.UI
         private void Build()
         {
             var doc = GetComponent<UIDocument>();
-            _root = doc.rootVisualElement;
-            _root.Clear();
-            _root.style.flexGrow = 1;
-            _root.pickingMode = PickingMode.Ignore;
+            if (doc.panelSettings == null) Debug.LogError("[hud] the HUD's UIDocument has no Panel Settings: nothing on screen will render. Run Ashes and Crowns > Setup Project, then Rebuild the scene.");
+            VisualElement panelRoot = doc.rootVisualElement;
+            panelRoot.style.flexGrow = 1;
+            panelRoot.pickingMode = PickingMode.Ignore;
+            // The HUD owns one container under the panel root. Other screens (character creation) share
+            // the same document, so never Clear() the panel root: whichever Start() runs first must survive.
+            if (_root != null) _root.RemoveFromHierarchy();
+            _root = new VisualElement { name = "hud", pickingMode = PickingMode.Ignore };
+            _root.style.position = Position.Absolute; _root.style.left = 0; _root.style.right = 0; _root.style.top = 0; _root.style.bottom = 0;
+            panelRoot.Insert(0, _root);
 
             // Hit flash
             _hitFlash = new VisualElement { pickingMode = PickingMode.Ignore };

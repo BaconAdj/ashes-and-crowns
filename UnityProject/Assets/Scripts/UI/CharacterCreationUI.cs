@@ -29,7 +29,8 @@ namespace AshesAndCrowns.UI
         private readonly List<Button> _rankButtons = new List<Button>();
         private readonly List<Button> _presetButtons = new List<Button>();
 
-        public bool IsOpen => _overlay != null && _overlay.style.display == DisplayStyle.Flex;
+        /// <summary>True while the overlay is attached to the panel and visible.</summary>
+        public bool IsOpen => _overlay != null && _overlay.panel != null && _overlay.style.display == DisplayStyle.Flex;
 
         public void Show(BackgroundsData data, Action<CharacterFactory.Choice> onBegin)
         {
@@ -40,8 +41,11 @@ namespace AshesAndCrowns.UI
             _name.value = string.Empty; _female.value = false;
             SelectRank(Rank.Peasant);
             RefreshAttributes();
+            if (_overlay.panel == null) _root.Add(_overlay);   // re-attach if another screen rebuilt the document
+            _overlay.BringToFront();
             _overlay.style.display = DisplayStyle.Flex;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            Debug.Log("[run] character screen open: pick a rank and background, type a name, then click 'Begin this life'.");
         }
 
         public void Hide() { if (_overlay != null) _overlay.style.display = DisplayStyle.None; }
