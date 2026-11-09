@@ -68,9 +68,9 @@ namespace AshesAndCrowns.Game
                 }
                 if (AllegianceRules.DayTick(ctx.Lordship, rng, _balance.lordship))
                 {
-                    var here = ctx.Current;
-                    AllegianceRules.OnDiscovered(ctx.Lordship, ctx.Crime, ctx.Reputation, here != null ? here.Id : "road", JobBoard.Today(clock.Calendar), rng);
-                    if (here != null) here.WantedHere = 1f;
+                    var caughtAt = ctx.Current;
+                    AllegianceRules.OnDiscovered(ctx.Lordship, ctx.Crime, ctx.Reputation, caughtAt != null ? caughtAt.Id : "road", JobBoard.Today(clock.Calendar), rng);
+                    if (caughtAt != null) caughtAt.WantedHere = 1f;
                     ctx.PendingNotices.Add("Your courier was taken on the road with your letters on him. By tonight every hall in the shire knows whose seal was on them. That is treason, and the rope for it.");
                 }
                 if (ctx.Realm == null) ctx.Realm = RealmRules.Fresh(_balance.lordship);
