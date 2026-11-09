@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using AshesAndCrowns.Sim;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Cursor = UnityEngine.Cursor;
 
 namespace AshesAndCrowns.UI
 {
