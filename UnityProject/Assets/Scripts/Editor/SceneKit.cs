@@ -326,6 +326,7 @@ namespace AshesAndCrowns.EditorTools
         {
             var hudGo = new GameObject("HUD");
             var doc = hudGo.AddComponent<UIDocument>();
+            if (panel == null) Debug.LogError("[Ashes and Crowns] no Panel Settings asset to give the HUD; the game will fall back to Resources at runtime. Run Ashes and Crowns > Setup Project and rebuild.");
             doc.panelSettings = panel;
             return hudGo.AddComponent<HudController>();
         }
