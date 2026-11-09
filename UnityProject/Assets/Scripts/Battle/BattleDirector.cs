@@ -568,15 +568,14 @@ namespace AshesAndCrowns.Battle
             _alive.CopyFrom(b.Alive); _side.CopyFrom(b.Side); _unitOf.CopyFrom(b.UnitOf); _slotOf.CopyFrom(b.SlotOf); _targets.CopyFrom(b.Targets);
             for (int k = 0; k < UnitCount; k++)
             {
-                int u = k;
-                _units[u] = new UnitState
+                _units[k] = new UnitState
                 {
-                    Side = b.UnitSide[u], Formation = b.UnitFormation[u], Order = b.UnitOrder[u], Alive = b.UnitAlive[u],
-                    SoldierStart = b.UnitStart[u], SoldierCount = b.UnitCount_[u], AliveCount = b.UnitAliveCount[u],
-                    Anchor = new float3(b.UnitAnchor[u * 3], b.UnitAnchor[u * 3 + 1], b.UnitAnchor[u * 3 + 2]), Yaw = b.UnitYaw[u],
-                    Target = new float3(b.UnitTarget[u * 3], b.UnitTarget[u * 3 + 1], b.UnitTarget[u * 3 + 2])
+                    Side = b.UnitSide[k], Formation = b.UnitFormation[k], Order = b.UnitOrder[k], Alive = b.UnitAlive[k],
+                    SoldierStart = b.UnitStart[k], SoldierCount = b.UnitCount_[k], AliveCount = b.UnitAliveCount[k],
+                    Anchor = new float3(b.UnitAnchor[k * 3], b.UnitAnchor[k * 3 + 1], b.UnitAnchor[k * 3 + 2]), Yaw = b.UnitYaw[k],
+                    Target = new float3(b.UnitTarget[k * 3], b.UnitTarget[k * 3 + 1], b.UnitTarget[k * 3 + 2])
                 };
-                _centroids[u] = _units[u].Anchor;
+                _centroids[k] = _units[k].Anchor;
             }
             _positionsSnapshot.CopyFrom(_positions);
             _playerSoldierEnd = b.PlayerSoldierEnd; _elapsed = b.Elapsed; _enemyThinkTimer = b.EnemyThinkTimer; BattleStarted = b.Started; _playerCharacterAlive = b.PlayerCharacterAlive;
