@@ -196,11 +196,17 @@ namespace AshesAndCrowns.EditorTools
         /// <summary>A Blender FBX under Assets/Art, or null when it has not been generated yet (callers fall back to primitives).</summary>
         public static Mesh ArtMesh(string relativePath)
         {
-            string path = ArtFolder + "/" + relativePath;
-            if (!File.Exists(path)) { path = Path.ChangeExtension(path, ".obj"); if (!File.Exists(path)) return null; }   // OBJ twins are committed; FBX comes from a local Blender run
+            // The OBJ twins are committed; an FBX only exists after a local Blender run. Whichever was written
+            // last wins, so a stale FBX from an older generator cannot hide a freshly pulled OBJ.
+            string fbx = ArtFolder + "/" + relativePath;
+            string obj = Path.ChangeExtension(fbx, ".obj");
+            bool hasFbx = File.Exists(fbx), hasObj = File.Exists(obj);
+            if (!hasFbx && !hasObj) return null;
+            string path = hasFbx && hasObj ? (File.GetLastWriteTimeUtc(fbx) >= File.GetLastWriteTimeUtc(obj) ? fbx : obj) : hasFbx ? fbx : obj;
+            if (hasFbx && hasObj && path == obj) Debug.LogWarning("[Ashes and Crowns] " + fbx + " is older than its OBJ twin and was skipped; delete it or regenerate it with Tools/blender/build_all.sh");
             var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (mesh == null) foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path)) if (o is Mesh m) { mesh = m; break; }
-            if (mesh != null) Debug.Log("[Ashes and Crowns] using Blender asset " + path);
+            if (mesh != null) Debug.Log("[Ashes and Crowns] using model " + path);
             return mesh;
         }
 

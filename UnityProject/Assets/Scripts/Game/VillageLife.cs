@@ -30,7 +30,7 @@ namespace AshesAndCrowns.Game
         public SiegeDirector siege;         // optional: sieges and castles
         public LordshipDirector lordship;   // optional: the hall
         public IntrigueDirector intrigue;   // optional: the knife in the dark
-        public DevCheats cheats;            // optional: F10 testing menu
+        public DevCheats cheats;            // optional: F10 / ` testing menu
         public HouseholdDirector household; // optional: a knight's duties
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;

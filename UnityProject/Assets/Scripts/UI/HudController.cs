@@ -308,10 +308,27 @@ namespace AshesAndCrowns.UI
 
         public void HideQuitScreen() { if (_quit != null) _quit.style.display = DisplayStyle.None; }
 
+        private System.Collections.IEnumerator ReportPanel(UIDocument doc)
+        {
+            yield return null; yield return null;
+            VisualElement r = doc.rootVisualElement;
+            if (r == null || r.panel == null) Debug.LogError("[hud] the UI panel is not attached after two frames: the HUD cannot draw. Check the HUD object's UI Document in the Inspector.");
+            else Debug.Log("[hud] panel attached, " + Mathf.RoundToInt(r.resolvedStyle.width) + "x" + Mathf.RoundToInt(r.resolvedStyle.height) + " px, " + r.childCount + " layers");
+        }
+
         private void Build()
         {
             var doc = GetComponent<UIDocument>();
-            if (doc.panelSettings == null) Debug.LogError("[hud] the HUD's UIDocument has no Panel Settings: nothing on screen will render. Run Ashes and Crowns > Setup Project, then Rebuild the scene.");
+            if (doc.panelSettings == null)
+            {
+                // A scene built before the panel asset existed renders no UI at all. Recover from Resources.
+                doc.panelSettings = Resources.Load<PanelSettings>("AshesPanelSettings");
+                if (doc.panelSettings == null) Debug.LogError("[hud] the HUD's UIDocument has no Panel Settings and none was found in Resources: nothing on screen will render. Run Ashes and Crowns > Setup Project, then Rebuild the scene.");
+                else Debug.LogWarning("[hud] the scene had no Panel Settings on the HUD; loaded AshesPanelSettings from Resources. Rebuild the scene to make it permanent.");
+            }
+            if (doc.panelSettings != null)
+                Debug.Log("[hud] panel " + doc.panelSettings.name + ", theme " + (doc.panelSettings.themeStyleSheet != null ? doc.panelSettings.themeStyleSheet.name : "NONE (text will not draw)"));
+            StartCoroutine(ReportPanel(doc));
             VisualElement panelRoot = doc.rootVisualElement;
             panelRoot.style.flexGrow = 1;
             panelRoot.pickingMode = PickingMode.Ignore;

@@ -43,6 +43,15 @@ namespace AshesAndCrowns.Game
                 return (c.Inventory, c.Items, c.Character.Get(Skill.OneHanded));
             };
             Debug.Log($"[Ashes and Crowns] run seed {seed}");
+            StartCoroutine(CheckInputBackend());
+        }
+
+        private System.Collections.IEnumerator CheckInputBackend()
+        {
+            yield return null;
+            if (UnityEngine.InputSystem.Keyboard.current == null)
+                Debug.LogError("[input] the Input System reports no keyboard, so nothing will respond to keys. Edit > Project Settings > Player > Other Settings > Active Input Handling must be 'Input System Package (New)' or 'Both'; Unity restarts after the change.");
+            else Debug.Log("[input] keyboard and mouse found: " + (UnityEngine.InputSystem.Mouse.current != null));
         }
 
         private void OnDestroy()

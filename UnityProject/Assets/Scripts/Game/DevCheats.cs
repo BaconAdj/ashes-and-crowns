@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace AshesAndCrowns.Game
 {
     /// <summary>
-    /// F10 in the England scene: a testing menu that jumps straight to late-phase content (coins, days, rank, service, estate,
+    /// F10 or ` (backquote) in the England scene: a testing menu that jumps straight to late-phase content (coins, days, rank, service, estate,
     /// siege, raid, plot, levy, teleport). Development only; it is compiled out of release builds.
     /// </summary>
     public sealed class DevCheats : MonoBehaviour
@@ -36,7 +36,7 @@ namespace AshesAndCrowns.Game
             var kb = Keyboard.current; var ctx = RunSession.Context;
             if (kb == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if ((village != null && village.IsBusy) || (saveManager != null && saveManager.IsQuitScreenOpen)) return;
-            if (kb.f10Key.wasPressedThisFrame) Menu();
+            if (kb.f10Key.wasPressedThisFrame || kb.backquoteKey.wasPressedThisFrame) Menu();   // ` for keyboards without F-keys
 #endif
         }
 
@@ -60,7 +60,7 @@ namespace AshesAndCrowns.Game
                 ("Teleport home", () => Teleport(SettlementType.Village)),
             };
             _open = true;
-            hud.ShowDialogue("Tester's menu (F10)", $"{c.Name}, {c.Rank}, {c.Coins} pennies, day {ctx.DaysIntoSeason} of the season. Save format is v{AshesAndCrowns.Save.RunState.CurrentVersion}.", opts.ToArray(), i => { _open = false; hud.HideDialogue(); opts[i].Item2?.Invoke(); });
+            hud.ShowDialogue("Tester's menu (F10 or `)", $"{c.Name}, {c.Rank}, {c.Coins} pennies, day {ctx.DaysIntoSeason} of the season. Save format is v{AshesAndCrowns.Save.RunState.CurrentVersion}.", opts.ToArray(), i => { _open = false; hud.HideDialogue(); opts[i].Item2?.Invoke(); });
         }
 
         private void Teleport(SettlementType atLeast)

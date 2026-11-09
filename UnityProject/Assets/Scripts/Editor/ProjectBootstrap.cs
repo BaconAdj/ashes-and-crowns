@@ -107,7 +107,7 @@ namespace AshesAndCrowns.EditorTools
 
         private static void EnsureFolders()
         {
-            foreach (string f in new[] { Paths.Settings, Paths.Generated, Paths.Palette, Paths.UiFolder, Paths.Scenes })
+            foreach (string f in new[] { Paths.Settings, Paths.Generated, Paths.Palette, Paths.UiFolder, Paths.UiResources, Paths.Scenes })
                 if (!AssetDatabase.IsValidFolder(f)) Directory.CreateDirectory(f);
             AssetDatabase.Refresh();
         }
@@ -178,7 +178,15 @@ namespace AshesAndCrowns.EditorTools
                 File.WriteAllText(Paths.Theme, "@import url(\"unity-theme://default\");\n");
                 AssetDatabase.ImportAsset(Paths.Theme);
             }
+            if (!AssetDatabase.IsValidFolder(Paths.UiResources)) { Directory.CreateDirectory(Paths.UiResources); AssetDatabase.Refresh(); }
             var ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(Paths.PanelSettings);
+            if (ps == null)
+            {
+                // Older projects kept it directly under Assets/UI: move it so the runtime fallback can find it.
+                string legacy = Paths.UiFolder + "/AshesPanelSettings.asset";
+                if (AssetDatabase.LoadAssetAtPath<PanelSettings>(legacy) != null && string.IsNullOrEmpty(AssetDatabase.MoveAsset(legacy, Paths.PanelSettings)))
+                    ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(Paths.PanelSettings);
+            }
             if (ps == null)
             {
                 ps = ScriptableObject.CreateInstance<PanelSettings>();
@@ -188,6 +196,7 @@ namespace AshesAndCrowns.EditorTools
                 AssetDatabase.CreateAsset(ps, Paths.PanelSettings);
             }
             var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(Paths.Theme);
+            if (theme == null) Debug.LogError("[Ashes and Crowns] " + Paths.Theme + " did not import as a theme style sheet; UI text will not render. Right-click Assets/UI and Reimport.");
             if (theme != null && ps.themeStyleSheet != theme) { ps.themeStyleSheet = theme; EditorUtility.SetDirty(ps); }
             return ps;
         }
