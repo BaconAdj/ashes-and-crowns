@@ -34,6 +34,7 @@ namespace AshesAndCrowns.Game
             if (_balance == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if ((village != null && village.IsBusy) || (siege != null && siege.IsOpen)) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
+            if (hud != null && hud.DialogueOpen) return;
             if (ctx.Estate != null && ctx.Estate.PendingCrisis != EstateCrisis.None && AtEstate(ctx) && EstateSettlement(ctx) != null) { Crisis(); return; }
             if (ctx.Estate != null && ctx.PendingDemand != Allegiance.Neutral && AtEstate(ctx)) { Demand(); return; }
         }

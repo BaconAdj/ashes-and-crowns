@@ -21,12 +21,17 @@ namespace AshesAndCrowns.Game
         private Quaternion _restLocalRot;
         private float _phase, _speedSmoothed;
 
-        private void Start()
+        private void Start() { CaptureRest(); _lastPos = transform.position; }
+
+        /// <summary>Re-read the visual's resting pose (call after anything resizes or repositions it).</summary>
+        public void CaptureRest()
         {
             if (visual == null && transform.childCount > 0) visual = transform.GetChild(0);
             if (visual != null) { _restLocalPos = visual.localPosition; _restLocalRot = visual.localRotation; }
-            _lastPos = transform.position;
         }
+
+        private void OnDisable() { if (visual != null) { visual.localPosition = _restLocalPos; visual.localRotation = _restLocalRot; } }
+        private void OnEnable() { _lastPos = transform.position; _speedSmoothed = 0f; }
 
         private void LateUpdate()
         {

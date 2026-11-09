@@ -23,6 +23,7 @@ namespace AshesAndCrowns.Game
         private bool _open;
         private Balance _balance;
         private Duty _pendingAfterFight;
+        private Settlement _pendingArrival;
 
         private void Start() { _balance = GameBootstrap.Instance.Balance; }
 
@@ -31,6 +32,8 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             if (_balance == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if ((village != null && village.IsBusy) || (saveManager != null && saveManager.IsQuitScreenOpen)) return;
+            if (hud != null && hud.DialogueOpen) return;
+            if (_pendingArrival != null) { var a = _pendingArrival; _pendingArrival = null; if (ctx.Current == a) OnArrived(a); return; }
             var d = ctx.Duty;
             if (d != null && d.State == DutyState.Given && HouseholdRules.Overdue(d, JobBoard.Today(clock.Calendar)))
             {
@@ -102,6 +105,7 @@ namespace AshesAndCrowns.Game
         {
             var ctx = RunSession.Context; var d = ctx.Duty; if (d == null || d.State != DutyState.Given || s == null) return;
             if (d.Kind != DutyKind.Escort && d.Kind != DutyKind.Message) return;
+            if ((village != null && village.IsBusy) || (hud != null && hud.DialogueOpen)) { _pendingArrival = s; return; }   // another dialogue is up: settle this next frame
             var b = _balance.household; var rng = Rng(183);
             if (s.Id == d.ToId)
             {

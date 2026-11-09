@@ -18,6 +18,7 @@ namespace AshesAndCrowns.Game
             float w = Mathf.Lerp(0.85f, 1.2f, Mathf.Clamp01(c.Build));
             if (body != null) { body.localScale = new Vector3(0.55f * w, 0.75f * h, 0.55f * w); body.localPosition = new Vector3(0f, 0.95f * h, 0f); }
             if (head != null) head.localPosition = new Vector3(0f, 1.78f * h, 0f);
+            var gait = GetComponent<ProceduralGait>(); if (gait != null) gait.CaptureRest();
             var cc = GetComponent<CharacterController>();
             float baseHeight = GameBootstrap.Instance != null ? GameBootstrap.Instance.Balance.player.height : 1.8f;
             if (cc != null) { cc.height = baseHeight * h; cc.center = new Vector3(0f, baseHeight * 0.5f * h, 0f); }

@@ -231,6 +231,9 @@ namespace AshesAndCrowns.UI
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
         }
 
+        /// <summary>True while any director's dialogue is on screen; the panel is shared, so nobody opens over somebody else.</summary>
+        public bool DialogueOpen => _dialogue != null && _dialogue.style.display == DisplayStyle.Flex;
+
         public void HideDialogue()
         {
             if (_dialogue == null) return;

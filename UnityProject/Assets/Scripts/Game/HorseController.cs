@@ -30,6 +30,7 @@ namespace AshesAndCrowns.Game
         {
             Mounted = true;
             var cc = rider.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
+            var riderGait = rider.GetComponent<ProceduralGait>(); if (riderGait != null) riderGait.enabled = false;
             rider.SetParent(seat, false);
             rider.localPosition = Vector3.zero;
             rider.localRotation = Quaternion.identity;
@@ -37,6 +38,7 @@ namespace AshesAndCrowns.Game
 
         public void Dismount(Transform rider)
         {
+            { var riderGait = rider.GetComponent<ProceduralGait>(); if (riderGait != null) riderGait.enabled = true; }
             Mounted = false;
             rider.SetParent(null, true);
             Vector3 side = transform.right * 1.6f;

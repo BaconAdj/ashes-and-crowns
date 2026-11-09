@@ -32,6 +32,7 @@ namespace AshesAndCrowns.Game
             if (_balance == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if (village != null && village.IsBusy) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
+            if (hud != null && hud.DialogueOpen) return;
             if (ctx.PendingWhisper != null) { hud.Whisper(ctx.PendingWhisper); AudioStubs.Play("whisper_warning"); ctx.PendingWhisper = null; }
             if (ctx.PendingRaiders > 0 && encounter != null) { int n = ctx.PendingRaiders; ctx.PendingRaiders = 0; AudioStubs.Play("village_raid_screams"); encounter.Ambush(n, Rng(171)); hud.Toast("Raiders in the lanes. They have torches."); return; }
             if (ctx.Plot != null && ctx.Plot.DaysUntil <= 0) { ResolvePlot(); return; }

@@ -35,6 +35,7 @@ namespace AshesAndCrowns.Game
             if (_balance == null || ctx == null || _open || vitals == null || vitals.IsDead) return;
             if (village != null && village.IsBusy) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
+            if (hud != null && hud.DialogueOpen) return;
             if (ctx.PendingNewSettlement != null && spawner != null) { spawner.AddSite(ctx.PendingNewSettlement, GameBootstrap.Instance.World.overworld.terrainSizeMetres); ctx.PendingNewSettlement = null; }
             if (ctx.PendingNotices.Count > 0) { var lines = string.Join("\n\n", ctx.PendingNotices); ctx.PendingNotices.Clear(); Show("Word reaches you", lines, ("...", null)); return; }
             if (ctx.PendingObjector != null) { Objection(ctx.PendingObjector); return; }
