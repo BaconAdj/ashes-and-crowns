@@ -19,3 +19,9 @@ scenes build either way; the console lists each FBX it found. Slot 1 is always `
 rule maps them to palette materials. Blender 4.x; run from the repo root on macOS:
 
     BLENDER=/Applications/Blender.app/Contents/MacOS/Blender Tools/blender/build_all.sh
+
+## No Blender? The same scripts write OBJ
+`common.py` falls back to a pure-Python Wavefront OBJ writer when `bpy` is not importable, so
+`python3 Tools/blender/gen_hut.py -- --out UnityProject/Assets/Art/Buildings/Hut.obj` works on any machine, including the
+cloud session. The OBJ twins of every model are committed (small text files); Unity imports them like FBX, and the scene
+builders look for `.fbx` first and `.obj` second. A local Blender run adds the FBX files on top; they are not committed (LFS).

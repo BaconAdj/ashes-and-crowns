@@ -11,6 +11,7 @@
 *.uss          text eol=lf
 *.shader       text eol=lf
 *.md           text eol=lf
+*.obj          text eol=lf
 
 # Git LFS: binary art and audio
 *.fbx   filter=lfs diff=lfs merge=lfs -text

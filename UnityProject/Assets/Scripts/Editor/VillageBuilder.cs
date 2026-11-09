@@ -135,6 +135,7 @@ namespace AshesAndCrowns.EditorTools
         private static Mesh LoadOrMake(string name, System.Func<Mesh> make)
         {
             string fbx = BuildingsFolder + "/" + name + ".fbx";
+            if (!File.Exists(fbx)) fbx = BuildingsFolder + "/" + name + ".obj";
             if (File.Exists(fbx))
             {
                 var fromFbx = AssetDatabase.LoadAssetAtPath<Mesh>(fbx);

@@ -152,7 +152,7 @@ namespace AshesAndCrowns.EditorTools
         public static Mesh ArtMesh(string relativePath)
         {
             string path = ArtFolder + "/" + relativePath;
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(path)) { path = Path.ChangeExtension(path, ".obj"); if (!File.Exists(path)) return null; }   // OBJ twins are committed; FBX comes from a local Blender run
             var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (mesh == null) foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path)) if (o is Mesh m) { mesh = m; break; }
             if (mesh != null) Debug.Log("[Ashes and Crowns] using Blender asset " + path);
