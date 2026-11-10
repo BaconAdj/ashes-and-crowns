@@ -187,14 +187,19 @@ namespace AshesAndCrowns.EditorTools
                 if (AssetDatabase.LoadAssetAtPath<PanelSettings>(legacy) != null && string.IsNullOrEmpty(AssetDatabase.MoveAsset(legacy, Paths.PanelSettings)))
                     ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(Paths.PanelSettings);
             }
+            if (ps == null) { AssetDatabase.SaveAssets(); AssetDatabase.Refresh(); ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(Paths.PanelSettings); }
             if (ps == null)
             {
                 ps = ScriptableObject.CreateInstance<PanelSettings>();
                 ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
                 ps.referenceResolution = new Vector2Int(1920, 1080);
                 ps.match = 0.5f;
-                AssetDatabase.CreateAsset(ps, Paths.PanelSettings);
+                string path = File.Exists(Paths.PanelSettings) ? AssetDatabase.GenerateUniqueAssetPath(Paths.PanelSettings) : Paths.PanelSettings;
+                AssetDatabase.CreateAsset(ps, path);
+                AssetDatabase.SaveAssets();
+                Debug.Log("[Ashes and Crowns] created panel settings at " + path);
             }
+            if (ps == null) Debug.LogError("[Ashes and Crowns] could not create or load " + Paths.PanelSettings);
             var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(Paths.Theme);
             if (theme == null) Debug.LogError("[Ashes and Crowns] " + Paths.Theme + " did not import as a theme style sheet; UI text will not render. Right-click Assets/UI and Reimport.");
             if (theme != null && ps.themeStyleSheet != theme) { ps.themeStyleSheet = theme; EditorUtility.SetDirty(ps); }
