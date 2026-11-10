@@ -14,7 +14,8 @@ namespace AshesAndCrowns.Sim
         KeepTravelling = 5,
         Hide = 6,
         StandInBattle = 7, // quit mid-fight: resolved as if you stood still
-        FleeBattle = 8     // quit mid-fight while moving away: resolved as a flight
+        FleeBattle = 8,    // quit mid-fight while moving away: resolved as a flight
+        AbandonLife = 9    // not an absence at all: the player ends this run on purpose (never saved)
     }
 
     public struct AbsenceInput

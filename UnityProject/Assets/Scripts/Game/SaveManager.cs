@@ -522,7 +522,7 @@ namespace AshesAndCrowns.Game
 
         public void SaveNow(AffairsChoice affairs)
         {
-            if (_dead) return;
+            if (_dead || _abandoning) return;   // nothing writes after death or after the player ends the run on purpose
             try { _store.Save(Capture(affairs)); }
             catch (Exception e) { Debug.LogError("[save] write failed: " + e.Message); }
             _nextAutosave = Time.unscaledTime + _balance.save.autosaveIntervalSeconds;
@@ -544,8 +544,12 @@ namespace AshesAndCrowns.Game
         private void BeginAgain()
         {
             _store.DeleteAll();
+            // Forget the run entirely, or the next scene would treat the old character as "back from a battle".
+            RunSession.Context = null; RunSession.PendingBattle = null; RunSession.ReturnChronicle = null; RunSession.PendingResume = null;
+            RunSession.CarriedBody = null; RunSession.CarriedTotalHours = -1;
             RunSession.NextSeed = DateTime.UtcNow.Ticks & 0x7FFFFFFF;
             RunSession.LaunchHandled = true;
+            Time.timeScale = 1f;
             SceneManager.LoadScene(0);
         }
 
@@ -577,8 +581,21 @@ namespace AshesAndCrowns.Game
                 options.Add(("Keep travelling", AffairsChoice.KeepTravelling));
                 options.Add(("Hide and wait", AffairsChoice.Hide));
             }
+            options.Add(("Abandon this life and begin another", AffairsChoice.AbandonLife));
             _quitOptions.Clear(); foreach (var o in options) _quitOptions.Add(o.choice);
+            _abandonArmed = false;
             hud.ShowQuitScreen("Leave your affairs", options, OnQuitChoice, CloseQuitScreen);
+        }
+
+        private bool _abandonArmed, _abandoning;
+
+        /// <summary>Second screen: the one irreversible choice in the menu asks twice.</summary>
+        private void ConfirmAbandon()
+        {
+            _abandonArmed = true;
+            var options = new List<(string label, AffairsChoice choice)>(2) { ("Yes. This life ends here and the save is destroyed. A new one begins.", AffairsChoice.AbandonLife) };
+            _quitOptions.Clear(); _quitOptions.Add(AffairsChoice.AbandonLife);
+            hud.ShowQuitScreen("Abandon " + (RunSession.Context != null ? RunSession.Context.Character.Name : "this life") + "?", options, OnQuitChoice, CloseQuitScreen);
         }
 
         private void CloseQuitScreen()
@@ -590,6 +607,15 @@ namespace AshesAndCrowns.Game
 
         private void OnQuitChoice(AffairsChoice choice)
         {
+            if (choice == AffairsChoice.AbandonLife)
+            {
+                if (!_abandonArmed) { ConfirmAbandon(); return; }
+                _abandoning = true; _quitting = true;
+                hud.HideQuitScreen(); _quitScreenOpen = false;
+                Debug.Log("[run] life abandoned by choice; starting another");
+                BeginAgain();
+                return;
+            }
             _quitting = true;
             SaveNow(choice);
             Debug.Log("[save] quit with affairs = " + choice);
