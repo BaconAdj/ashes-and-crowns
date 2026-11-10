@@ -13,6 +13,7 @@ namespace AshesAndCrowns.Game
         private GameInput _input;
         private float _yaw, _pitch = 15f;
         private float _distance, _height;
+        private Renderer[] _targetRenderers = System.Array.Empty<Renderer>(); private Transform _renderersFor; private bool _bodyHidden;
 
         public float Yaw => _yaw;
 
@@ -27,6 +28,8 @@ namespace AshesAndCrowns.Game
             _distance = riding ? _balance.camera.ridingDistance : _balance.camera.thirdPersonDistance;
             _height = riding ? _balance.camera.ridingHeight : _balance.camera.thirdPersonHeight;
         }
+
+        private void OnDisable() { if (_bodyHidden) { _bodyHidden = false; for (int i = 0; i < _targetRenderers.Length; i++) if (_targetRenderers[i] != null) _targetRenderers[i].enabled = true; } }
 
         private void LateUpdate()
         {
@@ -65,6 +68,10 @@ namespace AshesAndCrowns.Game
             }
             float t = 1f - Mathf.Exp(-_balance.camera.followSmoothing * Time.deltaTime);
             transform.position = Vector3.Lerp(transform.position, desired, t);
+            // Indoors the camera sits on the body's shoulder: hide the body rather than show the inside of a head.
+            if (_renderersFor != target) { _renderersFor = target; _targetRenderers = target.GetComponentsInChildren<Renderer>(true); _bodyHidden = false; }
+            bool hide = (transform.position - pivot).magnitude < 1.1f;
+            if (hide != _bodyHidden) { _bodyHidden = hide; for (int i = 0; i < _targetRenderers.Length; i++) if (_targetRenderers[i] != null) _targetRenderers[i].enabled = !hide; }
             transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
         }
     }

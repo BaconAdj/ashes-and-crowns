@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace AshesAndCrowns.Game
 {
-    public enum BuildingKind : byte { Hut = 0, Alehouse = 1, Church = 2 }
+    public enum BuildingKind : byte { Hut = 0, Alehouse = 1, Church = 2, Hall = 3 }   // Hall: a knight's hall house, the alehouse shell furnished for a lord of small account
 
     /// <summary>
     /// What goes inside the hollow buildings and where their doors are. Local positions match the generators in
@@ -19,7 +19,7 @@ namespace AshesAndCrowns.Game
             switch (k)
             {
                 case BuildingKind.Hut: return new Vector3(0f, HutFloor, 2.0f + 1.2f);
-                case BuildingKind.Alehouse: return new Vector3(0f, AleFloor, 3.5f + 1.9f + 1.2f);
+                case BuildingKind.Alehouse: case BuildingKind.Hall: return new Vector3(0f, AleFloor, 3.5f + 1.9f + 1.2f);
                 default: return new Vector3(4.5f + 1.5f, ChurchFloor, -4.5f + 2.2f);
             }
         }
@@ -30,7 +30,7 @@ namespace AshesAndCrowns.Game
             switch (k)
             {
                 case BuildingKind.Hut: return new Vector3(0f, HutFloor, 2.0f - 1.0f);
-                case BuildingKind.Alehouse: return new Vector3(0f, AleFloor, 3.5f - 1.0f);
+                case BuildingKind.Alehouse: case BuildingKind.Hall: return new Vector3(0f, AleFloor, 3.5f - 1.0f);
                 default: return new Vector3(4.5f - 1.4f, ChurchFloor, -4.5f + 2.2f);
             }
         }
@@ -74,6 +74,31 @@ namespace AshesAndCrowns.Game
                         Marker(b, "Bar", new Vector3(-3.0f, f, -1.4f)); Marker(b, "Hearth", new Vector3(-1.5f, f, 0.6f));
                         Marker(b, "Seat", new Vector3(0.2f, f, 0f)); Marker(b, "Seat", new Vector3(1.8f, f, 0f)); Marker(b, "Seat", new Vector3(2.8f, f, 0f)); Marker(b, "Seat", new Vector3(4.4f, f, 0f));
                         if (withLight) { Light(b, new Vector3(-1.5f, f + 0.9f, 1.8f), new Color(1f, 0.62f, 0.3f), 10f, 2.2f); Light(b, new Vector3(2.5f, f + 2.2f, 0f), new Color(1f, 0.75f, 0.45f), 7f, 0.9f); }
+                        break;
+                    }
+                case BuildingKind.Hall:
+                    {
+                        float f = AleFloor;
+                        // The dais at the west end with the high table; the central hearth; a curtained bed at the east end; chests.
+                        Prop(b, "Dais", PrimitiveType.Cube, new Vector3(-3.6f, f + 0.12f, 0f), new Vector3(2.4f, 0.24f, 5.6f), wood, collider: true);
+                        Prop(b, "HighTable", PrimitiveType.Cube, new Vector3(-3.6f, f + 0.24f + 0.74f, 0f), new Vector3(0.9f, 0.08f, 3.6f), wood, collider: true);
+                        Prop(b, "Chair", PrimitiveType.Cube, new Vector3(-4.3f, f + 0.24f + 0.5f, 0f), new Vector3(0.5f, 1.0f, 0.5f), wood);
+                        Prop(b, "HearthStone", PrimitiveType.Cylinder, new Vector3(0f, f + 0.08f, 0f), new Vector3(1.5f, 0.08f, 1.5f), stone);
+                        Prop(b, "Fire", PrimitiveType.Sphere, new Vector3(0f, f + 0.28f, 0f), new Vector3(0.7f, 0.35f, 0.7f), fire);
+                        for (int i = 0; i < 2; i++)
+                        {
+                            float z = i == 0 ? -2.0f : 2.0f;
+                            Prop(b, "Trestle", PrimitiveType.Cube, new Vector3(1.0f, f + 0.72f, z), new Vector3(3.0f, 0.08f, 0.8f), wood, collider: true);
+                            Prop(b, "Bench", PrimitiveType.Cube, new Vector3(1.0f, f + 0.22f, z + (i == 0 ? 0.7f : -0.7f)), new Vector3(2.8f, 0.06f, 0.3f), wood, collider: true);
+                        }
+                        Prop(b, "Pallet", PrimitiveType.Cube, new Vector3(3.9f, f + 0.25f, -2.0f), new Vector3(1.3f, 0.45f, 2.2f), linen, collider: true);
+                        Prop(b, "Curtain", PrimitiveType.Cube, new Vector3(3.0f, f + 1.2f, -1.0f), new Vector3(0.06f, 2.3f, 2.6f), linen);
+                        Prop(b, "Chest", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 1.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
+                        Prop(b, "Chest", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 2.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
+                        Prop(b, "Shield", PrimitiveType.Cylinder, new Vector3(-4.75f, f + 2.0f, 0f), new Vector3(0.9f, 0.04f, 0.9f), iron);
+                        Marker(b, "Hearth", new Vector3(1.0f, f, 0f)); Marker(b, "Bed", new Vector3(3.9f, f, -0.5f)); Marker(b, "Dais", new Vector3(-3.0f, f + 0.24f, 0f));
+                        Marker(b, "Seat", new Vector3(1.0f, f, -1.2f)); Marker(b, "Seat", new Vector3(1.0f, f, 1.2f)); Marker(b, "Seat", new Vector3(-0.2f, f, -2.6f)); Marker(b, "Seat", new Vector3(2.2f, f, 2.6f));
+                        if (withLight) { Light(b, new Vector3(0f, f + 1.0f, 0f), new Color(1f, 0.62f, 0.3f), 11f, 2.4f); Light(b, new Vector3(-3.6f, f + 2.0f, 0f), new Color(1f, 0.75f, 0.45f), 7f, 0.9f); }
                         break;
                     }
                 default:

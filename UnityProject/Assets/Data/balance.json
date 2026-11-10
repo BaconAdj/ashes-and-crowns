@@ -53,8 +53,8 @@
     "seatHeight": 1.75
   },
   "camera": {
-    "thirdPersonDistance": 5.5,
-    "thirdPersonHeight": 1.9,
+    "thirdPersonDistance": 3.6,
+    "thirdPersonHeight": 1.7,
     "ridingDistance": 7.5,
     "ridingHeight": 2.6,
     "lookSensitivity": 0.12,

@@ -30,6 +30,10 @@ namespace AshesAndCrowns.UI
         private readonly List<Button> _presetButtons = new List<Button>();
 
         /// <summary>True while the overlay is attached to the panel and visible.</summary>
+        /// <summary>Fired whenever the look or rank changes, so the body behind the panels can show it.</summary>
+        public event Action<CharacterFactory.Choice> Changed;
+        private void Touched() => Changed?.Invoke(_choice);
+
         public bool IsOpen => _overlay != null && _overlay.panel != null && _overlay.style.display == DisplayStyle.Flex;
 
         public void Show(BackgroundsData data, Action<CharacterFactory.Choice> onBegin)
@@ -54,8 +58,8 @@ namespace AshesAndCrowns.UI
         {
             _root = GetComponent<UIDocument>().rootVisualElement;
             _overlay = new VisualElement();
-            _overlay.style.position = Position.Absolute; _overlay.style.left = 0; _overlay.style.right = 0; _overlay.style.top = 0; _overlay.style.bottom = 0;
-            _overlay.style.backgroundColor = new Color(0.03f, 0.03f, 0.035f, 0.96f);
+            _overlay.style.position = Position.Absolute; _overlay.style.left = 0; _overlay.style.right = new Length(34, LengthUnit.Percent); _overlay.style.top = 0; _overlay.style.bottom = 0;   // the right third shows the body you are shaping
+            _overlay.style.backgroundColor = new Color(0.03f, 0.03f, 0.035f, 0.90f);
             _overlay.style.alignItems = Align.Center; _overlay.style.justifyContent = Justify.FlexStart; _overlay.style.paddingTop = 24;
             _root.Add(_overlay);
 
@@ -63,15 +67,15 @@ namespace AshesAndCrowns.UI
             _overlay.Add(title);
             _overlay.Add(L("England, December 1135. Choose who you were before the war found you.", 13, Dim));
 
-            var columns = new VisualElement(); columns.style.flexDirection = FlexDirection.Row; columns.style.marginTop = 16; columns.style.width = 1180;
+            var columns = new VisualElement(); columns.style.flexDirection = FlexDirection.Row; columns.style.marginTop = 16; columns.style.flexWrap = Wrap.Wrap; columns.style.justifyContent = Justify.Center;
             _overlay.Add(columns);
-            var left = Column(columns, 360); var middle = Column(columns, 440); var right = Column(columns, 340);
+            var left = Column(columns, 300); var middle = Column(columns, 380); var right = Column(columns, 320);
 
             // ---- left: identity + rank
             left.Add(L("NAME", 11, Dim));
             _name = new TextField { maxLength = 32 }; _name.style.marginBottom = 8; _name.RegisterValueChangedCallback(e => _choice.Name = e.newValue);
             left.Add(_name);
-            _female = new Toggle("Woman") ; _female.style.color = Parchment; _female.RegisterValueChangedCallback(e => _choice.Female = e.newValue);
+            _female = new Toggle("Woman") ; _female.style.color = Parchment; _female.RegisterValueChangedCallback(e => { _choice.Female = e.newValue; Touched(); });
             left.Add(_female);
             left.Add(L("RANK  (the only difficulty setting)", 11, Dim));
             _rankRow = new VisualElement(); left.Add(_rankRow);
@@ -104,10 +108,10 @@ namespace AshesAndCrowns.UI
             var presets = new VisualElement(); presets.style.flexDirection = FlexDirection.Row; presets.style.flexWrap = Wrap.Wrap;
             for (int i = 0; i < Presets.Length; i++) { int idx = i; var b = Btn(Presets[i]); b.style.width = 150; b.clicked += () => SelectPreset(idx); _presetButtons.Add(b); presets.Add(b); }
             right.Add(presets);
-            _height = SliderRow(right, "Height", 1.55f, 1.92f, 1.72f, v => _choice.Height = v);
-            _build = SliderRow(right, "Build", 0f, 1f, 0.5f, v => _choice.Build = v);
-            _skin = SliderRow(right, "Skin", 0f, 1f, 0.5f, v => _choice.SkinTone = v);
-            _hair = SliderRow(right, "Hair", 0f, 1f, 0.4f, v => _choice.HairTone = v);
+            _height = SliderRow(right, "Height", 1.55f, 1.92f, 1.72f, v => { _choice.Height = v; Touched(); });
+            _build = SliderRow(right, "Build", 0f, 1f, 0.5f, v => { _choice.Build = v; Touched(); });
+            _skin = SliderRow(right, "Skin", 0f, 1f, 0.5f, v => { _choice.SkinTone = v; Touched(); });
+            _hair = SliderRow(right, "Hair", 0f, 1f, 0.4f, v => { _choice.HairTone = v; Touched(); });
 
             _error = L(string.Empty, 13, new Color(0.8f, 0.45f, 0.4f)); _error.style.marginTop = 10; _overlay.Add(_error);
             var begin = Btn("Begin this life"); begin.style.marginTop = 10; begin.style.width = 300; begin.style.fontSize = 18; begin.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -129,6 +133,7 @@ namespace AshesAndCrowns.UI
                 var b = Btn(bg.name); b.clicked += () => SelectBackground(bg); _bgButtons.Add(b); _backgroundList.Add(b);
             }
             if (def.backgrounds.Length > 0) SelectBackground(def.backgrounds[0]);
+            Touched();
         }
 
         private void SelectBackground(BackgroundDef bg)
@@ -144,7 +149,7 @@ namespace AshesAndCrowns.UI
             if (bg.fixedFigure != null && bg.fixedFigure.Length > 0 && !string.IsNullOrEmpty(bg.name)) { _name.value = bg.name; _choice.Name = bg.name; _female.value = bg.fixedFigure == "matilda"; }
         }
 
-        private void SelectPreset(int idx) { _choice.AppearancePreset = idx; for (int i = 0; i < _presetButtons.Count; i++) Highlight(_presetButtons[i], i == idx); }
+        private void SelectPreset(int idx) { _choice.AppearancePreset = idx; for (int i = 0; i < _presetButtons.Count; i++) Highlight(_presetButtons[i], i == idx); Touched(); }
 
         private void Nudge(int attribute, int delta)
         {

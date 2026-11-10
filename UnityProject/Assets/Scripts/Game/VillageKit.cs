@@ -47,7 +47,7 @@ namespace AshesAndCrowns.Game
             return made;
         }
 
-        private static Villager Spawn(Transform parent, SettlementSite site, string trade, Transform hut, string name, bool female, int id, DeterministicRng rng, Mesh man, Material cloth, Material skin, Material wood, Material stone, Material iron, Terrain terrain, bool kin = false, Transform station = null, Transform stationBuilding = null)
+        public static Villager Spawn(Transform parent, SettlementSite site, string trade, Transform hut, string name, bool female, int id, DeterministicRng rng, Mesh man, Material cloth, Material skin, Material wood, Material stone, Material iron, Terrain terrain, bool kin = false, Transform station = null, Transform stationBuilding = null)
         {
             var go = new GameObject((trade == "priest" ? "Father " : string.Empty) + name + (trade == "priest" ? string.Empty : " the " + trade));
             go.transform.SetParent(parent, true);

@@ -118,7 +118,7 @@ namespace AshesAndCrowns.EditorTools
             var survival = sceneGo.AddComponent<SurvivalSystem>(); survival.clock = clock; survival.vitals = vitals; survival.home = vill.Root;
             var life = sceneGo.AddComponent<VillageLife>();
             life.clock = clock; life.vitals = vitals; life.player = pc; life.horse = horse; life.hud = hud; life.saveManager = save; life.survival = survival;
-            life.church = vill.Church; life.alehouse = vill.Alehouse; life.home = vill.Home; life.workplace = vill.Workplace; life.mastersRoot = vill.Masters;
+            life.church = vill.Church; life.alehouse = vill.Alehouse; life.home = vill.Home; life.hallHouse = vill.HallHouse; life.workplace = vill.Workplace; life.mastersRoot = vill.Masters;
             driver.villageLife = life;
             var ashbySite = vill.Root.GetComponent<SettlementSite>(); if (ashbySite != null) ashbySite.transform.SetParent(fixedSites, true);
             var assets = sceneGo.AddComponent<WorldAssets>();

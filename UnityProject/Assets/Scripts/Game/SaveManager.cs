@@ -447,6 +447,8 @@ namespace AshesAndCrowns.Game
             {
                 _creationOpen = true;
                 SetBodyControl(false);
+                PortraitCamera(true);
+                if (!_previewHooked) { creation.Changed += PreviewChoice; _previewHooked = true; }
                 creation.Show(DataFiles.LoadBackgrounds(), OnCharacterChosen);
                 return;
             }
@@ -455,6 +457,35 @@ namespace AshesAndCrowns.Game
             if (appearance != null) appearance.Apply(RunSession.Context.Character);
             if (spawner != null) spawner.Build(RunSession.Context.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
             SaveNow(AffairsChoice.None); // a run exists from its first frame
+        }
+
+        private bool _previewHooked;
+
+        /// <summary>The body behind the creation panels takes the shape the sliders give it.</summary>
+        private void PreviewChoice(CharacterFactory.Choice c)
+        {
+            if (appearance == null || c == null) return;
+            var sheet = new CharacterSheet { Female = c.Female, Rank = c.Rank, AppearancePreset = c.AppearancePreset, Height = c.Height, Build = c.Build, SkinTone = c.SkinTone, HairTone = c.HairTone };
+            appearance.Apply(sheet);
+        }
+
+        /// <summary>A three-quarter view of the body for the creation screen; false hands the camera back to the rig.</summary>
+        private void PortraitCamera(bool on)
+        {
+            Camera cam = narration != null ? narration.gameplayCamera : Camera.main;
+            if (cam == null || player == null) return;
+            var rig = cam.GetComponent<ThirdPersonCamera>();
+            if (on)
+            {
+                if (rig != null) rig.enabled = false;
+                // Stand the body facing the camera, on the open right third of the screen.
+                Transform body = player.transform;
+                Vector3 fwd = body.forward;
+                Vector3 eye = body.position + fwd * 3.2f + Vector3.up * 1.35f + body.right * 1.1f;
+                cam.transform.position = eye;
+                cam.transform.LookAt(body.position + Vector3.up * 1.0f + body.right * 1.1f * 0.55f);
+            }
+            else if (rig != null && (narration == null || !narration.Running)) rig.enabled = true;
         }
 
         private void OnCharacterChosen(CharacterFactory.Choice choice)
@@ -467,6 +498,18 @@ namespace AshesAndCrowns.Game
             if (spawner != null) spawner.Build(ctx.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
             Transform spawn = FindSpawn(ctx.SpawnLocationId);
             if (spawn != null) PlaceBody(spawn.position, spawn.rotation);
+            // Your life begins at your own hearth, with whoever shares the roof.
+            if (villageLife != null && villageLife.HomeBuilding != null)
+            {
+                Transform hearth = BuildingKit.Find(villageLife.HomeBuilding, "Hearth");
+                if (hearth != null)
+                {
+                    Vector3 face = villageLife.HomeBuilding.position - hearth.position; face.y = 0f;
+                    PlaceBody(hearth.position, face.sqrMagnitude > 0.01f ? Quaternion.LookRotation(face.normalized) : Quaternion.identity, keepHorseOutside: true);
+                }
+                if (spawner != null) spawner.SpawnHousehold(villageLife.HomeBuilding, ctx, GameBootstrap.Instance.Rng.Fork(48));
+            }
+            PortraitCamera(false);
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;
             string[] lines = RunSetup.OpeningNarration(ctx.Character, clock != null && clock.IsReady ? clock.Calendar : null);
             Debug.Log("[run] " + ctx.Character.Name + " begins. Opening narration: press any key or click to skip.");
@@ -498,13 +541,14 @@ namespace AshesAndCrowns.Game
             return t;
         }
 
-        private void PlaceBody(Vector3 position, Quaternion rotation)
+        private void PlaceBody(Vector3 position, Quaternion rotation, bool keepHorseOutside = false)
         {
             var cc = player.GetComponent<CharacterController>();
             if (horse.Mounted) horse.Dismount(player.transform);
             if (cc != null) cc.enabled = false;
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, rotation.eulerAngles.y, 0f));
             if (cc != null) cc.enabled = true;
+            if (keepHorseOutside) return;   // indoors: the body is on a floor marker already, the horse stays where it was
             var hcc = horse.GetComponent<CharacterController>();
             if (hcc != null) hcc.enabled = false;
             horse.transform.SetPositionAndRotation(position + rotation * new Vector3(3f, 0f, -2f), Quaternion.Euler(0f, rotation.eulerAngles.y + 20f, 0f));

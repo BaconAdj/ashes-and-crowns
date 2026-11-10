@@ -22,6 +22,9 @@ namespace AshesAndCrowns.Game
         public SaveManager saveManager;
         public SurvivalSystem survival;
         public Transform church, alehouse, home, workplace;
+        public Transform hallHouse;         // optional: where a knight or lord lives; the common sleep in the hut
+        /// <summary>The roof you live under: a hut, or the hall house from knight upward.</summary>
+        public Transform HomeBuilding { get { var ctx = RunSession.Context; return ctx != null && ctx.Character != null && ctx.Character.Rank >= Rank.Knight && hallHouse != null ? hallHouse : home; } }
         public Transform mastersRoot;       // children named "Master_<trade>"
         public SettlementSpawner spawner;   // every settlement site, home included
         public OpeningNarration narration;  // optional: no village keys while it plays
@@ -99,7 +102,7 @@ namespace AshesAndCrowns.Game
         private void FindNearest()
         {
             _nearest = null; float best = useRadius;
-            Check(Spot(church, "Altar"), "church", ref best); Check(Spot(alehouse, "Bar"), "alehouse", ref best); Check(Spot(home, "Hearth"), "home", ref best); Check(workplace, "work", ref best);
+            Check(Spot(church, "Altar"), "church", ref best); Check(Spot(alehouse, "Bar"), "alehouse", ref best); Check(Spot(HomeBuilding, "Hearth"), "home", ref best); Check(workplace, "work", ref best);
             if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(Spot(_site.church, "Altar"), "church", ref best); Check(Spot(_site.alehouse, "Bar"), "alehouse", ref best); }
             if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
@@ -207,7 +210,7 @@ namespace AshesAndCrowns.Game
             {
                 case "church": return "Kneel at the altar";
                 case "alehouse": return "The alewife's bar";
-                case "home": return "Your hearth";
+                case "home": return RunSession.Context.Character.Rank >= Rank.Knight ? "Your hall" : "Your hearth";
                 case "work": return "Work the day";
                 case "wood": return RunSession.Context.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : "An oak. You would need an axe.";
                 case "master": { var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; return (v != null && !v.WillTalk ? "Wake " : "Speak with ") + MasterName(_nearest); }
@@ -655,7 +658,7 @@ namespace AshesAndCrowns.Game
             {
                 _busy = true; _openKind = Open.Moment;
                 survival.RestingAtHome = true;
-                Transform bed = BuildingKit.Find(home, "Bed");
+                Transform bed = BuildingKit.Find(HomeBuilding, "Bed");
                 activity.BeginRest("You lie down", "E to wake before Prime", bed, RestPose.Lying, hours, _balance.activity.sleepTimeScale, true, (slept, early) =>
                 {
                     _busy = false; _openKind = Open.None;
@@ -686,7 +689,7 @@ namespace AshesAndCrowns.Game
             if (best == null) { hud.Toast("You have nothing to eat."); return; }
             if (activity == null) { EatSomething(); return; }
             _busy = true; _openKind = Open.Moment;
-            Transform hearth = BuildingKit.Find(home, "Hearth");
+            Transform hearth = BuildingKit.Find(HomeBuilding, "Hearth");
             activity.BeginRest("A meal by the fire", "E to leave the rest", hearth, RestPose.Sitting, 0.5f, _balance.activity.mealTimeScale, true, (hours, early) =>
             {
                 _busy = false; _openKind = Open.None;
@@ -801,7 +804,10 @@ namespace AshesAndCrowns.Game
         private string MasterName(Transform t)
         {
             var tag = t != null ? t.GetComponent<VillagerTag>() : null;
-            return tag != null ? (tag.trade == "priest" ? "Father " + tag.displayName : tag.displayName + " the " + tag.trade) : "the master";
+            if (tag == null) return "the master";
+            if (tag.trade == "priest") return "Father " + tag.displayName;
+            if (tag.trade.StartsWith("your ")) return tag.displayName + ", " + tag.trade;
+            return tag.displayName + " the " + tag.trade;
         }
 
         private void Master(Transform t)

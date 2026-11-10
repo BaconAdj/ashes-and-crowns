@@ -34,6 +34,44 @@ namespace AshesAndCrowns.Game
             }
         }
 
+        /// <summary>The player's kin, spawned under the player's roof when a life begins: they share the hearth, work the same
+        /// land and keep the same hours. A knight's household gets a steward and a groom besides.</summary>
+        public void SpawnHousehold(Transform home, RunContext ctx, DeterministicRng rng)
+        {
+            if (home == null || ctx == null) return;
+            SettlementSite site = null; float best = float.MaxValue;
+            foreach (var s in _sites) { if (s == null || s.centre == null) continue; float d = (s.centre.position - home.position).sqrMagnitude; if (d < best) { best = d; site = s; } }
+            if (site == null) return;
+            foreach (Villager old in home.GetComponentsInChildren<Villager>()) Destroy(old.gameObject);   // a second life under the same roof
+            var people = home.Find("Household"); if (people == null) { people = new GameObject("Household").transform; people.SetParent(home, false); }
+            string trade = string.IsNullOrEmpty(ctx.Character.Trade) ? "farmer" : ctx.Character.Trade;
+            Transform work = null;
+            foreach (Villager v in site.villagers) if (v != null && v.Tag != null && v.Tag.trade == trade && v.workStation != null) { work = v.workStation; break; }
+            int id = 300;
+            foreach (Npc kin in ctx.Family)
+            {
+                if (kin == null || kin.Relation == Relation.Steward || kin.Relation == Relation.Captain || kin.Relation == Relation.Queen) continue;
+                var v = VillageKit.Spawn(people, site, trade, home, kin.Name, kin.Female, id++, rng, kin.Female && assets.woman != null ? assets.woman : assets.man, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.iron != null ? assets.iron : assets.slate, assets.terrain, kin: true, station: work, stationBuilding: null);
+                v.Tag.displayName = kin.Name; v.Tag.trade = RelationWord(kin.Relation);
+                v.variant = id * 3;   // kin keep different hours from the neighbours so the hut is not a dormitory
+                if (kin.Age < 12) v.visual.localScale = new Vector3(0.7f, 0.65f, 0.7f);
+            }
+            if (ctx.Character.Rank >= Rank.Knight)
+            {
+                VillageKit.Spawn(people, site, "steward", home, "Osbert", false, id++, rng, assets.man, assets.villager, assets.skin, assets.darkWood, assets.stone, assets.iron, assets.terrain, station: BuildingKit.Find(home, "Dais"), stationBuilding: home).Tag.displayName = "Osbert";
+            }
+        }
+
+        private static string RelationWord(Relation r)
+        {
+            switch (r)
+            {
+                case Relation.Father: return "your father"; case Relation.Mother: return "your mother"; case Relation.Spouse: return "your spouse";
+                case Relation.Child: case Relation.Heir: return "your child"; case Relation.Sibling: case Relation.Sister: case Relation.ElderBrother: case Relation.HalfBrother: case Relation.HalfSibling: return "your sibling";
+                case Relation.BrotherInLaw: return "your brother-in-law"; default: return "your kin";
+            }
+        }
+
         /// <summary>A settlement that appears after the scene started (an adulterine castle).</summary>
         public void AddSite(Settlement s, float size) { if (_built) EnsureFixedSite(s, size); }
 

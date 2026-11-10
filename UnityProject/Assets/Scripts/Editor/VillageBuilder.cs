@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman; public SettlementSite Site; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform HallHouse; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman; public SettlementSite Site; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -48,13 +48,17 @@ namespace AshesAndCrowns.EditorTools
             Transform home = null; var huts = new System.Collections.Generic.List<Transform>(v.hutCount);
             // Alehouse: east, door toward the green.
             Transform alehouse = Place(root, "Alehouse", aleMesh, new[] { wattle, thatch }, terrain, centre + new Vector3(green + 9f, 0f, -4f), Quaternion.Euler(0f, 90f, 0f));
+            // Hall house: a knight's dwelling to the south-west, hall door toward the green.
+            Vector3 hallPos = centre + new Vector3(-green - 16f, 0f, -green - 6f);
+            Vector3 hallFace = centre - hallPos; hallFace.y = 0f;
+            Transform hallHouse = Place(root, "HallHouse", aleMesh, new[] { wattle, thatch }, terrain, hallPos, Quaternion.LookRotation(hallFace.normalized, Vector3.up));
             // Huts in a loose ring, skipping the church (north) and alehouse (east) sectors.
             int placed = 0, attempts = 0;
             while (placed < v.hutCount && attempts < v.hutCount * 6)
             {
                 attempts++;
                 float angle = rng.Range(0f, 360f);
-                if ((angle > 60f && angle < 120f) || (angle > -20f && angle < 25f) || angle > 340f) continue; // keep north and east clear
+                if ((angle > 60f && angle < 120f) || (angle > -20f && angle < 25f) || angle > 340f || (angle > 205f && angle < 240f)) continue; // keep north, east and the hall house's corner clear
                 float radius = green + 6f + rng.Range(0f, 14f);
                 Vector3 pos = centre + new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad) * radius, 0f, Mathf.Sin(angle * Mathf.Deg2Rad) * radius);
                 bool tooClose = false;
@@ -79,6 +83,7 @@ namespace AshesAndCrowns.EditorTools
             var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
             site.huts.AddRange(huts); site.oaks.AddRange(oaks);
             BuildingKit.Furnish(home, BuildingKind.Hut, darkWood, stone, linen, fire, iron, withLight: true);
+            BuildingKit.Furnish(hallHouse, BuildingKind.Hall, darkWood, stone, linen, fire, iron, withLight: true);
             var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
             VillageKit.Populate(site, root, manMesh, womanMesh, villagerMat, skinMat, darkWood, stone, linen, fire, iron, nameGen, rng.Fork(7), terrain, lights: true);
             Transform masters = root.Find("People");
@@ -87,7 +92,7 @@ namespace AshesAndCrowns.EditorTools
             work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Woman = womanMesh, Site = site };
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, HallHouse = hallHouse, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Woman = womanMesh, Site = site };
         }
 
         /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>
