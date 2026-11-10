@@ -239,4 +239,12 @@ README: controls, the command-position mechanic, the soldier-service system, per
 
 **Phase 11 — Betrayal and polish.** Assassination and betrayal (including scheming relatives), refugee / foraging / raid events on villages, polish (blood, fog, bells, audio, paranoia UI), French localization pass, and a balance pass across all five starts.
 
+**Phase 12 — The household and motion.** Duties under a patron; procedural gait; the eleven generated models.
+
+**Phase 13 — Hands and steel (after the owner's first play).** For Honor melee on a keyboard; hands-on prayer and work with the clock sped up; Total War command keys; legible nights and torches.
+
+**Phase 14 — A day in the life (after the owner's second play).** Enterable buildings with interiors; villagers with timetables who walk their day; rest, meals, mass and ale done in place; a peasant without a horse; jump and climb; the arrival banner; women in the village; firewood as a chore.
+
+**Next — Phase 15, to be agreed in the morning.** Candidates: the keep's hall and a town around each castle; villagers trading and gossiping with each other and reacting to crimes; body animation for fighting and climbing; a shared palette texture pass; sound.
+
 Start with Phase 0 now. Begin with the git safety steps, then scaffold. Stop at the end of Phase 0 with the summary and test steps.
