@@ -124,8 +124,9 @@ namespace AshesAndCrowns.Combat
             else
             {
                 // Out of guard mode: a plain swing for the press of battle; the stance stays where the mouse last put it.
-                if (mouse != null && mouse.leftButton.wasPressedThisFrame && _fighter.TryAttack(_stance, AttackKind.Light)) Swung?.Invoke();
-                if (kb != null && kb.spaceKey.wasPressedThisFrame && !mounted && _duelists.Count > 0 && _fighter.TryDodge()) Note("dodge");
+                bool locked = Cursor.lockState == CursorLockMode.Locked;   // never swing at a menu button
+                if (locked && mouse != null && mouse.leftButton.wasPressedThisFrame && _fighter.TryAttack(_stance, AttackKind.Light)) Swung?.Invoke();
+                if (locked && kb != null && kb.spaceKey.wasPressedThisFrame && !mounted && _duelists.Count > 0 && _fighter.TryDodge()) Note("dodge");
             }
 
             _fighter.SetStamina(vitals.Stamina);            // honour sprint drain and anything else that touched it
