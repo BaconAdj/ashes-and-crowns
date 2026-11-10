@@ -697,7 +697,10 @@
     "workBeats": 6,
     "beatSweepSeconds": 1.4,
     "beatZoneWidth": 0.18,
-    "beatMissPenalty": 0.6
+    "beatMissPenalty": 0.6,
+    "sleepTimeScale": 40,
+    "mealTimeScale": 8,
+    "massTimeScale": 12
   },
   "villageDay": {
     "wakeHour": 5,

@@ -20,6 +20,7 @@ namespace AshesAndCrowns.Game
         public SiegeDirector siege;
         public LordshipDirector lordship;
         public SettlementSpawner spawner;
+        public EncounterDirector encounter;
         public PlayerController player;
         public HorseController horse;
         public PlayerVitals vitals;
@@ -46,6 +47,11 @@ namespace AshesAndCrowns.Game
             var opts = new List<(string, System.Action)>
             {
                 ("+100 pennies", () => { c.Coins += 100; Done("Silver appears, as it does."); }),
+                ("Give me a rouncey", () => { ctx.Inventory.Add("horse"); Done("A horse waits outside. E beside it to mount."); }),
+                ("Jump to dusk (half past five)", () => { JumpTo(17.5f); Done("The light goes."); }),
+                ("Jump to night (eleven)", () => { JumpTo(23f); Done("Dark. T for a torch; you have two."); ctx.Inventory.Add("torch", 2); }),
+                ("Jump to Sunday mass (half past nine)", () => { var cal = clock.Calendar; long jdn = Calendar.JulianDayNumber(cal.Year, cal.Month, cal.Day); int toSunday = (int)((7 - ((jdn + 1) % 7)) % 7); clock.SkipHours(toSunday * 24f); JumpTo(9.5f); Done("The bells. Everyone is walking to the church."); }),
+                ("A bandit on the road (fight now)", () => { if (encounter != null) { encounter.Ambush(1, GameBootstrap.Instance.Rng.Fork(99)); Done("Hold Ctrl. Watch his line."); } else Done("No encounter director."); }),
                 ("Skip a day", () => { clock.SkipHours(24f); Done("A day passes."); }),
                 ("Skip thirty days", () => { clock.SkipHours(24f * 30f); Done("A month passes. Check the chronicle lines."); }),
                 ("Make me a knight (mail, warhorse, renown, a patron)", () => { c.Rank = Rank.Knight; ctx.Inventory.Add("mail"); ctx.Inventory.Add("warhorse"); ctx.Inventory.Add("sword"); ctx.Service.Renown = Mathf.Max(ctx.Service.Renown, _balance.service.knighthoodRenown + 20); ctx.Service.PatronFavour = 1f; if (string.IsNullOrEmpty(ctx.Service.PatronId) && ctx.Baronage.Count > 0) ctx.Service.PatronId = ctx.Baronage[0].Id.ToString(); Done("Sir. Seek an audience at a castle for a command, land or an heiress."); }),
@@ -85,5 +91,13 @@ namespace AshesAndCrowns.Game
         }
 
         private void Done(string text) { hud.Toast(text); saveManager?.SaveNow(AffairsChoice.None); }
+
+        /// <summary>Advance the clock to a time of day today (or tomorrow if it has passed).</summary>
+        private void JumpTo(float hour)
+        {
+            float now = clock.Calendar.HourOfDay;
+            float delta = hour - now; if (delta < 0f) delta += 24f;
+            clock.SkipHours(delta);
+        }
     }
 }

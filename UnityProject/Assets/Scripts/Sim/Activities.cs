@@ -16,6 +16,8 @@ namespace AshesAndCrowns.Sim
         public float beatSweepSeconds = 1.4f;          // marker travels end to end in this long (real seconds)
         public float beatZoneWidth = 0.18f;            // fraction of the track that counts as a good strike
         public float beatMissPenalty = 0.6f;           // a beat you never press scores this much less than a poor press
+        // Rest-like spans: the clock runs this much faster while you lie, sit or stand through them.
+        public float sleepTimeScale = 40f, mealTimeScale = 8f, massTimeScale = 12f;
     }
 
     /// <summary>Pure rules for hands-on activities: prayer favour and timing beats. Deterministic, allocation-free.</summary>

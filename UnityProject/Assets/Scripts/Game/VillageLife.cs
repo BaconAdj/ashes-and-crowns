@@ -224,8 +224,21 @@ namespace AshesAndCrowns.Game
             if (Festivals.IsMassWindow(cal, _balance.time))
             {
                 if (ctx.LastMassDay == today) { Dialogue("The church", "You have heard mass already today. The priest nods.", ("Leave", null)); return; }
-                ctx.LastMassDay = today; ctx.Standing.AttendedMass();
                 Feast f = Festivals.FeastOn(cal);
+                if (activity != null)
+                {
+                    _busy = true; _openKind = Open.Moment;
+                    Transform nave = Spot(_site != null && _site.church != null ? _site.church : church, "Nave");
+                    activity.BeginRest("Mass", "E to slip out early (the village will notice)", nave, RestPose.Standing, 1.5f, _balance.activity.massTimeScale, true, (hours, early) =>
+                    {
+                        _busy = false; _openKind = Open.None;
+                        if (early && hours < 1.0f) { ctx.Standing.MissedMass(); Dialogue("Mass", "You slip out before the elevation. Heads turn. That will be remembered.", ("Go out into the cold", null)); return; }
+                        ctx.LastMassDay = today; ctx.Standing.AttendedMass();
+                        Dialogue("Mass", $"You stand at the back with the village while the priest sings the {Festivals.Name(f)} mass in a Latin nobody follows. People saw you come. ({ctx.Standing.Describe()})", ("Go out into the cold", null));
+                    });
+                    return;
+                }
+                ctx.LastMassDay = today; ctx.Standing.AttendedMass();
                 clock.SkipHours(1.5f);
                 Dialogue("Mass", $"You stand at the back with the village while the priest sings the {Festivals.Name(f)} mass in a Latin nobody follows. People saw you come. ({ctx.Standing.Describe()})", ("Go out into the cold", null));
             }
@@ -277,7 +290,15 @@ namespace AshesAndCrowns.Game
             string title = s != null ? "The alehouse of " + s.Name : "The alehouse";
             var opts = new List<(string, System.Action)>(6) { ("Buy and sell", () => OpenMarket(true)), ("Ask for work", AskForWork) };
             if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.DaysRequired > 0 && s != null && ctx.ActiveJob.ToId == s.Id) opts.Add(($"Serve a day ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})", ServeDay));
-            opts.Add(("A gallon of ale and the rumour of the day (1 penny)", () => { if (ctx.Character.Coins >= 1) { ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f); clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); } else Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); }));
+            opts.Add(("A gallon of ale and the rumour of the day (1 penny)", () =>
+            {
+                if (ctx.Character.Coins < 1) { Dialogue("The alewife", "No penny, no ale.", ("Leave", null)); return; }
+                ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f);
+                if (activity == null) { clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); return; }
+                _busy = true; _openKind = Open.Moment;
+                Transform seat = BuildingKit.Find(_site != null && _site.alehouse != null ? _site.alehouse : alehouse, "Seat", 1);
+                activity.BeginRest("A pot of ale", "E to drink up and go", seat, RestPose.Sitting, 1f, _balance.activity.mealTimeScale, true, (hours, early) => { _busy = false; _openKind = Open.None; Dialogue("Rumour", Rumour(), ("Enough", null)); });
+            }));
             if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) opts.Add(("Enter the festival melee (stake 1 penny)", () => encounter.FestivalMelee(1)));
             var company = s != null && s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
             if (company != null && !ctx.Service.Active) opts.Add(($"Sign with {company.Name} ({company.Captain}, for {company.Employer}, {_balance.service.mercenaryWagePerDay}d a day)", () => Enlist(company)));
@@ -599,8 +620,8 @@ namespace AshesAndCrowns.Game
         {
             var ctx = RunSession.Context;
             Dialogue("Your hut", $"A hearth, a pallet, a chest. Hunger {Mathf.RoundToInt(ctx.Needs.Hunger * 100)}%, rest {Mathf.RoundToInt(ctx.Needs.Rest * 100)}%.",
-                ("Sleep until Prime", SleepUntilPrime),
-                ("Eat", EatSomething),
+                ("Lie down until Prime", SleepUntilPrime),
+                ("Sit and eat", EatAtHearth),
                 ("Clean and bind your wounds", () => { int n = vitals.Body.TreatAll(); ctx.Character.Use(Skill.Medicine, _balance.character, n > 0 ? 1f : 0.2f); clock.SkipHours(0.5f); Dialogue("Wounds", n > 0 ? $"You wash and bind {n} wound{(n == 1 ? "" : "s")} with what linen you have." : "Nothing needs binding.", ("Done", null)); }),
                 ("Leave", null));
         }
@@ -609,6 +630,23 @@ namespace AshesAndCrowns.Game
         {
             var ctx = RunSession.Context; var cal = clock.Calendar;
             float hours = cal.HourOfDay < 6f ? 6f - cal.HourOfDay : 30f - cal.HourOfDay;
+            if (activity != null)
+            {
+                _busy = true; _openKind = Open.Moment;
+                survival.RestingAtHome = true;
+                Transform bed = BuildingKit.Find(home, "Bed");
+                activity.BeginRest("You lie down", "E to wake before Prime", bed, RestPose.Lying, hours, _balance.activity.sleepTimeScale, true, (slept, early) =>
+                {
+                    _busy = false; _openKind = Open.None;
+                    survival.RestingAtHome = false;
+                    ctx.Needs.Sleep(slept); vitals.Body.Rest(slept);
+                    if (vitals.IsDead) return;
+                    saveManager?.SaveNow(AffairsChoice.None);
+                    string woke = early ? $"You wake in the dark after {slept:0.#} hours and lie listening to the rain." : $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry.");
+                    Dialogue(early ? "Night" : "Morning", woke, ("Rise", null));
+                });
+                return;
+            }
             survival.RestingAtHome = true;
             ctx.Needs.Sleep(hours);
             vitals.Body.Rest(hours);
@@ -617,6 +655,34 @@ namespace AshesAndCrowns.Game
             if (vitals.IsDead) return;
             saveManager?.SaveNow(AffairsChoice.None);
             Dialogue("Morning", $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry."), ("Rise", null));
+        }
+
+        /// <summary>A proper meal at your own hearth: you sit, it takes a while, it does you more good than bread on the road.</summary>
+        private void EatAtHearth()
+        {
+            var ctx = RunSession.Context;
+            string best = BestFood(ctx, out float n);
+            if (best == null) { hud.Toast("You have nothing to eat."); return; }
+            if (activity == null) { EatSomething(); return; }
+            _busy = true; _openKind = Open.Moment;
+            Transform hearth = BuildingKit.Find(home, "Hearth");
+            activity.BeginRest("A meal by the fire", "E to leave the rest", hearth, RestPose.Sitting, 0.5f, _balance.activity.mealTimeScale, true, (hours, early) =>
+            {
+                _busy = false; _openKind = Open.None;
+                ctx.Inventory.Remove(best, 1); ctx.Needs.Eat(n * (early ? 0.8f : 1.15f));
+                hud.Toast(early ? "You bolt the " + ctx.Items.Find(best).name.ToLowerInvariant() + " and go." : "You eat " + ctx.Items.Find(best).name.ToLowerInvariant() + " slowly, by your own fire.");
+            });
+        }
+
+        private static string BestFood(RunContext ctx, out float bestN)
+        {
+            string best = null; bestN = 0f;
+            for (int i = 0; i < ctx.Inventory.DistinctCount; i++)
+            {
+                var def = ctx.Items.Find(ctx.Inventory.IdAt(i));
+                if (def != null && def.nutrition > bestN) { bestN = def.nutrition; best = def.id; }
+            }
+            return best;
         }
 
         private void EatSomething()

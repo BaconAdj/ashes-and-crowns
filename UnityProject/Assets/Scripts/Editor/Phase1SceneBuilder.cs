@@ -102,7 +102,7 @@ namespace AshesAndCrowns.EditorTools
             var perf = sceneGo.AddComponent<PerfProbe>();
             var narration = sceneGo.AddComponent<OpeningNarration>(); narration.hud = hud; narration.gameplayCamera = cam;
             var torch = playerGo.AddComponent<TorchLight>(); torch.clock = clock; torch.hud = hud;
-            var activity = sceneGo.AddComponent<ActivityDirector>(); activity.clock = clock; activity.hud = hud; activity.player = pc; activity.horse = horse; activity.body = playerGo.transform.Find("Body");
+            var activity = sceneGo.AddComponent<ActivityDirector>(); activity.clock = clock; activity.hud = hud; activity.player = pc; activity.horse = horse; activity.vitals = vitals; activity.body = playerGo.transform.Find("Body");
             var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
             var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse; growth.melee = melee;
             driver.terrain = terrain; driver.melee = melee; driver.clock = clock; driver.dayNight = dayNight; driver.weather = weather; driver.bells = bells;
@@ -144,7 +144,7 @@ namespace AshesAndCrowns.EditorTools
             intrigue.clock = clock; intrigue.hud = hud; intrigue.saveManager = save; intrigue.village = life; intrigue.encounter = enc; intrigue.vitals = vitals;
             life.intrigue = intrigue;
             var cheats = sceneGo.AddComponent<DevCheats>();
-            cheats.clock = clock; cheats.hud = hud; cheats.saveManager = save; cheats.village = life; cheats.siege = siege; cheats.lordship = lordship; cheats.spawner = spawnerComp; cheats.player = pc; cheats.horse = horse; cheats.vitals = vitals;
+            cheats.clock = clock; cheats.hud = hud; cheats.saveManager = save; cheats.village = life; cheats.siege = siege; cheats.lordship = lordship; cheats.spawner = spawnerComp; cheats.encounter = enc; cheats.player = pc; cheats.horse = horse; cheats.vitals = vitals;
             life.cheats = cheats;
             var household = sceneGo.AddComponent<HouseholdDirector>();
             household.clock = clock; household.hud = hud; household.saveManager = save; household.village = life; household.encounter = enc; household.vitals = vitals;

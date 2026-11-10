@@ -52,6 +52,11 @@ namespace AshesAndCrowns.Game
             Quaternion rot = Quaternion.Euler(_pitch, _yaw, 0f);
             Vector3 pivot = target.position + Vector3.up * _height;
             Vector3 desired = pivot - rot * Vector3.forward * _distance;
+            // Keep the camera out of walls: pull it in along the line from the pivot when something is in the way (interiors, trees).
+            Vector3 toCam = desired - pivot; float dist = toCam.magnitude;
+            if (dist > 0.05f && Physics.SphereCast(pivot, 0.25f, toCam / dist, out RaycastHit block, dist, ~0, QueryTriggerInteraction.Ignore)
+                && block.collider.GetComponent<CharacterController>() == null)
+                desired = pivot + toCam / dist * Mathf.Max(0.6f, block.distance - 0.1f);
             // Keep the camera out of the ground.
             if (Terrain.activeTerrain != null)
             {

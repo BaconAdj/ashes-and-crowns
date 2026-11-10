@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace AshesAndCrowns.Game
 {
-    public enum ActivityKind : byte { None = 0, Pray = 1, Work = 2 }
+    public enum ActivityKind : byte { None = 0, Pray = 1, Work = 2, Rest = 3 }
+    public enum RestPose : byte { Lying = 0, Sitting = 1, Standing = 2 }
 
     /// <summary>
     /// Hands-on activities that take real time at the place they happen. The body is held in a pose, the clock runs
@@ -19,6 +20,7 @@ namespace AshesAndCrowns.Game
         public HorseController horse;
         public Transform body;                 // the visual child posed while kneeling or working
         public ProceduralGait gait;            // paused while posed
+        public Combat.PlayerVitals vitals;      // death ends any activity at once
 
         private Balance _balance;
         private ActivityKind _kind;
@@ -31,6 +33,8 @@ namespace AshesAndCrowns.Game
         // work
         private float _workHours; private int _beatsPlanned, _beatsFired, _beatsPressed; private float _beatSum; private float _nextBeatAtHours; private bool _beatOpen; private float _beatT; private string _beatVerb;
         private System.Action<float> _onWorkDone;             // quality
+        // rest-like spans (sleep, mass, a meal, ale)
+        private float _restHours; private RestPose _restPose; private string _restTitle, _restLeaveHint; private bool _restCanLeave; private System.Action<float, bool> _onRestDone;   // hours, left early
 
         public ActivityKind Current => _kind;
         public bool Active => _kind != ActivityKind.None;
@@ -93,6 +97,55 @@ namespace AshesAndCrowns.Game
             hud.SetActivity($"{Mathf.FloorToInt(_gameHoursDone)}h of {Mathf.RoundToInt(_workHours)}h.  Beats: {_beatsPressed} of {_beatsFired} taken, {Mathf.RoundToInt(_beatsFired > 0 ? _beatSum / _beatsFired * 100f : 0f)}% good.", _beatOpen ? _beatVerb + "  [ X ]" : L.T("Work on..."));
         }
 
+        // ------------------------------------------------------------------ rest-like spans
+
+        /// <summary>Lie, sit or stand somewhere while the clock runs fast: sleep, mass, a meal, a pot of ale.
+        /// `at` is a marker to step to (the bed, a seat, the nave); null stays put. onDone(hoursPassed, leftEarly).</summary>
+        public void BeginRest(string title, string leaveHint, Transform at, RestPose pose, float hours, float timeScale, bool canLeave, System.Action<float, bool> onDone)
+        {
+            if (Active || _balance == null) return;
+            if (at != null && player != null)
+            {
+                Vector3 spot = at.position; spot.y = player.transform.position.y;
+                var cc = player.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
+                player.transform.position = spot;
+                if (cc != null) cc.enabled = true;
+            }
+            _restHours = hours; _restPose = pose; _restTitle = title; _restLeaveHint = leaveHint; _restCanLeave = canLeave; _onRestDone = onDone;
+            Enter(ActivityKind.Rest, timeScale);
+            PoseRest(pose);
+            hud.ShowActivity(title, canLeave ? leaveHint : string.Empty);
+            SetRestText();
+        }
+
+        private void SetRestText()
+        {
+            int mins = Mathf.RoundToInt(_gameHoursDone * 60f);
+            var cal = clock.Calendar;
+            hud.SetActivity($"{mins / 60}h {mins % 60:00}m.  {cal.Weekday}, {Mathf.FloorToInt(cal.HourOfDay)}:{Mathf.FloorToInt((cal.HourOfDay % 1f) * 60f):00}.", _restCanLeave ? _restLeaveHint : L.T("Wait."));
+        }
+
+        private void PoseRest(RestPose pose)
+        {
+            if (body == null) return;
+            _restPos = body.localPosition; _restRot = body.localRotation;
+            if (gait != null) gait.enabled = false;
+            switch (pose)
+            {
+                case RestPose.Lying: body.localRotation = _restRot * Quaternion.Euler(-88f, 0f, 0f); body.localPosition = _restPos + new Vector3(0f, 0.3f, -0.6f); break;
+                case RestPose.Sitting: body.localRotation = _restRot * Quaternion.Euler(8f, 0f, 0f); body.localPosition = _restPos + Vector3.down * 0.4f; break;
+                default: break;
+            }
+        }
+
+        private void EndRest(bool early)
+        {
+            float hours = _gameHoursDone;
+            var done = _onRestDone; _onRestDone = null;
+            Leave();
+            done?.Invoke(hours, early);
+        }
+
         // ------------------------------------------------------------------ shared
 
         private void Enter(ActivityKind kind, float timeScale)
@@ -103,6 +156,9 @@ namespace AshesAndCrowns.Game
             if (horse != null) horse.enabled = false;
             clock.HoursPassed += OnHours;
         }
+
+        /// <summary>Death, arrest or a scene change: stop whatever is running without callbacks.</summary>
+        public void Abort() { if (Active) { _onPrayerDone = null; _onWorkDone = null; _onRestDone = null; Leave(); } }
 
         private void Leave()
         {
@@ -145,6 +201,7 @@ namespace AshesAndCrowns.Game
         private void Update()
         {
             if (!Active) return;
+            if (vitals != null && vitals.IsDead) { Abort(); return; }
             var kb = UnityEngine.InputSystem.Keyboard.current;
             _elapsedReal += Time.unscaledDeltaTime;
             if (_kind == ActivityKind.Pray)
@@ -153,6 +210,15 @@ namespace AshesAndCrowns.Game
                 if (body != null) body.localRotation = _restRot * Quaternion.Euler(18f + Mathf.Sin(_elapsedReal * 1.1f) * 1.5f, 0f, 0f);
                 if (Time.frameCount % 15 == 0) SetPrayerText();
                 if (kb != null && (kb.eKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame) && _elapsedReal > 0.4f) EndPrayer();
+                return;
+            }
+            if (_kind == ActivityKind.Rest)
+            {
+                if (body != null && _restPose == RestPose.Lying) body.localPosition = _restPos + new Vector3(0f, 0.3f + Mathf.Sin(_elapsedReal * 1.3f) * 0.01f, -0.6f);
+                if (Time.frameCount % 12 == 0) SetRestText();
+                bool leave = kb != null && (kb.eKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame) && _elapsedReal > 0.5f;
+                if (_gameHoursDone >= _restHours) EndRest(false);
+                else if (leave && _restCanLeave) EndRest(true);
                 return;
             }
             // ---- work

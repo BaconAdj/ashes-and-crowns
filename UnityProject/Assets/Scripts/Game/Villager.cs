@@ -30,7 +30,7 @@ namespace AshesAndCrowns.Game
         private VillagerActivity _activity = VillagerActivity.Home;
         private bool _planned;
         private Transform _building;          // the building we are inside, or null
-        private readonly Vector3[] _route = new Vector3[4]; private int _routeCount, _routeIndex;
+        private readonly Vector3[] _route = new Vector3[5]; private int _routeCount, _routeIndex, _exitDoorIndex = -1;
         private Vector3 _goal; private Transform _goalBuilding;
         private float _vy, _dodgeUntil, _dodgeSign = 1f, _bob, _nextThink;
         private Vector3 _restPos; private Quaternion _restRot;
@@ -107,8 +107,8 @@ namespace AshesAndCrowns.Game
                     }
             }
             _goal = goal; _goalBuilding = targetBuilding;
-            _routeCount = 0; _routeIndex = 0;
-            if (_building != null && _building != targetBuilding) { Add(Marker(_building, "Inside")); Add(Marker(_building, "Door")); }
+            _routeCount = 0; _routeIndex = 0; _exitDoorIndex = -1;
+            if (_building != null && _building != targetBuilding) { Add(Marker(_building, "Inside")); Add(Marker(_building, "Door")); _exitDoorIndex = 1; }
             if (targetBuilding != null && targetBuilding != _building) { Add(Marker(targetBuilding, "Door")); Add(Marker(targetBuilding, "Inside")); }
             Add(goal);
         }
@@ -143,9 +143,9 @@ namespace AshesAndCrowns.Game
                 if (d < 0.35f)
                 {
                     _routeIndex++;
-                    // Crossing a door marks us inside or outside.
+                    // Crossing a door marks us outside; arriving marks us inside the goal's building (or outdoors).
+                    if (_exitDoorIndex >= 0 && _routeIndex == _exitDoorIndex + 1) _building = null;
                     if (_routeIndex == _routeCount) _building = _goalBuilding;
-                    else if (_goalBuilding != null && _routeIndex >= 2 && _routeCount >= 3 && _building != null && _building != _goalBuilding && _routeIndex == 2) _building = null;
                 }
                 else
                 {
