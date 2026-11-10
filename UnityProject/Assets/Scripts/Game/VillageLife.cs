@@ -107,6 +107,7 @@ namespace AshesAndCrowns.Game
             if (_site != null && _site.keep != null) Check(_site.keep, "keep", ref best);
             if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
+            if (_site != null) foreach (Deer deer in _site.deer) if (deer != null && deer.gameObject.activeSelf) Check(deer.transform, deer.Dead ? "carcass" : "deer", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
         }
 
@@ -201,7 +202,7 @@ namespace AshesAndCrowns.Game
             if (t == null) return;
             Vector3 p = Body().position; Vector3 q = t.position; q.y = p.y;
             bool furnished = t.parent != null && t.parent.GetComponent<MeshFilter>() != null && (t.name == "Altar" || t.name == "Bar" || t.name == "Hearth");
-            float d = Vector3.Distance(p, q) - (furnished ? 0f : kind == "church" ? 8f : kind == "alehouse" ? 6f : kind == "keep" ? 12f : 0f);
+            float d = Vector3.Distance(p, q) - (furnished ? 0f : kind == "church" ? 8f : kind == "alehouse" ? 6f : kind == "keep" ? 12f : kind == "deer" ? _balance.wildlife.shotRangeMetres - useRadius : 0f);
             if (d < best) { best = d; _nearest = t; _nearestKind = kind; }
         }
 
@@ -215,6 +216,8 @@ namespace AshesAndCrowns.Game
                 case "home": return RunSession.Context.Character.Rank >= Rank.Knight ? "Your hall" : "Your hearth";
                 case "work": return "Work the day";
                 case "wood": return RunSession.Context.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : "An oak. You would need an axe.";
+                case "deer": return RunSession.Context.Inventory.Count("bow") > 0 ? "Stalk and loose at the deer" : "Deer. You would need a bow.";
+                case "carcass": return "Dress the kill";
                 case "master": { var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; return (v != null && !v.WillTalk ? "Wake " : "Speak with ") + MasterName(_nearest); }
                 default: return "Use";
             }
@@ -240,6 +243,8 @@ namespace AshesAndCrowns.Game
                 case "home": Home(); break;
                 case "work": WorkTheDay(); break;
                 case "wood": CutWood(at); break;
+                case "deer": Hunt(at.GetComponent<Deer>()); break;
+                case "carcass": DressKill(at.GetComponent<Deer>()); break;
                 case "master": Master(at); break;
             }
         }
@@ -818,6 +823,50 @@ namespace AshesAndCrowns.Game
             };
             if (activity != null) activity.BeginWork(def, 10f, finish);
             else hud.ShowMoment(def.momentKind, def.id, finish);
+        }
+
+        /// <summary>A stalk and a shot: beats for the still moments, a hit by the quality. The deer are the lord's.</summary>
+        private void Hunt(Deer deer)
+        {
+            var ctx = RunSession.Context; var w = _balance.wildlife;
+            if (deer == null || deer.Dead) return;
+            if (ctx.Inventory.Count("bow") <= 0) { hud.Toast("You have no bow."); return; }
+            if (activity == null) { deer.Kill(); return; }
+            _busy = true; _openKind = Open.Moment;
+            Vector3 face = deer.transform.position - player.transform.position; face.y = 0f;
+            if (face.sqrMagnitude > 0.01f) player.transform.rotation = Quaternion.LookRotation(face.normalized, Vector3.up);
+            var def = new TradeDef { id = "hunting", momentKind = "stalk" };
+            activity.BeginWork(def, w.shotHours, quality =>
+            {
+                _busy = false; _openKind = Open.None;
+                var rng = GameBootstrap.Instance.Rng.Fork(86); rng.State ^= (ulong)clock.Calendar.TotalHours;
+                ctx.Character.Use(Skill.Hunting, _balance.character, 1f);
+                bool hit = deer != null && !deer.Dead && rng.Chance(Mathf.Lerp(w.hitChanceAtWorst, w.hitChanceAtPerfect, quality));
+                if (hit) { deer.Kill(); Dialogue("The shot", "The shaft takes it behind the shoulder. It runs three strides and folds. Dress it before the light goes.", ("Good", null)); }
+                else Dialogue("The shot", quality > 0.5f ? "The arrow skips off a root. White tails everywhere." : "You draw too soon; the herd is gone before the string sings.", ("Curse", null));
+            });
+        }
+
+        /// <summary>Knife work over a dead deer: meat and a hide, and a chance that the lord's forester saw.</summary>
+        private void DressKill(Deer deer)
+        {
+            var ctx = RunSession.Context; var s = ctx.Current; var w = _balance.wildlife;
+            if (deer == null || !deer.Dead || deer.Dressed) return;
+            if (ctx.Inventory.Count("knife") <= 0 && ctx.Inventory.Count("sword") <= 0 && ctx.Inventory.Count("axe") <= 0) { hud.Toast("You need a blade to dress it."); return; }
+            deer.Dress();
+            ctx.Inventory.Add("meat", w.meatPerDeer); ctx.Inventory.Add("hide", 1);
+            clock.SkipHours(0.5f);
+            var rng = GameBootstrap.Instance.Rng.Fork(87); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            bool hunterByRight = ctx.Character.Trade == "hunter" || ctx.Character.Rank >= Rank.Knight;
+            string tail = string.Empty;
+            if (!hunterByRight && rng.Chance(w.poachingWitnessChance))
+            {
+                float wanted = ctx.Crime.Commit(CrimeKind.Poaching, s != null ? s.Id : "road", JobBoard.Today(clock.Calendar), 1, rng, ctx.Reputation);
+                if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
+                tail = " A man in green watched you from the trees and did not come closer. The lord's deer, the lord's forester.";
+            }
+            Dialogue("The kill", $"{w.meatPerDeer} haunches of venison and a hide, and blood to the elbow." + tail, ("Done", null));
+            saveManager?.SaveNow(AffairsChoice.None);
         }
 
         /// <summary>Two hours at an oak with an axe: beats on the stroke, bundles of firewood by the quality. Anyone's chore.</summary>

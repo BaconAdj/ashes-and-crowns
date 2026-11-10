@@ -8,7 +8,8 @@ namespace AshesAndCrowns.Game
         public Material wattle, thatch, stone, slate, darkWood, villager;
         public Material linen, fire, iron, skin;   // interiors and people
         public Mesh hut, alehouse, church;
-        public Mesh oak, keep, man, woman;       // optional (Blender art)
+        public Mesh oak, keep, man, woman, deer; // optional (Blender art)
+        public Material deerCoat, antler;
         public Material bark, leaf;
         public Terrain terrain;
     }

@@ -116,6 +116,90 @@ namespace AshesAndCrowns.Game
             v.workStation = yard; v.workBuilding = null;
         }
 
+        /// <summary>Deer herds in the woods beyond the fields. Each herd is a parent with its ground as the centre.</summary>
+        public static void SpawnHerds(SettlementSite site, Transform root, Mesh deer, Material coat, Material antler, Terrain terrain, DeterministicRng rng, WildlifeBalance w)
+        {
+            if (deer == null || site == null || site.centre == null) return;
+            for (int h = 0; h < w.herdsPerVillage; h++)
+            {
+                float a = rng.Range(0f, Mathf.PI * 2f);
+                Vector3 c = site.centre.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (w.herdDistanceMetres + rng.Range(0f, 60f));
+                if (terrain != null) c.y = terrain.SampleHeight(c) + terrain.transform.position.y;
+                var herd = new GameObject("Herd_" + h).transform; herd.SetParent(root, true); herd.position = c;
+                for (int i = 0; i < w.deerPerHerd; i++)
+                {
+                    var go = new GameObject("Deer"); go.transform.SetParent(herd, true);
+                    Vector3 p = c + new Vector3(rng.Range(-8f, 8f), 0f, rng.Range(-8f, 8f)); if (terrain != null) p.y = terrain.SampleHeight(p) + terrain.transform.position.y;
+                    go.transform.position = p; go.transform.rotation = Quaternion.Euler(0f, rng.Range(0f, 360f), 0f);
+                    var body = new GameObject("Body"); body.transform.SetParent(go.transform, false);
+                    var mf = body.AddComponent<MeshFilter>(); mf.sharedMesh = deer;
+                    var mr = body.AddComponent<MeshRenderer>(); mr.sharedMaterials = deer.subMeshCount >= 2 ? new[] { coat, antler } : new[] { coat };
+                    var col = go.AddComponent<CapsuleCollider>(); col.center = new Vector3(0f, 0.8f, 0f); col.radius = 0.35f; col.height = 1.6f; col.direction = 2;
+                    float sc = rng.Range(0.85f, 1.1f); if (i % 3 != 0) { sc *= 0.92f; }   // hinds are smaller; the stag keeps his antlers in the mesh regardless, for now
+                    go.transform.localScale = new Vector3(sc, sc, sc);
+                    var d = go.AddComponent<Deer>(); d.herdCentre = c; d.index = i + h * 7; d.visual = body.transform;
+                    site.deer.Add(d);
+                }
+            }
+        }
+
+        /// <summary>Woods: clumps of oaks beyond the fields, far denser than the few about the green.</summary>
+        public static void PlantWoods(SettlementSite site, Transform root, Mesh oak, Material bark, Material leaf, Terrain terrain, DeterministicRng rng, int clumps, int perClump, float distance)
+        {
+            if (oak == null || site == null || site.centre == null) return;
+            var woods = new GameObject("Woods").transform; woods.SetParent(root, true);
+            for (int c = 0; c < clumps; c++)
+            {
+                float a = rng.Range(0f, Mathf.PI * 2f); float r = distance + rng.Range(0f, 80f);
+                Vector3 centre = site.centre.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                for (int i = 0; i < perClump; i++)
+                {
+                    float ta = rng.Range(0f, Mathf.PI * 2f), tr = Mathf.Sqrt(rng.Range(0f, 1f)) * 34f;
+                    Vector3 p = centre + new Vector3(Mathf.Cos(ta), 0f, Mathf.Sin(ta)) * tr;
+                    if (terrain != null) p.y = terrain.SampleHeight(p) + terrain.transform.position.y - 0.2f;
+                    var go = new GameObject("Oak"); go.transform.SetParent(woods, true);
+                    go.transform.SetPositionAndRotation(p, Quaternion.Euler(0f, rng.Range(0f, 360f), 0f));
+                    float sc = rng.Range(0.75f, 1.35f); go.transform.localScale = new Vector3(sc, sc, sc);
+                    var mf = go.AddComponent<MeshFilter>(); mf.sharedMesh = oak;
+                    var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterials = oak.subMeshCount >= 2 ? new[] { bark, leaf } : new[] { bark };
+                    var col = go.AddComponent<CapsuleCollider>(); col.center = new Vector3(0f, 2.5f, 0f); col.radius = 0.45f; col.height = 5f;   // the trunk only; walk under the canopy
+                    go.isStatic = root.gameObject.isStatic;
+                    site.oaks.Add(go.transform);
+                }
+            }
+        }
+
+        /// <summary>The open fields: strips of ridge and furrow in a belt around the village, with the odd hurdle fence.</summary>
+        public static void LayFields(SettlementSite site, Transform root, Material earth, Material wood, Terrain terrain, DeterministicRng rng, float innerRadius, int strips)
+        {
+            if (site == null || site.centre == null) return;
+            var fields = new GameObject("Fields").transform; fields.SetParent(root, true);
+            for (int i = 0; i < strips; i++)
+            {
+                float a = rng.Range(0f, Mathf.PI * 2f); float r = innerRadius + rng.Range(0f, 45f);
+                Vector3 c = site.centre.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                if (terrain != null) c.y = terrain.SampleHeight(c) + terrain.transform.position.y;
+                Quaternion rot = Quaternion.Euler(0f, rng.Range(0f, 180f), 0f);
+                int ridges = rng.Range(4, 8);
+                for (int k = 0; k < ridges; k++)
+                {
+                    var ridge = GameObject.CreatePrimitive(PrimitiveType.Cube); ridge.name = "Ridge"; Object.DestroyImmediate(ridge.GetComponent<Collider>());
+                    ridge.transform.SetParent(fields, true);
+                    Vector3 p = c + rot * new Vector3((k - ridges / 2f) * 2.2f, 0.08f, 0f);
+                    if (terrain != null) p.y = terrain.SampleHeight(p) + terrain.transform.position.y + 0.08f;
+                    ridge.transform.SetPositionAndRotation(p, rot); ridge.transform.localScale = new Vector3(1.1f, 0.22f, 18f + rng.Range(0f, 10f));
+                    ridge.GetComponent<Renderer>().sharedMaterial = earth;
+                }
+                if (rng.Chance(0.5f))
+                {
+                    var hurdle = GameObject.CreatePrimitive(PrimitiveType.Cube); hurdle.name = "Hurdle"; hurdle.transform.SetParent(fields, true);
+                    Vector3 p = c + rot * new Vector3(0f, 0.5f, 12f); if (terrain != null) p.y = terrain.SampleHeight(p) + terrain.transform.position.y + 0.5f;
+                    hurdle.transform.SetPositionAndRotation(p, rot); hurdle.transform.localScale = new Vector3(ridges * 2.2f, 1.0f, 0.08f);
+                    hurdle.GetComponent<Renderer>().sharedMaterial = wood;
+                }
+            }
+        }
+
         private static void Prop(Transform parent, PrimitiveType type, Vector3 pos, Vector3 scale, Material mat)
         {
             var go = GameObject.CreatePrimitive(type); go.transform.SetParent(parent, true);

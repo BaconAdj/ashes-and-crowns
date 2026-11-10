@@ -407,6 +407,17 @@
    "armour": 0,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "hide",
+   "name": "Deer hide",
+   "category": "raw",
+   "basePrice": 4,
+   "nutrition": 0,
+   "weight": 3,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

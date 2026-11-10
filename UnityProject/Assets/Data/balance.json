@@ -713,5 +713,21 @@
     "walkSpeed": 1.35,
     "hurrySpeed": 2.0,
     "awakeRadiusMetres": 160
+  },
+  "wildlife": {
+    "herdsPerVillage": 2,
+    "deerPerHerd": 5,
+    "herdDistanceMetres": 140,
+    "grazeRadiusMetres": 18,
+    "fleeRadiusMetres": 26,
+    "fleeSpeed": 7.5,
+    "grazeSpeed": 0.8,
+    "fleeSeconds": 6,
+    "shotRangeMetres": 28,
+    "shotHours": 0.4,
+    "hitChanceAtPerfect": 0.9,
+    "hitChanceAtWorst": 0.1,
+    "meatPerDeer": 2,
+    "poachingWitnessChance": 0.25
   }
 }

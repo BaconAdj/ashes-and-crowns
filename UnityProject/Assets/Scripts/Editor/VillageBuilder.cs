@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform HallHouse; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman; public SettlementSite Site; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform HallHouse; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin, DeerCoat, Antler, Earth; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman, Deer; public SettlementSite Site; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -85,6 +85,14 @@ namespace AshesAndCrowns.EditorTools
             BuildingKit.Furnish(home, BuildingKind.Hut, darkWood, stone, linen, fire, iron, withLight: true);
             BuildingKit.Furnish(hallHouse, BuildingKind.Hall, darkWood, stone, linen, fire, iron, withLight: true);
             var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
+            Mesh deerMesh = SceneKit.ArtMesh("Characters/Deer.fbx");
+            Material deerCoat = SceneKit.Mat("DeerCoat", SceneKit.LitShader, new Color(0.42f, 0.30f, 0.19f), 0f, 0.95f);
+            Material antler = SceneKit.Mat("Antler", SceneKit.LitShader, new Color(0.24f, 0.19f, 0.14f), 0f, 0.9f);
+            Material earth = SceneKit.Mat("PloughedEarth", SceneKit.LitShader, new Color(0.26f, 0.20f, 0.15f), 0f, 1f);
+            Mesh oakMesh = SceneKit.ArtMesh("Nature/Oak.fbx");
+            VillageKit.PlantWoods(site, root, oakMesh, bark, SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f), terrain, rng.Fork(9), 4, 30, 120f);
+            VillageKit.LayFields(site, root, earth, darkWood, terrain, rng.Fork(10), green + 40f, 10);
+            VillageKit.SpawnHerds(site, root, deerMesh, deerCoat, antler, terrain, rng.Fork(11), balance.wildlife);
             VillageKit.Populate(site, root, manMesh, womanMesh, villagerMat, skinMat, darkWood, stone, linen, fire, iron, nameGen, rng.Fork(7), terrain, lights: true);
             Transform masters = root.Find("People");
             // Workplace: a bench behind the player's hut; one spot stands in for field, forge, mill and weir in Phase 4.
@@ -92,7 +100,7 @@ namespace AshesAndCrowns.EditorTools
             work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, HallHouse = hallHouse, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Woman = womanMesh, Site = site };
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, HallHouse = hallHouse, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, DeerCoat = deerCoat, Antler = antler, Earth = earth, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Woman = womanMesh, Deer = deerMesh, Site = site };
         }
 
         /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>

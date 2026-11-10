@@ -123,7 +123,7 @@ namespace AshesAndCrowns.EditorTools
             var ashbySite = vill.Root.GetComponent<SettlementSite>(); if (ashbySite != null) ashbySite.transform.SetParent(fixedSites, true);
             var assets = sceneGo.AddComponent<WorldAssets>();
             assets.wattle = vill.Wattle; assets.thatch = vill.Thatch; assets.stone = vill.Stone; assets.slate = vill.Slate; assets.darkWood = vill.DarkWood; assets.hut = vill.HutMesh; assets.alehouse = vill.AlehouseMesh; assets.church = vill.ChurchMesh; assets.terrain = terrain;
-            assets.linen = vill.Linen; assets.fire = vill.Fire; assets.iron = vill.Iron; assets.villager = vill.Villager; assets.skin = vill.Skin; assets.man = vill.Man; assets.woman = vill.Woman;
+            assets.linen = vill.Linen; assets.fire = vill.Fire; assets.iron = vill.Iron; assets.villager = vill.Villager; assets.skin = vill.Skin; assets.man = vill.Man; assets.woman = vill.Woman; assets.deer = vill.Deer; assets.deerCoat = vill.DeerCoat; assets.antler = vill.Antler;
             assets.oak = SceneKit.ArtMesh("Nature/Oak.fbx"); assets.keep = SceneKit.ArtMesh("Buildings/Keep.fbx"); assets.bark = vill.Bark; assets.leaf = SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f);
             var spawnerGo = new GameObject("Settlements");
             var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites; spawnerComp.strongholdsRoot = stubsRoot;

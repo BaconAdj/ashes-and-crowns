@@ -105,6 +105,16 @@ namespace AshesAndCrowns.Sim
         public float torchRange = 14f, torchIntensity = 3.2f, torchBurnHours = 2f; public float[] torchColor = { 1f, 0.72f, 0.42f };
     }
 
+    [Serializable] public sealed class WildlifeBalance
+    {
+        public int herdsPerVillage = 2, deerPerHerd = 5;
+        public float herdDistanceMetres = 140f, grazeRadiusMetres = 18f, fleeRadiusMetres = 26f, fleeSpeed = 7.5f, grazeSpeed = 0.8f, fleeSeconds = 6f;
+        public float shotRangeMetres = 28f, shotHours = 0.4f;    // a stalk and a shot take this long in game time
+        public float hitChanceAtPerfect = 0.9f, hitChanceAtWorst = 0.1f;
+        public int meatPerDeer = 2;                               // haunches
+        public float poachingWitnessChance = 0.25f;               // someone in the lord's wood saw
+    }
+
     [Serializable] public sealed class SaveBalance
     {
         public float autosaveIntervalSeconds = 30f;
@@ -172,6 +182,7 @@ namespace AshesAndCrowns.Sim
         public MeleeRulesBalance duel = new MeleeRulesBalance();
         public ActivityBalance activity = new ActivityBalance();
         public VillageDayBalance villageDay = new VillageDayBalance();
+        public WildlifeBalance wildlife = new WildlifeBalance();
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
         public SiegeBalance siege = new SiegeBalance();

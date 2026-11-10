@@ -17,6 +17,7 @@ run gen_soldier  Characters/Soldier.fbx
 run gen_man      Characters/Man.fbx
 run gen_woman    Characters/Woman.fbx
 run gen_horse    Characters/Horse.fbx
+run gen_deer     Characters/Deer.fbx
 run gen_oak      Nature/Oak.fbx
 run gen_wall     Siege/WallSegment.fbx
 run gen_tower    Siege/Tower.fbx

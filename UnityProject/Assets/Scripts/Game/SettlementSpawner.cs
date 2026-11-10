@@ -141,6 +141,10 @@ namespace AshesAndCrowns.Game
             site.settlementId = s.Id; site.centre = root; site.church = church; site.alehouse = ale; site.radius = town ? 100f : 60f;
             site.huts.AddRange(hutList); site.oaks.AddRange(oakList);
             if (site_keep_placeholder != null) site.keep = site_keep_placeholder;
+            var wb = GameBootstrap.Instance != null ? GameBootstrap.Instance.Balance.wildlife : new WildlifeBalance();
+            VillageKit.PlantWoods(site, root, assets.oak, assets.bark != null ? assets.bark : assets.darkWood, assets.leaf != null ? assets.leaf : assets.thatch, assets.terrain, rng.Fork(9), town ? 5 : 3, town ? 30 : 26, town ? 170f : 110f);
+            VillageKit.LayFields(site, root, assets.stone, assets.darkWood, assets.terrain, rng.Fork(10), green + 40f, town ? 14 : 8);
+            VillageKit.SpawnHerds(site, root, assets.deer, assets.deerCoat != null ? assets.deerCoat : assets.darkWood, assets.antler != null ? assets.antler : assets.darkWood, assets.terrain, rng.Fork(11), wb);
             if (_names == null) _names = DataFiles.LoadNames();
             VillageKit.Populate(site, root, assets.man, assets.woman, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.linen != null ? assets.linen : assets.wattle, assets.fire != null ? assets.fire : assets.thatch, assets.iron != null ? assets.iron : assets.slate, new NameGenerator(_names, rng.Fork(5)), rng.Fork(7), assets.terrain, lights: true);
             if (existing == null) _sites.Add(site);
