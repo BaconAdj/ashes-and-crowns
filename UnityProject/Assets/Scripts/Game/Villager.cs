@@ -32,7 +32,7 @@ namespace AshesAndCrowns.Game
         private Transform _building;          // the building we are inside, or null
         private readonly Vector3[] _route = new Vector3[5]; private int _routeCount, _routeIndex, _exitDoorIndex = -1;
         private Vector3 _goal; private Transform _goalBuilding;
-        private float _vy, _dodgeUntil, _dodgeSign = 1f, _bob, _nextThink;
+        private float _vy, _dodgeUntil, _dodgeSign = 1f, _bob, _nextThink, _stuck; private Vector3 _lastPos;
         private Vector3 _restPos; private Quaternion _restRot;
 
         public VillagerActivity Activity => _activity;
@@ -95,7 +95,14 @@ namespace AshesAndCrowns.Game
             {
                 case VillagerActivity.Asleep: case VillagerActivity.Rising: targetBuilding = home; goal = MarkerOr(home, "Bed", 0); break;
                 case VillagerActivity.Eating: case VillagerActivity.Home: targetBuilding = home; goal = MarkerOr(home, "Hearth", 0); break;
-                case VillagerActivity.Working: targetBuilding = workBuilding; goal = workStation != null ? workStation.position : (home != null ? home.position + home.forward * 5f : transform.position); break;
+                case VillagerActivity.Working:
+                    {
+                        targetBuilding = workBuilding;
+                        if (workStation == null) goal = home != null ? home.position + home.forward * 5f : transform.position;
+                        else if (workBuilding != null) goal = workStation.position;
+                        else { Vector3 back = (home != null ? home.position : transform.position) - workStation.position; back.y = 0f; goal = workStation.position + (back.sqrMagnitude > 0.01f ? back.normalized : Vector3.back) * 0.9f; }   // stand at the station, not in it
+                        break;
+                    }
                 case VillagerActivity.Drinking: targetBuilding = site != null ? site.alehouse : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
                 case VillagerActivity.Praying: targetBuilding = site != null ? site.church : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
                 default:
@@ -140,8 +147,12 @@ namespace AshesAndCrowns.Game
                 Vector3 target = _route[_routeIndex];
                 Vector3 to = target - transform.position; to.y = 0f;
                 float d = to.magnitude;
-                if (d < 0.35f)
+                // Wedged against a bench or a post: after a couple of seconds, count the waypoint as reached.
+                if ((transform.position - _lastPos).sqrMagnitude < 0.0004f) _stuck += dt; else _stuck = 0f;
+                _lastPos = transform.position;
+                if (d < 0.35f || (_stuck > 2.5f && d < 2.5f))
                 {
+                    _stuck = 0f;
                     _routeIndex++;
                     // Crossing a door marks us outside; arriving marks us inside the goal's building (or outdoors).
                     if (_exitDoorIndex >= 0 && _routeIndex == _exitDoorIndex + 1) _building = null;

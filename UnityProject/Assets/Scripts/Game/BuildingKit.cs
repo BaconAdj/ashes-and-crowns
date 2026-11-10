@@ -45,9 +45,9 @@ namespace AshesAndCrowns.Game
                 case BuildingKind.Hut:
                     {
                         float f = HutFloor;
-                        Prop(b, "Hearth", PrimitiveType.Cylinder, new Vector3(0f, f + 0.08f, -0.2f), new Vector3(1.1f, 0.08f, 1.1f), stone);
+                        Prop(b, "HearthStone", PrimitiveType.Cylinder, new Vector3(0f, f + 0.08f, -0.2f), new Vector3(1.1f, 0.08f, 1.1f), stone);
                         Prop(b, "Embers", PrimitiveType.Sphere, new Vector3(0f, f + 0.2f, -0.2f), new Vector3(0.45f, 0.18f, 0.45f), fire);
-                        Prop(b, "Bed", PrimitiveType.Cube, new Vector3(-1.9f, f + 0.17f, -1.0f), new Vector3(1.0f, 0.3f, 2.0f), linen, collider: true);
+                        Prop(b, "Pallet", PrimitiveType.Cube, new Vector3(-1.9f, f + 0.17f, -1.0f), new Vector3(1.0f, 0.3f, 2.0f), linen, collider: true);
                         Prop(b, "Chest", PrimitiveType.Cube, new Vector3(2.0f, f + 0.3f, -1.3f), new Vector3(0.9f, 0.6f, 0.55f), wood, collider: true);
                         Prop(b, "Stool", PrimitiveType.Cylinder, new Vector3(1.2f, f + 0.2f, 0.4f), new Vector3(0.4f, 0.2f, 0.4f), wood);
                         Prop(b, "Shelf", PrimitiveType.Cube, new Vector3(0f, f + 1.5f, -1.75f), new Vector3(2.2f, 0.06f, 0.3f), wood);
@@ -59,7 +59,7 @@ namespace AshesAndCrowns.Game
                 case BuildingKind.Alehouse:
                     {
                         float f = AleFloor;
-                        Prop(b, "Bar", PrimitiveType.Cube, new Vector3(-3.0f, f + 0.5f, -2.3f), new Vector3(3.2f, 1.0f, 0.7f), wood, collider: true);
+                        Prop(b, "Counter", PrimitiveType.Cube, new Vector3(-3.0f, f + 0.5f, -2.3f), new Vector3(3.2f, 1.0f, 0.7f), wood, collider: true);
                         for (int i = 0; i < 3; i++) Prop(b, "Cask", PrimitiveType.Cylinder, new Vector3(-4.2f + i * 0.9f, f + 0.45f, -3.0f), new Vector3(0.7f, 0.45f, 0.7f), wood);
                         for (int i = 0; i < 2; i++)
                         {
@@ -69,7 +69,7 @@ namespace AshesAndCrowns.Game
                             Prop(b, "Bench", PrimitiveType.Cube, new Vector3(x - 0.8f, f + 0.22f, 0f), new Vector3(0.3f, 0.06f, 2.2f), wood, collider: true);
                             Prop(b, "Bench", PrimitiveType.Cube, new Vector3(x + 0.8f, f + 0.22f, 0f), new Vector3(0.3f, 0.06f, 2.2f), wood, collider: true);
                         }
-                        Prop(b, "Hearth", PrimitiveType.Cylinder, new Vector3(-1.5f, f + 0.08f, 1.8f), new Vector3(1.3f, 0.08f, 1.3f), stone);
+                        Prop(b, "HearthStone", PrimitiveType.Cylinder, new Vector3(-1.5f, f + 0.08f, 1.8f), new Vector3(1.3f, 0.08f, 1.3f), stone);
                         Prop(b, "Fire", PrimitiveType.Sphere, new Vector3(-1.5f, f + 0.25f, 1.8f), new Vector3(0.6f, 0.3f, 0.6f), fire);
                         Marker(b, "Bar", new Vector3(-3.0f, f, -1.4f)); Marker(b, "Hearth", new Vector3(-1.5f, f, 0.6f));
                         Marker(b, "Seat", new Vector3(0.2f, f, 0f)); Marker(b, "Seat", new Vector3(1.8f, f, 0f)); Marker(b, "Seat", new Vector3(2.8f, f, 0f)); Marker(b, "Seat", new Vector3(4.4f, f, 0f));
@@ -80,7 +80,7 @@ namespace AshesAndCrowns.Game
                     {
                         float f = ChurchFloor;
                         // Chancel beyond the arch on +Z: altar, two candles. Nave: a font by the door, two rows of benches.
-                        Prop(b, "Altar", PrimitiveType.Cube, new Vector3(0f, f + 0.5f, 12.5f), new Vector3(2.0f, 1.0f, 0.9f), stone, collider: true);
+                        Prop(b, "AltarStone", PrimitiveType.Cube, new Vector3(0f, f + 0.5f, 12.5f), new Vector3(2.0f, 1.0f, 0.9f), stone, collider: true);
                         Prop(b, "Cloth", PrimitiveType.Cube, new Vector3(0f, f + 1.02f, 12.5f), new Vector3(2.1f, 0.04f, 1.0f), linen);
                         Prop(b, "Candle", PrimitiveType.Cylinder, new Vector3(-0.7f, f + 1.3f, 12.5f), new Vector3(0.08f, 0.25f, 0.08f), linen);
                         Prop(b, "Candle", PrimitiveType.Cylinder, new Vector3(0.7f, f + 1.3f, 12.5f), new Vector3(0.08f, 0.25f, 0.08f), linen);

@@ -83,7 +83,7 @@ namespace AshesAndCrowns.Game
             if (kb.gKey.wasPressedThisFrame) EatSomething();
             if (kb.iKey.wasPressedThisFrame) ShowInventory();
 
-            if (Time.unscaledTime >= _nextSiteScan) { _nextSiteScan = Time.unscaledTime + 1f; ScanSite(); }
+            if (Time.unscaledTime >= _nextSiteScan) { _nextSiteScan = Time.unscaledTime + 1f; ScanSite(); Passing(ctx); }
             FindNearest();
             if (Time.unscaledTime >= _nextPrompt) { _nextPrompt = Time.unscaledTime + 0.25f; hud.SetPrompt(_nearest != null ? "[E] " + PromptFor(_nearestKind) : string.Empty); UpdateHudLines(ctx); }
             if (HasPlaceInReach && GameBootstrap.Instance.Input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode)) Use(_nearestKind, _nearest);
@@ -104,6 +104,24 @@ namespace AshesAndCrowns.Game
             if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
+        }
+
+        private float _nextGreeting;
+        /// <summary>Villagers you brush past say something, by standing: a nod, a word, or a turned back.</summary>
+        private void Passing(RunContext ctx)
+        {
+            if (_site == null || Time.unscaledTime < _nextGreeting) return;
+            Vector3 p = Body().position;
+            foreach (Villager v in _site.villagers)
+            {
+                if (v == null || !v.WillTalk || v.Activity == VillagerActivity.Praying) continue;
+                if ((v.transform.position - p).sqrMagnitude > 9f) continue;
+                string name = v.Tag.displayName;
+                string line = ctx.Standing.Despised ? name + " looks through you." : ctx.Standing.Respected ? name + " touches a cap to you." : v.Activity == VillagerActivity.Working ? name + " grunts without looking up." : name + " nods as you pass.";
+                hud.Whisper(line);
+                _nextGreeting = Time.unscaledTime + 25f;
+                return;
+            }
         }
 
         /// <summary>A building's named marker (the altar, the bar, the hearth) or the building itself when it is not furnished.</summary>
