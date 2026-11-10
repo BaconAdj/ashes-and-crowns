@@ -12,6 +12,7 @@ namespace AshesAndCrowns.Game
     {
         public WorldAssets assets;
         public Transform fixedSitesRoot;    // SettlementSite children created by the scene builder (home village, keeps)
+        public Transform strongholdsRoot;   // the scene builder's keeps, named Keep_<settlement id>
         private readonly List<SettlementSite> _sites = new List<SettlementSite>(24);
         private NamesData _names;
         private bool _built;
@@ -29,7 +30,14 @@ namespace AshesAndCrowns.Game
             if (fixedSitesRoot != null) foreach (Transform t in fixedSitesRoot) { var site = t.GetComponent<SettlementSite>(); if (site != null) _sites.Add(site); }
             foreach (var s in settlements)
             {
-                if (s.IsFixed) { EnsureFixedSite(s, terrainSize); continue; }
+                if (s.IsFixed)
+                {
+                    SettlementSite site = EnsureFixedSite(s, terrainSize);
+                    if (strongholdsRoot != null && site.keep == null) site.keep = strongholdsRoot.Find("Keep_" + s.Id);
+                    // A keep stub is not a town: give every fixed place a church, an alehouse, huts and people on its north side.
+                    if (site.huts.Count == 0 && (site.alehouse == null || site.alehouse == site.centre)) BuildVillage(s, terrainSize, rng.Fork(MapGeometry.StableHash(s.Id)), site);
+                    continue;
+                }
                 BuildVillage(s, terrainSize, rng.Fork(MapGeometry.StableHash(s.Id)));
             }
         }
@@ -75,9 +83,9 @@ namespace AshesAndCrowns.Game
         /// <summary>A settlement that appears after the scene started (an adulterine castle).</summary>
         public void AddSite(Settlement s, float size) { if (_built) EnsureFixedSite(s, size); }
 
-        private void EnsureFixedSite(Settlement s, float size)
+        private SettlementSite EnsureFixedSite(Settlement s, float size)
         {
-            foreach (var site in _sites) if (site.settlementId == s.Id) return;
+            foreach (var site in _sites) if (site.settlementId == s.Id) return site;
             var go = new GameObject("Site_" + s.Id);
             go.transform.SetParent(transform, true);
             var pos = new Vector3(s.Nx * size, 0f, s.Nz * size); pos.y = Ground(pos);
@@ -86,25 +94,30 @@ namespace AshesAndCrowns.Game
             // The alehouse of a town is its gate for now: trading and jobs happen at the centre marker.
             site2.alehouse = go.transform;
             _sites.Add(site2);
+            return site2;
         }
 
-        private void BuildVillage(Settlement s, float size, DeterministicRng rng)
+        private void BuildVillage(Settlement s, float size, DeterministicRng rng, SettlementSite existing = null)
         {
-            var root = new GameObject("Village_" + s.Name).transform;
-            root.SetParent(transform, true);
-            var centre = new Vector3(s.Nx * size, 0f, s.Nz * size);
-            Flatten(centre, 55f);
+            Transform root = existing != null ? existing.transform : new GameObject("Village_" + s.Name).transform;
+            if (existing == null) root.SetParent(transform, true);
+            var centre = existing != null ? existing.centre.position : new Vector3(s.Nx * size, 0f, s.Nz * size);
+            Flatten(centre, existing != null ? 70f : 55f);
             centre.y = Ground(centre);
             root.position = centre;
             float green = 16f;
-            Transform church = Place(root, "Church", assets.church, new[] { assets.stone, assets.slate }, centre + new Vector3(0f, 0f, green + 12f), Quaternion.Euler(0f, 90f, 0f));
+            bool town = existing != null;   // the keep stands south of a fixed place's centre: build on the north side
+            Transform site_keep_placeholder = null;
+            Transform church = Place(root, "Church", assets.church, new[] { assets.stone, assets.slate }, centre + new Vector3(town ? -green - 20f : 0f, 0f, town ? 6f : green + 12f), Quaternion.Euler(0f, 90f, 0f));
             Transform ale = Place(root, "Alehouse", assets.alehouse, new[] { assets.wattle, assets.thatch }, centre + new Vector3(green + 8f, 0f, -3f), Quaternion.Euler(0f, 90f, 0f));
-            int huts = Mathf.Clamp(s.Population / 25, 3, 8);
+            int huts = town ? Mathf.Clamp(s.Population / 60, 8, 16) : Mathf.Clamp(s.Population / 25, 3, 8);
             var hutList = new List<Transform>(huts);
             for (int i = 0; i < huts; i++)
             {
-                float a = Mathf.Lerp(190f, 350f, i / (float)Mathf.Max(1, huts - 1)) * Mathf.Deg2Rad + rng.Range(-0.15f, 0.15f);
-                float r = green + 5f + rng.Range(0f, 9f);
+                float a0 = town ? 10f : 190f, a1 = town ? 170f : 350f;
+                int ring = town ? i / 8 : 0;   // towns take a second ring
+                float a = Mathf.Lerp(a0, a1, (i % 8) / 7f) * Mathf.Deg2Rad + rng.Range(-0.15f, 0.15f);
+                float r = green + 5f + ring * 11f + rng.Range(0f, 9f);
                 Vector3 pos = centre + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
                 hutList.Add(Place(root, "Hut_" + i, assets.hut, new[] { assets.wattle, assets.thatch }, pos, Quaternion.LookRotation(toGreen.normalized) * Quaternion.Euler(0f, rng.Range(-10f, 10f), 0f)));
@@ -121,15 +134,16 @@ namespace AshesAndCrowns.Game
                     oakList.Add(t);
                 }
             }
-            if (s.Type == SettlementType.Castle && assets.keep != null) Place(root, "Keep", assets.keep, new[] { assets.stone, assets.darkWood }, centre + new Vector3(-green - 22f, 0f, green + 10f), Quaternion.identity);
+            if (existing == null && s.Type == SettlementType.Castle && assets.keep != null) site_keep_placeholder = Place(root, "Keep", assets.keep, new[] { assets.stone, assets.darkWood }, centre + new Vector3(-green - 22f, 0f, green + 10f), Quaternion.identity);
             var well = GameObject.CreatePrimitive(PrimitiveType.Cylinder); well.name = "Well"; well.transform.SetParent(root, true);
             well.transform.localScale = new Vector3(1.6f, 0.5f, 1.6f); well.transform.position = centre + Vector3.up * 0.5f; well.GetComponent<Renderer>().sharedMaterial = assets.stone;
-            var site = root.gameObject.AddComponent<SettlementSite>();
-            site.settlementId = s.Id; site.centre = root; site.church = church; site.alehouse = ale; site.radius = 60f;
+            var site = existing != null ? existing : root.gameObject.AddComponent<SettlementSite>();
+            site.settlementId = s.Id; site.centre = root; site.church = church; site.alehouse = ale; site.radius = town ? 100f : 60f;
             site.huts.AddRange(hutList); site.oaks.AddRange(oakList);
+            if (site_keep_placeholder != null) site.keep = site_keep_placeholder;
             if (_names == null) _names = DataFiles.LoadNames();
             VillageKit.Populate(site, root, assets.man, assets.woman, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.linen != null ? assets.linen : assets.wattle, assets.fire != null ? assets.fire : assets.thatch, assets.iron != null ? assets.iron : assets.slate, new NameGenerator(_names, rng.Fork(5)), rng.Fork(7), assets.terrain, lights: true);
-            _sites.Add(site);
+            if (existing == null) _sites.Add(site);
         }
 
         private Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Vector3 pos, Quaternion rot)

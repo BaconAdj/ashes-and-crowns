@@ -126,7 +126,7 @@ namespace AshesAndCrowns.EditorTools
             assets.linen = vill.Linen; assets.fire = vill.Fire; assets.iron = vill.Iron; assets.villager = vill.Villager; assets.skin = vill.Skin; assets.man = vill.Man; assets.woman = vill.Woman;
             assets.oak = SceneKit.ArtMesh("Nature/Oak.fbx"); assets.keep = SceneKit.ArtMesh("Buildings/Keep.fbx"); assets.bark = vill.Bark; assets.leaf = SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f);
             var spawnerGo = new GameObject("Settlements");
-            var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites;
+            var spawnerComp = spawnerGo.AddComponent<SettlementSpawner>(); spawnerComp.assets = assets; spawnerComp.fixedSitesRoot = fixedSites; spawnerComp.strongholdsRoot = stubsRoot;
             save.spawner = spawnerComp; life.spawner = spawnerComp; survival.village = life; save.villageLife = life; life.narration = narration;
             var map = sceneGo.AddComponent<MapScreen>(); map.hud = hud; map.saveManager = save; map.player = playerGo.transform; map.terrainSize = size;
             var enc = sceneGo.AddComponent<EncounterDirector>();

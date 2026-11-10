@@ -8,6 +8,7 @@ namespace AshesAndCrowns.Game
     {
         public string settlementId = string.Empty;
         public Transform centre, church, alehouse;
+        public Transform keep;                                           // the lord's keep, where audiences are sought (towns, castles, cities)
         public float radius = 60f;
         public List<Transform> huts = new List<Transform>(12);        // serialized: Ashby is baked into the scene
         public List<Villager> villagers = new List<Villager>(16);
