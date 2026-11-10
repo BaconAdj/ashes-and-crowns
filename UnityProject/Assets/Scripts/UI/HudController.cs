@@ -40,6 +40,7 @@ namespace AshesAndCrowns.UI
         private float _bellToastUntil;
         private VisualElement _guard, _guardTop, _guardLeft, _guardRight, _revengeFill; private Label _guardHint;
         private VisualElement _activity, _beat, _beatTrack, _beatMarker, _beatZone; private Label _activityTitle, _activityBody, _activityPrompt, _beatTitle;
+        private VisualElement _place, _placeRule; private Label _placeName, _placeLord; private float _placeShownAt = -100f;
         private static readonly Color GuardIdle = new Color(0.25f, 0.25f, 0.27f, 0.85f), GuardHeld = new Color(0.80f, 0.76f, 0.66f, 0.95f), IncomingLight = new Color(0.85f, 0.35f, 0.25f, 0.95f), IncomingHeavy = new Color(0.95f, 0.55f, 0.15f, 0.95f);
         private float _nextTextUpdate;
         private float _fpsAccum; private int _fpsFrames; private float _fpsValue;
@@ -276,6 +277,23 @@ namespace AshesAndCrowns.UI
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
         }
 
+        /// <summary>The name of a place you arrive at, and whose it is. Fades on its own.</summary>
+        public void ShowPlaceBanner(string name, string lordLine)
+        {
+            if (_place == null) return;
+            _placeName.text = name.ToUpperInvariant(); _placeLord.text = lordLine;
+            _place.style.display = DisplayStyle.Flex; _place.style.opacity = 0f; _placeShownAt = Time.unscaledTime;
+        }
+
+        private void UpdatePlaceBanner()
+        {
+            if (_place == null || _place.style.display == DisplayStyle.None) return;
+            float t = Time.unscaledTime - _placeShownAt;
+            float a = t < 0.8f ? t / 0.8f : t < 4.5f ? 1f : t < 6.5f ? 1f - (t - 4.5f) / 2f : 0f;
+            _place.style.opacity = a;
+            if (t >= 6.5f) _place.style.display = DisplayStyle.None;
+        }
+
         public void ShowActivity(string title, string prompt) { if (_activity == null) return; _activityTitle.text = title; _activityBody.text = string.Empty; _activityPrompt.text = prompt; _activity.style.display = DisplayStyle.Flex; }
         public void SetActivity(string body, string prompt) { if (_activity == null) return; _activityBody.text = body; _activityPrompt.text = prompt; }
         public void HideActivity() { if (_activity != null) _activity.style.display = DisplayStyle.None; }
@@ -505,6 +523,15 @@ namespace AshesAndCrowns.UI
             _beatTrack.Add(_beatZone); _beatTrack.Add(_beatMarker); _beat.Add(_beatTitle); _beat.Add(_beatTrack);
             _root.Add(_beat);
 
+            // Place banner: the name of the settlement you walk into and whose it is, fading over a few seconds.
+            _place = new VisualElement { pickingMode = PickingMode.Ignore };
+            _place.style.position = Position.Absolute; _place.style.top = new Length(18, LengthUnit.Percent); _place.style.left = 0; _place.style.right = 0; _place.style.alignItems = Align.Center; _place.style.display = DisplayStyle.None;
+            _placeName = MakeLabel(string.Empty, 44, Parchment); _placeName.style.unityFontStyleAndWeight = FontStyle.Bold; _placeName.style.letterSpacing = 6; _placeName.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _placeRule = new VisualElement { pickingMode = PickingMode.Ignore }; _placeRule.style.width = 260; _placeRule.style.height = 1; _placeRule.style.backgroundColor = new Color(0.72f, 0.62f, 0.40f, 0.9f); _placeRule.style.marginTop = 4; _placeRule.style.marginBottom = 8;
+            _placeLord = MakeLabel(string.Empty, 16, new Color(0.80f, 0.74f, 0.62f)); _placeLord.style.letterSpacing = 2; _placeLord.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _place.Add(_placeName); _place.Add(_placeRule); _place.Add(_placeLord);
+            _root.Add(_place);
+
             _moment = MakeOverlay(0.35f);
             _momentTitle = MakeLabel(string.Empty, 22, Parchment); _momentTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
             _momentHint = MakeLabel(string.Empty, 14, Parchment); _momentHint.style.marginBottom = 14;
@@ -541,6 +568,7 @@ namespace AshesAndCrowns.UI
             _fpsAccum += Time.unscaledDeltaTime; _fpsFrames++;
             UpdateMoment();
             UpdateGuard();
+            UpdatePlaceBanner();
             if (_toast != null && _toast.style.display == DisplayStyle.Flex && Time.unscaledTime > _toastUntil) _toast.style.display = DisplayStyle.None;
             if (_whisper != null && _whisper.style.display == DisplayStyle.Flex && Time.unscaledTime > _whisperUntil) _whisper.style.display = DisplayStyle.None;
             if (Time.unscaledTime < _nextTextUpdate) return;

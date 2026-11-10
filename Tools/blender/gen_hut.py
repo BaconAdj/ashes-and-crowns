@@ -9,18 +9,17 @@ reset_scene()
 walls = material("Walls", (0.52, 0.46, 0.36)); roof = material("Roof", (0.36, 0.30, 0.18))
 b = MeshBuilder("Hut")
 W, D, H, R = 5.5, 4.0, 2.2, 2.4
-b.box(0, 0, 0.0, W + 0.3, D + 0.3, 0.3)                           # footing
-b.frustum(0, 0, 0.3, W, D, W - 0.15, D - 0.12, H - 0.3)            # daub walls, slightly battered
+b.box(0, 0, 0.0, W + 0.3, D + 0.3, 0.3)                           # footing (its top is the floor)
+b.room(0, 0, 0.3, W, D, H - 0.3, 0.28, doors=(("N", 0.0, 1.1, 0.0, 1.85),), windows=(("E", 0.9, 0.6, 1.0, 0.5),), batter=0.04)   # hollow daub walls
 for x in (-W / 2, 0.0, W / 2):
     for y in (-D / 2, D / 2):
         b.box(x, y, 0.25, 0.2, 0.2, H)                             # posts
 for y in (0.0,):
     b.box(-W / 2, y, 0.25, 0.2, 0.2, H); b.box(W / 2, y, 0.25, 0.2, 0.2, H)
-b.box(0, D / 2 + 0.05, 0.3, 1.1, 0.12, 1.75, roof=True)            # door leaf (dark)
+b.box(-0.47, D / 2 - 0.02, 0.3, 0.1, 0.1, 1.75, roof=True)          # door leaf, swung open against the jamb (dark)
 for x in (-0.62, 0.62):
     b.box(x, D / 2 + 0.08, 0.3, 0.14, 0.16, 1.85)                   # door posts
 b.box(0, D / 2 + 0.08, 2.12, 1.4, 0.16, 0.14)                       # lintel
-b.box(W / 2 + 0.04, 0.9, 1.3, 0.1, 0.6, 0.5, roof=True)             # shuttered window, side
 b.gable(0, 0, H, W, D, R, 0.6, drop=0.35)                           # thatch, eaves at 1.85 m
 b.box(0, 0, H + R - 0.1, 0.3, D + 1.1, 0.22, roof=True)             # ridge cap
 for i, (y, r) in enumerate(((-0.9, 0.16), (-0.5, 0.14), (-0.7, 0.13))):

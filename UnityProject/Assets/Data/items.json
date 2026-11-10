@@ -385,6 +385,17 @@
    "armour": 0,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "horse",
+   "name": "Rouncey (riding horse)",
+   "category": "tool",
+   "basePrice": 120,
+   "nutrition": 0,
+   "weight": 0,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

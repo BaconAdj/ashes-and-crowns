@@ -40,9 +40,21 @@ namespace AshesAndCrowns.Game
         // ------------------------------------------------------------------ prayer
 
         /// <summary>Kneel until E or Space. onDone(hoursPrayed, favourEarned).</summary>
-        public void BeginPrayer(System.Action<float, float> onDone)
+        public void BeginPrayer(Transform altar, System.Action<float, float> onDone)
         {
             if (Active || _balance == null) return;
+            if (altar != null && player != null)
+            {
+                // Step to the altar rail and face it.
+                Vector3 face = altar.position - player.transform.position; face.y = 0f;
+                if (face.sqrMagnitude > 0.01f)
+                {
+                    Vector3 spot = altar.position - face.normalized * 1.3f; spot.y = player.transform.position.y;
+                    var cc = player.GetComponent<CharacterController>(); if (cc != null) cc.enabled = false;
+                    player.transform.SetPositionAndRotation(spot, Quaternion.LookRotation(face.normalized, Vector3.up));
+                    if (cc != null) cc.enabled = true;
+                }
+            }
             var cal = clock.Calendar; long today = Calendar.JulianDayNumber(cal.Year, cal.Month, cal.Day);
             if (today != _prayDay) { _prayDay = today; _prayedHoursToday = 0f; }
             _onPrayerDone = onDone; _favourThisKneel = 0f;

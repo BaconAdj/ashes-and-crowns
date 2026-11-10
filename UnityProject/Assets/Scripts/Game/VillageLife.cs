@@ -50,7 +50,7 @@ namespace AshesAndCrowns.Game
 
         public bool IsBusy => _busy;
         /// <summary>A usable place is nearer than the horse, so E uses it instead of mounting.</summary>
-        public bool HasPlaceInReach => _nearest != null && !(horse != null && !horse.Mounted && Vector3.Distance(player.transform.position, horse.transform.position) <= _balance.player.mountRadius && _nearestKind != "home" && _nearestKind != "church");
+        public bool HasPlaceInReach => _nearest != null && !(horse != null && horse.gameObject.activeSelf && !horse.Mounted && Vector3.Distance(player.transform.position, horse.transform.position) <= _balance.player.mountRadius && _nearestKind != "home" && _nearestKind != "church");
 
         private void Start() { _balance = GameBootstrap.Instance.Balance; }
 
@@ -99,10 +99,14 @@ namespace AshesAndCrowns.Game
         private void FindNearest()
         {
             _nearest = null; float best = useRadius;
-            Check(church, "church", ref best); Check(alehouse, "alehouse", ref best); Check(home, "home", ref best); Check(workplace, "work", ref best);
-            if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(_site.church, "church", ref best); Check(_site.alehouse, "alehouse", ref best); }
-            if (mastersRoot != null) foreach (Transform m in mastersRoot) Check(m, "master", ref best);
+            Check(Spot(church, "Altar"), "church", ref best); Check(Spot(alehouse, "Bar"), "alehouse", ref best); Check(Spot(home, "Hearth"), "home", ref best); Check(workplace, "work", ref best);
+            if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(Spot(_site.church, "Altar"), "church", ref best); Check(Spot(_site.alehouse, "Bar"), "alehouse", ref best); }
+            if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
+            if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
         }
+
+        /// <summary>A building's named marker (the altar, the bar, the hearth) or the building itself when it is not furnished.</summary>
+        private static Transform Spot(Transform building, string marker) { if (building == null) return null; var m = BuildingKit.Find(building, marker); return m != null ? m : building; }
 
         private void ScanSite()
         {
@@ -125,7 +129,7 @@ namespace AshesAndCrowns.Game
                 var s = ctx.Current;
                 if (s != null)
                 {
-                    hud.Toast("You come to " + s.Name + (s.Allegiance == Allegiance.Neutral ? "." : ", which holds for " + s.Allegiance + "."));
+                    hud.ShowPlaceBanner(s.Name, LordLine(ctx, s));
                     if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.ToId == s.Id && ctx.ActiveJob.DaysRequired == 0)
                     {
                         if (ctx.ActiveJob.Kind == JobKind.Bounty && encounter != null) encounter.BountyTarget(ctx.ActiveJob); else DeliverJob(s);
@@ -173,7 +177,8 @@ namespace AshesAndCrowns.Game
         {
             if (t == null) return;
             Vector3 p = Body().position; Vector3 q = t.position; q.y = p.y;
-            float d = Vector3.Distance(p, q) - (kind == "church" ? 8f : kind == "alehouse" ? 6f : 0f);
+            bool furnished = t.parent != null && t.parent.GetComponent<MeshFilter>() != null && (t.name == "Altar" || t.name == "Bar" || t.name == "Hearth");
+            float d = Vector3.Distance(p, q) - (furnished ? 0f : kind == "church" ? 8f : kind == "alehouse" ? 6f : 0f);
             if (d < best) { best = d; _nearest = t; _nearestKind = kind; }
         }
 
@@ -181,11 +186,11 @@ namespace AshesAndCrowns.Game
         {
             switch (kind)
             {
-                case "church": return "Enter the church";
-                case "alehouse": return "Enter the alehouse";
-                case "home": return "Your hut";
+                case "church": return "Kneel at the altar";
+                case "alehouse": return "The alewife's bar";
+                case "home": return "Your hearth";
                 case "work": return "Work the day";
-                case "master": return "Speak with " + MasterName(_nearest);
+                case "master": { var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; return (v != null && !v.WillTalk ? "Wake " : "Speak with ") + MasterName(_nearest); }
                 default: return "Use";
             }
         }
@@ -238,7 +243,8 @@ namespace AshesAndCrowns.Game
         private void BeginPrayer()
         {
             _busy = true; _openKind = Open.Moment;
-            activity.BeginPrayer((hours, favour) =>
+            Transform altar = Spot(_site != null && _site.church != null ? _site.church : church, "Altar");
+            activity.BeginPrayer(altar, (hours, favour) =>
             {
                 _busy = false; _openKind = Open.None;
                 var ctx = RunSession.Context;
@@ -251,6 +257,16 @@ namespace AshesAndCrowns.Game
                 Dialogue("The altar", line, ("Go out into the cold", null));
                 saveManager?.SaveNow(AffairsChoice.None);
             });
+        }
+
+        private static string LordLine(RunContext ctx, Settlement s)
+        {
+            MinorLord lord = null;
+            if (s.LordId >= 0) foreach (var l in ctx.Baronage) if (l.Id == s.LordId) { lord = l; break; }
+            string side = s.Allegiance == Allegiance.Stephen ? "for King Stephen" : s.Allegiance == Allegiance.Matilda ? "for the Empress Matilda" : "for no one yet";
+            string kind = s.Type == SettlementType.City ? "a city" : s.Type == SettlementType.Town ? "a market town" : s.Type == SettlementType.Castle ? "a castle and its vill" : "a village";
+            if (lord != null) return $"{kind} held by {lord.GivenName} {lord.House}, {side}";
+            return $"{kind}, {side}";
         }
 
         private static int DaysToSunday(long jdn) { int wd = (int)((jdn + 1) % 7); return wd == 0 ? 7 : 7 - wd; }
@@ -674,17 +690,25 @@ namespace AshesAndCrowns.Game
         private string MasterName(Transform t)
         {
             var tag = t != null ? t.GetComponent<VillagerTag>() : null;
-            return tag != null ? tag.displayName + " the " + tag.trade : "the master";
+            return tag != null ? (tag.trade == "priest" ? "Father " + tag.displayName : tag.displayName + " the " + tag.trade) : "the master";
         }
 
         private void Master(Transform t)
         {
             var tag = t.GetComponent<VillagerTag>(); if (tag == null) return;
             var ctx = RunSession.Context;
+            var v = t.GetComponent<Villager>();
+            if (v != null && !v.WillTalk) { Dialogue(MasterName(t), $"{tag.displayName} is {v.Doing}.", ("Leave them", null)); return; }
+            if (v != null && tag.trade == "priest")
+            {
+                Dialogue("Father " + tag.displayName, $"The priest is {v.Doing}. \"God keep you. Mass is sung on Sundays and feasts between Terce and Sext; the altar is open to any who kneel.\"", ("Confess (half an hour)", () => { clock.SkipHours(0.5f); ctx.Standing.Prayed(0.01f); Dialogue("Confession", "You tell him the smaller sins. He gives you three paternosters and a look.", ("Leave", null)); }), ("Leave", null));
+                return;
+            }
+            string doing = v != null ? $"{tag.displayName} is {v.Doing}. " : string.Empty;
             if (ctx.Apprenticeship.Active && ctx.Apprenticeship.Trade == tag.trade)
             { Dialogue(MasterName(t), $"\"Back to work. {ctx.Apprenticeship.SeasonsRemaining:F1} seasons and you might be worth your bread.\"", ("Yes, master", null)); return; }
-            if (ctx.Character.Trade == tag.trade) { Dialogue(MasterName(t), "\"Weather for it, isn't it.\" You talk shop for a while.", ("Leave", null)); return; }
-            Dialogue(MasterName(t), $"\"{Greeting(tag)}\"",
+            if (ctx.Character.Trade == tag.trade) { Dialogue(MasterName(t), doing + "\"Weather for it, isn't it.\" You talk shop for a while.", ("Leave", null)); return; }
+            Dialogue(MasterName(t), doing + $"\"{Greeting(tag)}\"",
                 ("Ask to be taken on as an apprentice", () =>
                 {
                     var rng = GameBootstrap.Instance.Rng.Fork(81); rng.State ^= (ulong)clock.Calendar.TotalHours;

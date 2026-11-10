@@ -37,7 +37,11 @@
     "staminaRegenPerSecond": 10.0,
     "sprintStaminaPerSecond": 14.0,
     "mountRadius": 3.0,
-    "height": 1.8
+    "height": 1.8,
+    "jumpSpeed": 5.2,
+    "mantleMaxHeight": 2.3,
+    "mantleMinHeight": 0.9,
+    "mantleSeconds": 0.55
   },
   "horse": {
     "walkSpeed": 6.5,
@@ -694,5 +698,17 @@
     "beatSweepSeconds": 1.4,
     "beatZoneWidth": 0.18,
     "beatMissPenalty": 0.6
+  },
+  "villageDay": {
+    "wakeHour": 5,
+    "workStartHour": 6,
+    "dinnerHour": 11.5,
+    "dinnerEndHour": 12.5,
+    "workEndHour": 17,
+    "greenEndHour": 19,
+    "bedHour": 21.5,
+    "walkSpeed": 1.35,
+    "hurrySpeed": 2.0,
+    "awakeRadiusMetres": 160
   }
 }

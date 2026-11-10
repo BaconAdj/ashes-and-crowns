@@ -1,5 +1,6 @@
 using AshesAndCrowns.Combat;
 using AshesAndCrowns.UI;
+using AshesAndCrowns.Sim;
 using UnityEngine;
 
 namespace AshesAndCrowns.Game
@@ -60,16 +61,28 @@ namespace AshesAndCrowns.Game
             hud.SetMode(horse.Mounted ? GameMode.Riding : GameMode.OnFoot);
         }
 
+        private float _nextHorseCheck;
+
+        /// <summary>A peasant has no horse. One appears when you own a rouncey or a warhorse, or were born to the saddle.</summary>
+        public static bool OwnsHorse(RunContext ctx) => ctx != null && (ctx.Character.Rank >= Rank.Knight || ctx.Inventory.Count("horse") > 0 || ctx.Inventory.Count("warhorse") > 0);
+
         private void Update()
         {
             var input = GameBootstrap.Instance.Input;
             if (vitals.IsDead) return;
+            if (horse != null && Time.unscaledTime >= _nextHorseCheck)
+            {
+                _nextHorseCheck = Time.unscaledTime + 0.5f;
+                bool owned = OwnsHorse(RunSession.Context);
+                if (horse.gameObject.activeSelf != owned && !(horse.Mounted && !owned)) horse.gameObject.SetActive(owned);
+                else if (horse.Mounted && !owned) { horse.Dismount(player.transform); player.enabled = true; thirdPersonCamera.target = player.transform; thirdPersonCamera.SetRiding(false); hud.SetMode(GameMode.OnFoot); horse.gameObject.SetActive(false); }
+            }
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
             if (villageLife != null && villageLife.IsBusy) return;
             if (input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode) && !(villageLife != null && villageLife.HasPlaceInReach))
             {
                 if (horse.Mounted) { horse.Dismount(player.transform); player.enabled = true; }
-                else if (Vector3.Distance(player.transform.position, horse.transform.position) <= GameBootstrap.Instance.Balance.player.mountRadius)
+                else if (horse.gameObject.activeSelf && Vector3.Distance(player.transform.position, horse.transform.position) <= GameBootstrap.Instance.Balance.player.mountRadius)
                 { horse.Mount(player.transform); player.enabled = false; }
                 thirdPersonCamera.target = horse.Mounted ? horse.transform : player.transform;
                 thirdPersonCamera.SetRiding(horse.Mounted);

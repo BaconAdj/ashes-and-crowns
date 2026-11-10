@@ -13,6 +13,7 @@ namespace AshesAndCrowns.Game
         public WorldAssets assets;
         public Transform fixedSitesRoot;    // SettlementSite children created by the scene builder (home village, keeps)
         private readonly List<SettlementSite> _sites = new List<SettlementSite>(24);
+        private NamesData _names;
         private bool _built;
 
         public IReadOnlyList<SettlementSite> Sites => _sites;
@@ -61,13 +62,14 @@ namespace AshesAndCrowns.Game
             Transform church = Place(root, "Church", assets.church, new[] { assets.stone, assets.slate }, centre + new Vector3(0f, 0f, green + 12f), Quaternion.Euler(0f, 90f, 0f));
             Transform ale = Place(root, "Alehouse", assets.alehouse, new[] { assets.wattle, assets.thatch }, centre + new Vector3(green + 8f, 0f, -3f), Quaternion.Euler(0f, 90f, 0f));
             int huts = Mathf.Clamp(s.Population / 25, 3, 8);
+            var hutList = new List<Transform>(huts);
             for (int i = 0; i < huts; i++)
             {
                 float a = Mathf.Lerp(190f, 350f, i / (float)Mathf.Max(1, huts - 1)) * Mathf.Deg2Rad + rng.Range(-0.15f, 0.15f);
                 float r = green + 5f + rng.Range(0f, 9f);
                 Vector3 pos = centre + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
-                Place(root, "Hut_" + i, assets.hut, new[] { assets.wattle, assets.thatch }, pos, Quaternion.LookRotation(toGreen.normalized) * Quaternion.Euler(0f, rng.Range(-10f, 10f), 0f));
+                hutList.Add(Place(root, "Hut_" + i, assets.hut, new[] { assets.wattle, assets.thatch }, pos, Quaternion.LookRotation(toGreen.normalized) * Quaternion.Euler(0f, rng.Range(-10f, 10f), 0f)));
             }
             if (assets.oak != null)
             {
@@ -84,6 +86,9 @@ namespace AshesAndCrowns.Game
             well.transform.localScale = new Vector3(1.6f, 0.5f, 1.6f); well.transform.position = centre + Vector3.up * 0.5f; well.GetComponent<Renderer>().sharedMaterial = assets.stone;
             var site = root.gameObject.AddComponent<SettlementSite>();
             site.settlementId = s.Id; site.centre = root; site.church = church; site.alehouse = ale; site.radius = 60f;
+            site.huts.AddRange(hutList);
+            if (_names == null) _names = DataFiles.LoadNames();
+            VillageKit.Populate(site, root, assets.man, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.linen != null ? assets.linen : assets.wattle, assets.fire != null ? assets.fire : assets.thatch, assets.iron != null ? assets.iron : assets.slate, new NameGenerator(_names, rng.Fork(5)), rng.Fork(7), assets.terrain, lights: true);
             _sites.Add(site);
         }
 

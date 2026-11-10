@@ -92,6 +92,36 @@ class MeshBuilder:
                 idx.reverse()
             self.faces.append((idx, roof, self._group, smooth))
 
+    # ---- rooms
+    def room(self, cx, cy, z0, sx, sy, h, t, doors=(), windows=(), batter=0.0, roof=False):
+        """Four wall slabs around an open interior. `doors`/`windows` are (side, offset, width, z_bottom, height) with side in
+        "N" (+Y), "S" (-Y), "E" (+X), "W" (-X) and offset along that wall from its centre. Openings split the slab into pieces.
+        `batter` leans the outside faces inward a little (daub walls)."""
+        def wall(side):
+            if side in ("N", "S"):
+                length, wy = sx, cy + (sy / 2 - t / 2) * (1 if side == "N" else -1)
+            else:
+                length, wx = sy, cx + (sx / 2 - t / 2) * (1 if side == "E" else -1)
+            cuts = sorted([(o, w, zb, zh) for (sd, o, w, zb, zh) in list(doors) + list(windows) if sd == side])
+            # vertical slices: full-height pieces between openings, plus the bits above/below each opening
+            pieces = []   # (offset_centre, width, z_bottom, z_top)
+            cursor = -length / 2
+            for (o, w, zb, zh) in cuts:
+                a, b = o - w / 2, o + w / 2
+                if a > cursor: pieces.append(((cursor + a) / 2, a - cursor, 0.0, h))
+                if zb > 0: pieces.append((o, w, 0.0, zb))
+                if zb + zh < h: pieces.append((o, w, zb + zh, h - zb - zh))
+                cursor = b
+            if cursor < length / 2: pieces.append(((cursor + length / 2) / 2, length / 2 - cursor, 0.0, h))
+            for (oc, w, zb, zh) in pieces:
+                if w <= 0.005 or zh <= 0.005: continue
+                if side in ("N", "S"):
+                    self.frustum(cx + oc, wy, z0 + zb, w, t, w, t - batter * zh, zh, roof)
+                else:
+                    self.frustum(wx, cy + oc, z0 + zb, t, w, t - batter * zh, w, zh, roof)
+        for side in ("N", "S", "E", "W"):
+            wall(side)
+
     # ---- flat primitives
     def box(self, cx, cy, z0, sx, sy, sz, roof=False):
         self.frustum(cx, cy, z0, sx, sy, sx, sy, sz, roof)

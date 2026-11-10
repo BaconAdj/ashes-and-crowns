@@ -24,6 +24,7 @@ namespace AshesAndCrowns.Sim
 
     [Serializable] public sealed class PlayerBalance
     {
+        public float jumpSpeed = 5.2f, mantleMaxHeight = 2.3f, mantleMinHeight = 0.9f, mantleSeconds = 0.55f;
         public float walkSpeed = 4.2f, sprintSpeed = 7f, gravity = 20f;
         public float staminaMax = 100f, staminaRegenPerSecond = 10f, sprintStaminaPerSecond = 14f;
         public float mountRadius = 3f, height = 1.8f;
@@ -170,6 +171,7 @@ namespace AshesAndCrowns.Sim
         public CrimeBalance crime = new CrimeBalance();
         public MeleeRulesBalance duel = new MeleeRulesBalance();
         public ActivityBalance activity = new ActivityBalance();
+        public VillageDayBalance villageDay = new VillageDayBalance();
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
         public SiegeBalance siege = new SiegeBalance();

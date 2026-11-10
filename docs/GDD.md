@@ -193,6 +193,10 @@ Third-person real-time melee for all personal fights: in the line, duels, ambush
 * Outside guard mode E talks, uses and mounts, and LMB still swings for the press of battle.
 * Stamina, weight and wounds: weapon vs. armour matters; spears have reach; skills grow with use. Every hit taken is a persistent wound. Killing the surrendered stains you. The HUD shows three plates (the held stance bright, an incoming blow red, orange for a heavy) and the revenge bar.
 
+## Places you can enter, people with lives
+
+Every hut, alehouse and church is hollow with a real door. Inside: hearth, bed and chest; bar, casks and trestles; altar, font and benches. The things you do happen at those places: kneel at the altar, buy at the bar, sleep at your own hearth. Villagers keep a timetable by the bells (asleep until Prime, work until Vespers with dinner at Sext, the green, the alehouse or home, mass on Sundays and feasts) and walk it through the doors; each family has a station in its yard or out on the land, and the priest his altar. Ask anyone and you learn what they are doing; the asleep do not answer. Arriving anywhere shows its name and who holds it for whom. A peasant walks; a horse is bought or inherited with rank. You can jump, and climb a ledge you can reach.
+
 ## Hands-on living — nothing is a menu
 
 Every activity is done at the place, in the body, with the clock running faster while you do it. Prayer: walk to the altar and **kneel**; favour grows the longer you stay (diminishing by the hour, capped per day) and whoever is in the nave carries the tale. Work: a day at the trade runs at speed with hands-on **beats** — a marker sweeps a band, press **X** on the moment: strike while the iron is hot, loose when the deer stills, judge the brew. The quality of your beats is the quality of the day. Esc abandons the day with nothing to show. Sleeping, eating and talking stay quick; smithing, praying, hunting, brewing are things you do.

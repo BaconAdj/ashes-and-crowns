@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark; public Mesh HutMesh, AlehouseMesh, ChurchMesh; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man; public SettlementSite Site; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -29,6 +29,10 @@ namespace AshesAndCrowns.EditorTools
             Material slate = SceneKit.TexturedMat("Slate", slateTex, Color.white, 0.75f, SceneKit.NormalTexture(Paths.Generated + "/SlateNormal.png", 12f, 36f, 12.4f, 2.0f));
             Material darkWood = SceneKit.Mat("DarkWood", SceneKit.LitShader, new Color(0.18f, 0.14f, 0.10f), 0f, 0.9f);
             Material bark = SceneKit.Mat("Bark", SceneKit.LitShader, new Color(0.33f, 0.27f, 0.20f), 0f, 0.95f);
+            Material linen = SceneKit.Mat("Linen", SceneKit.LitShader, new Color(0.62f, 0.58f, 0.48f), 0f, 0.95f);
+            Material iron = SceneKit.Mat("Iron", SceneKit.LitShader, new Color(0.30f, 0.31f, 0.33f), 0.6f, 0.55f);
+            Material fire = SceneKit.Mat("Fire", SceneKit.LitShader, new Color(1.0f, 0.55f, 0.2f), 0f, 1f);
+            fire.EnableKeyword("_EMISSION"); fire.SetColor("_EmissionColor", new Color(2.2f, 1.0f, 0.3f)); fire.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
 
             Mesh hutMesh = LoadOrMake("Hut", () => ProceduralBuildings.Hut(v.hutFootprintMetres[0], v.hutFootprintMetres[1], v.hutWallHeight, v.hutRoofHeight));
             Mesh aleMesh = LoadOrMake("Alehouse", () => ProceduralBuildings.Alehouse(v.alehouseFootprint[0], v.alehouseFootprint[1], v.alehouseWallHeight));
@@ -41,7 +45,7 @@ namespace AshesAndCrowns.EditorTools
             // Church: north of the green, chancel (its +Z) pointing east, so the tower stands west.
             Vector3 churchPos = centre + new Vector3(0f, 0f, green + 14f);
             Transform church = Place(root, "Church", churchMesh, new[] { stone, slate }, terrain, churchPos, Quaternion.Euler(0f, 90f, 0f));
-            Transform home = null;
+            Transform home = null; var huts = new System.Collections.Generic.List<Transform>(v.hutCount);
             // Alehouse: east, door toward the green.
             Transform alehouse = Place(root, "Alehouse", aleMesh, new[] { wattle, thatch }, terrain, centre + new Vector3(green + 9f, 0f, -4f), Quaternion.Euler(0f, 90f, 0f));
             // Huts in a loose ring, skipping the church (north) and alehouse (east) sectors.
@@ -59,7 +63,7 @@ namespace AshesAndCrowns.EditorTools
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
                 Quaternion face = Quaternion.LookRotation(toGreen.normalized, Vector3.up) * Quaternion.Euler(0f, rng.Range(-12f, 12f), 0f);
                 Transform hut = Place(root, "Hut_" + placed, hutMesh, new[] { wattle, thatch }, terrain, pos, face);
-                if (home == null) home = hut;
+                if (home == null) home = hut; else huts.Add(hut);   // the first hut is yours; the rest are the village's
                 placed++;
             }
             // Well on the green
@@ -67,38 +71,23 @@ namespace AshesAndCrowns.EditorTools
             well.transform.position = new Vector3(centre.x, SceneKit.GroundY(terrain, centre) + 0.5f, centre.z);
             var post = SceneKit.Primitive(PrimitiveType.Cube, "WellBeam", root, Vector3.zero, new Vector3(0.12f, 2.2f, 0.12f), darkWood);
             post.transform.position = well.transform.position + new Vector3(0.7f, 1.3f, 0f);
-            // Village masters: one placeholder villager per trade, standing by the green, named from the name lists.
-            var masters = new GameObject("Masters").transform; masters.SetParent(root, true);
-            var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
-            string[] trades = { "farmer", "blacksmith", "miller", "hunter", "brewer", "carpenter", "shepherd", "fisherman" };
+            // People: huts furnished, a family per trade with a station, a priest by the altar. Shared with the runtime villages.
             Material villagerMat = SceneKit.Mat("Villager", SceneKit.LitShader, new Color(0.3f, 0.26f, 0.2f), 0f, 0.9f);
             Material skinMat = SceneKit.Mat("Skin", SceneKit.LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f);
             Mesh manMesh = SceneKit.ArtMesh("Characters/Man.fbx");
             PlantOaks(root, terrain, centre, green, rng, bark);
-            int k = 0;
-            foreach (string trade in trades)
-            {
-                float a = (k / (float)trades.Length) * Mathf.PI * 2f + 0.3f;
-                Vector3 pos = centre + new Vector3(Mathf.Cos(a) * (green + 3f), 0f, Mathf.Sin(a) * (green + 3f));
-                pos.y = SceneKit.GroundY(terrain, pos);
-                var m = new GameObject("Master_" + trade); m.transform.SetParent(masters, true); m.transform.position = pos;
-                m.transform.rotation = Quaternion.LookRotation(new Vector3(centre.x - pos.x, 0f, centre.z - pos.z));
-                if (manMesh != null) SceneKit.MeshChild("Body", m.transform, manMesh, villagerMat, skinMat, collider: true);
-                else
-                {
-                    SceneKit.Primitive(PrimitiveType.Capsule, "Body", m.transform, new Vector3(0f, 0.95f, 0f), new Vector3(0.5f, 0.72f, 0.5f), villagerMat, keepCollider: true);
-                    SceneKit.Primitive(PrimitiveType.Sphere, "Head", m.transform, new Vector3(0f, 1.75f, 0f), new Vector3(0.28f, 0.3f, 0.28f), villagerMat);
-                }
-                var tag = m.AddComponent<VillagerTag>(); tag.npcId = 100 + k; tag.trade = trade; tag.displayName = nameGen.Given(k % 3 == 2, false); tag.disposition = rng.Range(-0.2f, 0.5f);
-                k++;
-            }
+            var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
+            site.huts.AddRange(huts);
+            BuildingKit.Furnish(home, BuildingKind.Hut, darkWood, stone, linen, fire, iron, withLight: true);
+            var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
+            VillageKit.Populate(site, root, manMesh, villagerMat, skinMat, darkWood, stone, linen, fire, iron, nameGen, rng.Fork(7), terrain, lights: true);
+            Transform masters = root.Find("People");
             // Workplace: a bench behind the player's hut; one spot stands in for field, forge, mill and weir in Phase 4.
             var work = new GameObject("Workplace").transform; work.SetParent(root, true);
             work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
-            var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Site = site };
         }
 
         /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>
