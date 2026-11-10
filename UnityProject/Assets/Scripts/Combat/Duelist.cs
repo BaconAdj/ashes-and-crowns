@@ -35,15 +35,16 @@ namespace AshesAndCrowns.Combat
             _cc = GetComponent<CharacterController>();
         }
 
-        /// <summary>Tick the brain and the state machine. Returns true on the frame this duelist's strike lands.</summary>
-        public bool Step(float dt, AttackDir? playerWindup)
+        /// <summary>Tick the brain and the state machine. Returns the event (strike or guard break landing) the owner must resolve this frame.</summary>
+        public FightEvent Step(float dt, AttackDir? playerWindup, AttackKind playerKind, bool playerGuarding, AttackDir? playerGuardDir)
         {
-            if (Fighter == null || Dead) return false;
-            Brain.Think(Fighter, playerWindup, DistanceToTarget, Loadout.Reach, dt, _b);
-            bool strikes = Fighter.Tick(dt);
+            if (Fighter == null || Dead) return FightEvent.None;
+            Brain.Think(Fighter, playerWindup, playerKind, playerGuarding, DistanceToTarget, Loadout.Reach, dt, _b);
+            if (Brain.ConsiderFeint(Fighter, playerGuarding && playerGuardDir == Fighter.Dir)) Fighter.TryFeint();
+            FightEvent ev = Fighter.Tick(dt);
             Move(dt);
             Animate();
-            return strikes;
+            return ev;
         }
 
         private void Move(float dt)
@@ -65,9 +66,10 @@ namespace AshesAndCrowns.Combat
             float x = 0f, y = 20f, z = 0f;
             switch (Fighter.Phase)
             {
-                case FightPhase.Windup: y = -60f; x = Fighter.Dir == AttackDir.High ? -50f : Fighter.Dir == AttackDir.Low ? 30f : 0f; z = Fighter.Dir == AttackDir.Left ? 40f : Fighter.Dir == AttackDir.Right ? -40f : 0f; break;
-                case FightPhase.Strike: y = 80f; x = Fighter.Dir == AttackDir.High ? 40f : Fighter.Dir == AttackDir.Low ? -30f : 0f; break;
-                case FightPhase.Block: x = -60f; z = 70f; break;
+                case FightPhase.Windup: y = Fighter.Kind == AttackKind.Heavy ? -95f : -60f; x = Fighter.Dir == AttackDir.High ? -50f : 0f; z = Fighter.Dir == AttackDir.Left ? 40f : Fighter.Dir == AttackDir.Right ? -40f : 0f; break;
+                case FightPhase.Strike: y = 80f; x = Fighter.Dir == AttackDir.High ? 40f : 0f; break;
+                case FightPhase.GuardBreak: x = 20f; y = 10f; break;
+                case FightPhase.Idle when Fighter.GuardDir.HasValue: x = Fighter.GuardDir == AttackDir.High ? -80f : -50f; z = Fighter.GuardDir == AttackDir.Left ? 90f : Fighter.GuardDir == AttackDir.Right ? 50f : 70f; y = -20f; break;
                 case FightPhase.Stagger: x = 30f; y = -20f; break;
                 case FightPhase.Yielded: x = 70f; y = 0f; break;
                 case FightPhase.Down: x = 90f; break;

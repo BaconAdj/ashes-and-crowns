@@ -50,7 +50,7 @@ namespace AshesAndCrowns.Game
 
             // Mount / dismount
             bool mountChanged = false;
-            if (_input.Mount.WasPressedThisFrame())
+            if (_input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode))
             {
                 if (horse.Mounted) { horse.Dismount(player.transform); mountChanged = true; }
                 else if (Vector3.Distance(player.transform.position, horse.transform.position) <= _balance.player.mountRadius) { horse.Mount(player.transform); mountChanged = true; }

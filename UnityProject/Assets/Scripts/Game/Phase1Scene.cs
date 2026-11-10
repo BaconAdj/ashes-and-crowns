@@ -66,7 +66,7 @@ namespace AshesAndCrowns.Game
             if (vitals.IsDead) return;
             if (saveManager != null && saveManager.IsQuitScreenOpen) return;
             if (villageLife != null && villageLife.IsBusy) return;
-            if (input.Mount.WasPressedThisFrame() && !(villageLife != null && villageLife.HasPlaceInReach))
+            if (input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode) && !(villageLife != null && villageLife.HasPlaceInReach))
             {
                 if (horse.Mounted) { horse.Dismount(player.transform); player.enabled = true; }
                 else if (Vector3.Distance(player.transform.position, horse.transform.position) <= GameBootstrap.Instance.Balance.player.mountRadius)

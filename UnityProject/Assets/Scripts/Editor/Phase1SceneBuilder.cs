@@ -62,7 +62,7 @@ namespace AshesAndCrowns.EditorTools
 
             GameObject playerGo = SceneKit.BuildPlayer(balance, leather, steel, out PlayerVitals vitals, out PlayerController pc, out MeleeController melee);
             GameObject horseGo = SceneKit.BuildHorse(balance, bay, leather, out HorseController horse);
-            pc.cameraRig = tpc; tpc.target = playerGo.transform;
+            pc.cameraRig = tpc; tpc.target = playerGo.transform; pc.melee = melee; tpc.melee = melee;
 
             var spawn = new GameObject("PlayerSpawn").transform; spawn.position = centre + new Vector3(-6f, 0f, -8f);
             var horseSpawn = new GameObject("HorseSpawn").transform; horseSpawn.position = centre + new Vector3(-2f, 0f, -10f);
@@ -100,8 +100,9 @@ namespace AshesAndCrowns.EditorTools
             var sceneGo = new GameObject("Phase1Scene");
             var driver = sceneGo.AddComponent<Phase1Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
-            var brightness = sceneGo.AddComponent<BrightnessControl>(); brightness.hud = hud;
             var narration = sceneGo.AddComponent<OpeningNarration>(); narration.hud = hud; narration.gameplayCamera = cam;
+            var torch = playerGo.AddComponent<TorchLight>(); torch.clock = clock; torch.hud = hud;
+            var activity = sceneGo.AddComponent<ActivityDirector>(); activity.clock = clock; activity.hud = hud; activity.player = pc; activity.horse = horse; activity.body = playerGo.transform.Find("Body");
             var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
             var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse; growth.melee = melee;
             driver.terrain = terrain; driver.melee = melee; driver.clock = clock; driver.dayNight = dayNight; driver.weather = weather; driver.bells = bells;
@@ -130,7 +131,7 @@ namespace AshesAndCrowns.EditorTools
             var enc = sceneGo.AddComponent<EncounterDirector>();
             enc.melee = melee; enc.vitals = vitals; enc.clock = clock; enc.hud = hud; enc.village = life; enc.saveManager = save; enc.player = playerGo.transform;
             enc.banditMaterial = SceneKit.Mat("Bandit", SceneKit.LitShader, new Color(0.22f, 0.2f, 0.17f), 0f, 0.9f); enc.steelMaterial = steel;
-            life.encounter = enc; life.melee = melee;
+            life.encounter = enc; life.melee = melee; life.activity = activity;
             save.melee = melee;
             var siege = sceneGo.AddComponent<SiegeDirector>();
             siege.clock = clock; siege.hud = hud; siege.saveManager = save; siege.village = life; siege.vitals = vitals; siege.spawner = spawnerComp;
@@ -147,7 +148,7 @@ namespace AshesAndCrowns.EditorTools
             var household = sceneGo.AddComponent<HouseholdDirector>();
             household.clock = clock; household.hud = hud; household.saveManager = save; household.village = life; household.encounter = enc; household.vitals = vitals;
             life.household = household;
-            var gaitP = playerGo.AddComponent<ProceduralGait>(); gaitP.fullSpeed = balance.player.sprintSpeed;
+            var gaitP = playerGo.AddComponent<ProceduralGait>(); gaitP.fullSpeed = balance.player.sprintSpeed; activity.gait = gaitP;
             var gaitH = horseGo.AddComponent<ProceduralGait>(); gaitH.horse = true; gaitH.fullSpeed = balance.horse.gallopSpeed; gaitH.bobMetres = 0.07f; gaitH.strideHz = 1.8f;
             var blood = sceneGo.AddComponent<BloodDecals>(); blood.vitals = vitals; blood.melee = melee; blood.player = playerGo.transform;
             blood.material = SceneKit.Mat("Blood", SceneKit.LitShader, new Color(0.22f, 0.04f, 0.03f), 0f, 0.6f, instancing: true);

@@ -32,6 +32,7 @@ namespace AshesAndCrowns.Game
         public IntrigueDirector intrigue;   // optional: the knife in the dark
         public DevCheats cheats;            // optional: F10 / ` testing menu
         public HouseholdDirector household; // optional: a knight's duties
+        public ActivityDirector activity;   // optional: kneeling prayer and the working day
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
         public float useRadius = 4f;
@@ -85,7 +86,7 @@ namespace AshesAndCrowns.Game
             if (Time.unscaledTime >= _nextSiteScan) { _nextSiteScan = Time.unscaledTime + 1f; ScanSite(); }
             FindNearest();
             if (Time.unscaledTime >= _nextPrompt) { _nextPrompt = Time.unscaledTime + 0.25f; hud.SetPrompt(_nearest != null ? "[E] " + PromptFor(_nearestKind) : string.Empty); UpdateHudLines(ctx); }
-            if (HasPlaceInReach && GameBootstrap.Instance.Input.Mount.WasPressedThisFrame()) Use(_nearestKind, _nearest);
+            if (HasPlaceInReach && GameBootstrap.Instance.Input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode)) Use(_nearestKind, _nearest);
         }
 
         private static bool DigitPressed(Keyboard kb, int i)
@@ -227,8 +228,29 @@ namespace AshesAndCrowns.Game
             {
                 Feast f = Festivals.FeastOn(cal);
                 string next = f != Feast.None ? "Mass is sung between Terce and Sext." : "There is no mass today. Sunday is " + DaysToSunday(today) + " days off.";
-                Dialogue("The church", "Cold stone and the smell of tallow. " + next, ("Pray a while (half an hour)", () => { clock.SkipHours(0.5f); }), ("Leave", null));
+                if (activity != null)
+                    Dialogue("The church", "Cold stone and the smell of tallow. " + next, ("Kneel at the altar", BeginPrayer), ("Leave", null));
+                else
+                    Dialogue("The church", "Cold stone and the smell of tallow. " + next, ("Pray a while (half an hour)", () => { clock.SkipHours(0.5f); }), ("Leave", null));
             }
+        }
+
+        private void BeginPrayer()
+        {
+            _busy = true; _openKind = Open.Moment;
+            activity.BeginPrayer((hours, favour) =>
+            {
+                _busy = false; _openKind = Open.None;
+                var ctx = RunSession.Context;
+                if (favour > 0f) ctx.Standing.Prayed(favour);
+                int mins = Mathf.RoundToInt(hours * 60f);
+                string line = mins < _balance.activity.prayMinMinutesToCount ? "A bob of the knee and out again. The priest's mouth tightens." :
+                              favour > 0.03f ? $"You rise stiff after {mins / 60}h {mins % 60:00}m. Two women by the font saw the whole of it; by Vespers the village will know. ({ctx.Standing.Describe()})" :
+                              favour > 0.005f ? $"You rise after {mins} minutes. The priest nods once. ({ctx.Standing.Describe()})" :
+                              "You rise. God knows; the village does not yet.";
+                Dialogue("The altar", line, ("Go out into the cold", null));
+                saveManager?.SaveNow(AffairsChoice.None);
+            });
         }
 
         private static int DaysToSunday(long jdn) { int wd = (int)((jdn + 1) % 7); return wd == 0 ? 7 : 7 - wd; }
@@ -625,7 +647,7 @@ namespace AshesAndCrowns.Game
         private void StartWork(TradeDef def, bool onHolyDay)
         {
             _busy = true; _openKind = Open.Moment; _options.Clear();
-            hud.ShowMoment(def.momentKind, def.id, quality =>
+            System.Action<float> finish = quality =>
             {
                 _busy = false; _openKind = Open.None;
                 var ctx = RunSession.Context;
@@ -636,13 +658,15 @@ namespace AshesAndCrowns.Game
                 var r = TradeWork.WorkDay(def, ctx.Character, ctx.Inventory, ctx.Needs, clock.Calendar.Month, weatherPenalty, quality, _balance.character, vitals.Body, rng, 10f, apprentice);
                 if (apprentice && ctx.Apprenticeship.WorkedDay(quality)) { ctx.Character.Trade = ctx.Apprenticeship.Trade; ctx.Apprenticeship.Trade = string.Empty; r.Note += " Your master calls you a " + ctx.Character.Trade + " now."; }
                 if (onHolyDay) ctx.Standing.BrawlStarted();
-                clock.SkipHours(10f);
+                if (activity == null) clock.SkipHours(10f);   // the activity already ran the hours
                 if (vitals.IsDead) return;
                 var prod = ctx.Items.Find(r.Product);
                 string made = r.UnitsProduced > 0 ? $"{r.UnitsProduced} x {(prod != null ? prod.name : r.Product)}" : "nothing worth the name";
                 Dialogue("The day's work", $"Ten hours at the {def.id}'s work ({(quality > 0.75f ? "good hands today" : quality > 0.4f ? "steady" : "clumsy")}). You made {made}. {r.Note}{(r.Injured ? " You hurt yourself." : "")}", ("Done", null));
                 saveManager?.SaveNow(AffairsChoice.None);
-            });
+            };
+            if (activity != null) activity.BeginWork(def, 10f, finish);
+            else hud.ShowMoment(def.momentKind, def.id, finish);
         }
 
         // ------------------------------------------------------------------ masters and apprenticeship

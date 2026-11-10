@@ -1,3 +1,4 @@
+using AshesAndCrowns.Combat;
 using AshesAndCrowns.Sim;
 using UnityEngine;
 
@@ -7,6 +8,7 @@ namespace AshesAndCrowns.Game
     public sealed class ThirdPersonCamera : MonoBehaviour
     {
         public Transform target;
+        public MeleeController melee;     // optional: guard mode locks the camera on the opponent
         private Balance _balance;
         private GameInput _input;
         private float _yaw, _pitch = 15f;
@@ -29,7 +31,19 @@ namespace AshesAndCrowns.Game
         private void LateUpdate()
         {
             if (_balance == null || target == null) return;
-            if (Cursor.lockState == CursorLockMode.Locked)
+            Transform lockOn = melee != null && melee.GuardMode ? melee.LockTarget : null;
+            if (lockOn != null)
+            {
+                // Guard mode: the mouse picks the stance, the camera holds the opponent in frame.
+                Vector3 to = lockOn.position - target.position; to.y = 0f;
+                if (to.sqrMagnitude > 0.01f)
+                {
+                    float wantYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
+                    _yaw = Mathf.LerpAngle(_yaw, wantYaw, 1f - Mathf.Exp(-8f * Time.deltaTime));
+                }
+                _pitch = Mathf.Lerp(_pitch, 12f, 1f - Mathf.Exp(-4f * Time.deltaTime));
+            }
+            else if (Cursor.lockState == CursorLockMode.Locked && !(melee != null && melee.GuardMode))
             {
                 Vector2 look = _input.LookDelta * _balance.camera.lookSensitivity;
                 _yaw += look.x;

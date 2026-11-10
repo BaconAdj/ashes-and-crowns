@@ -175,16 +175,27 @@ Blood: valour gets you noticed — knighted on the field, granted manors, raised
 
 Real-time 3D battles on terrain, up to ~1,000 soldiers per side. Two command states only:
 
-* In command (you lead this army and you're at a command position — a vantage away from the fighting): full RTS — select units, formations (line, wedge, square, shieldwall), move, flank, charge, volley, retreat. Tactical camera.
+* In command (you lead this army and you're at a command position — a vantage away from the fighting): full RTS keyed like Total War — click banners (Shift adds), Ctrl+A all, Return none, Ctrl+0..9 saves a group and 0..9 recalls it; RMB move, Alt+drag move facing the drag, C/F charge, H hold, Backspace halt, J about face, U withdraw to the rally point, Ctrl+Left/Right wheel, Shift+1..4 line / wedge / square / shieldwall; WASD or arrows pan, Q/E rotate, wheel or Z/X zoom, Home finds your body, K hides the HUD, P pauses. Tactical camera.
 * Ride into the fight and you lose all command. Camera drops to third-person melee; the army runs on its last orders via sergeant AI. Fighting personally raises army-wide morale, but the army is tactically headless. To command again, physically ride back through a moving battle to a safe vantage.
 * As a soldier in someone else's army you never command — you live or die by the AI commander's competence.
 * Death on the field, in either role, ends the run.
 * Morale and routing (full realism): per-unit morale (casualties, flanking, fatigue, weather, commander presence, allies fleeing). Broken units rout; cavalry runs down routers (brutal, effective, reputation-staining); surrounded units surrender into prisoners. Battles end in morale collapse, not annihilation.
 * Brutality: blood decals, bodies stay, screams and steel (audio stubs fine), named casualty lists.
 
-## Personal melee — Assassin's Creed-style
+## Personal melee — For Honor on a keyboard
 
-Third-person real-time melee for all personal fights: in the line, duels, ambushes, assassinations, brawls, breaches, festival melees. Directional attacks, block, parry, dodge, stamina — timing-based, weighty, punishing. Use an Animator with root motion for the player and nearby fighters; hit detection via physics queries on weapon colliders, resolved per body part. Weapon vs. armour matters; spears have reach; skills grow with use. Every hit taken is a persistent wound. Killing the surrendered stains you.
+Third-person real-time melee for all personal fights: in the line, duels, ambushes, assassinations, brawls, breaches, festival melees. The layout is For Honor's:
+
+* Hold **Ctrl** for guard mode: lock on to the nearest opponent, the camera holds them in frame, the body squares up. Push the mouse **up, left or right** to set the stance (three guards; there is no low guard).
+* **LMB** light attack (quick, cheap). **RMB** heavy attack (slow, hard, can be feinted). A heavy begun in the attacker's line just before the blow lands is a **parry** (long stagger).
+* **E** or middle mouse: **guard break** when free; **feint** while a heavy winds up. Guard break beats a standing guard (opponent staggered and open to one free blow), loses to an attack, and is countered by a guard break pressed as it lands.
+* **Space** dodge (invulnerable frames). **R** revenge when the meter fills from blocks and hits taken: stamina refilled, lights do not stagger you, blows hit harder, everyone in reach is knocked back. **Shift** sprint.
+* Outside guard mode E talks, uses and mounts, and LMB still swings for the press of battle.
+* Stamina, weight and wounds: weapon vs. armour matters; spears have reach; skills grow with use. Every hit taken is a persistent wound. Killing the surrendered stains you. The HUD shows three plates (the held stance bright, an incoming blow red, orange for a heavy) and the revenge bar.
+
+## Hands-on living — nothing is a menu
+
+Every activity is done at the place, in the body, with the clock running faster while you do it. Prayer: walk to the altar and **kneel**; favour grows the longer you stay (diminishing by the hour, capped per day) and whoever is in the nave carries the tale. Work: a day at the trade runs at speed with hands-on **beats** — a marker sweeps a band, press **X** on the moment: strike while the iron is hot, loose when the deer stills, judge the brew. The quality of your beats is the quality of the day. Esc abandons the day with nothing to show. Sleeping, eating and talking stay quick; smithing, praying, hunting, brewing are things you do.
 
 ## Sieges — both paths
 

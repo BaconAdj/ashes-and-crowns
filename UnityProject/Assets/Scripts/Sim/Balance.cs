@@ -90,17 +90,18 @@ namespace AshesAndCrowns.Sim
     {
         public float fogDensity = 0.011f;
         public float[] fogColor = { 0.62f, 0.65f, 0.68f };
-        public float[] ambientColor = { 0.48f, 0.51f, 0.56f };
+        public float[] ambientColor = { 0.36f, 0.39f, 0.44f };
         public float[] sunColor = { 0.80f, 0.84f, 0.92f };
         public float sunIntensity = 1.05f, sunPitchDegrees = 28f, sunYawDegrees = -140f;
-        public float saturation = -22f, contrast = 8f, postExposure = 0.2f, vignette = 0.2f, filmGrain = 0.2f;
+        public float saturation = -28f, contrast = 12f, postExposure = -0.25f, vignette = 0.3f, filmGrain = 0.3f;
         // Day/night
-        public float noonSunIntensity = 1.25f, dawnSunIntensity = 0.65f, moonIntensity = 0.2f;
-        public float[] nightAmbientColor = { 0.11f, 0.13f, 0.17f };
+        public float noonSunIntensity = 1.1f, dawnSunIntensity = 0.5f, moonIntensity = 0.35f;   // the moon is generous: night must stay legible without a torch
+        public float[] nightAmbientColor = { 0.16f, 0.18f, 0.24f };
         public float[] dawnSunColor = { 0.85f, 0.62f, 0.45f };
-        public float[] nightFogColor = { 0.13f, 0.14f, 0.18f };
-        public float cloudSunDimming = 0.7f;   // sun intensity multiplier at full cloud cover
+        public float[] nightFogColor = { 0.10f, 0.11f, 0.15f };
+        public float cloudSunDimming = 0.6f;   // sun intensity multiplier at full cloud cover
         public float rainParticlesPerSecond = 2500f, snowParticlesPerSecond = 900f;
+        public float torchRange = 14f, torchIntensity = 3.2f, torchBurnHours = 2f; public float[] torchColor = { 1f, 0.72f, 0.42f };
     }
 
     [Serializable] public sealed class SaveBalance
@@ -168,6 +169,7 @@ namespace AshesAndCrowns.Sim
         public ReputationBalance reputation = new ReputationBalance();
         public CrimeBalance crime = new CrimeBalance();
         public MeleeRulesBalance duel = new MeleeRulesBalance();
+        public ActivityBalance activity = new ActivityBalance();
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
         public SiegeBalance siege = new SiegeBalance();
@@ -226,7 +228,8 @@ namespace AshesAndCrowns.Sim
             if (b.economy != null && (b.economy.sellSpread <= 0f || b.economy.sellSpread > 1f)) errors.Add("economy.sellSpread must be within 0..1");
             if (b.settlements == null || b.settlements.walkKmPerDay <= 0f || b.settlements.rideKmPerDay <= b.settlements.walkKmPerDay) errors.Add("settlements: rideKmPerDay must exceed walkKmPerDay > 0");
             if (b.crime == null || b.crime.arrestChancePerDayAtFullWanted < 0f || b.crime.arrestChancePerDayAtFullWanted > 1f) errors.Add("crime.arrestChancePerDayAtFullWanted must be 0..1");
-            if (b.duel == null || b.duel.windupSeconds <= 0f || b.duel.parryWindowSeconds <= 0f) errors.Add("duel timings must be positive");
+            if (b.duel == null || b.duel.lightWindupSeconds <= 0f || b.duel.heavyWindupSeconds <= b.duel.lightWindupSeconds || b.duel.parryWindowSeconds <= 0f || b.duel.guardBreakSeconds <= 0f) errors.Add("duel timings must be positive and a heavy slower than a light");
+            if (b.activity == null || b.activity.prayTimeScale < 1f || b.activity.workTimeScale < 1f || b.activity.workBeats < 1 || b.activity.beatSweepSeconds <= 0f) errors.Add("activity: time scales >= 1, at least one beat, a positive sweep");
             if (b.morale == null || !(b.morale.routBelow < b.morale.shakenBelow && b.morale.shakenBelow < b.morale.rallyAbove)) errors.Add("morale thresholds must satisfy rout < shaken < rally");
             if (b.service == null || b.service.floggingAbove >= b.service.hangingAbove) errors.Add("service.floggingAbove must be below hangingAbove");
             if (b.siege == null || b.siege.surrenderMoraleBelow <= 0f || b.siege.surrenderMoraleBelow >= 1f) errors.Add("siege.surrenderMoraleBelow must be within (0,1)");

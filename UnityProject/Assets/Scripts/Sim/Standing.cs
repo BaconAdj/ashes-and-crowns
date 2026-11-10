@@ -26,6 +26,8 @@ namespace AshesAndCrowns.Sim
         public void Set(float value, int attended, int missed) { Value = Clamp(value); MassesAttended = attended; MassesMissed = missed; }
 
         public void AttendedMass() { MassesAttended++; Adjust(_b.massAttended); }
+        /// <summary>Kneeling at the altar, seen by whoever is in the nave. Amount comes from ActivityRules.PrayerGain.</summary>
+        public void Prayed(float favour) => Adjust(favour);
         public void MissedMass() { MassesMissed++; Adjust(_b.massMissed); }
         public void DebtHonoured() => Adjust(_b.debtHonoured);
         public void DebtDefaulted() => Adjust(_b.debtDefaulted);

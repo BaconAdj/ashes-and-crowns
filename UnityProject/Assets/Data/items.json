@@ -374,6 +374,17 @@
    "armour": 0,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "torch",
+   "name": "Torch (pitch and tow)",
+   "category": "tool",
+   "basePrice": 1,
+   "nutrition": 0,
+   "weight": 0.8,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

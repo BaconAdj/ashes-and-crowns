@@ -135,14 +135,14 @@
   "look": {
     "fogDensity": 0.0035,
     "fogColor": [
-      0.66,
-      0.69,
-      0.72
+      0.62,
+      0.65,
+      0.68
     ],
     "ambientColor": [
-      0.48,
-      0.51,
-      0.56
+      0.36,
+      0.39,
+      0.44
     ],
     "sunColor": [
       0.8,
@@ -152,18 +152,18 @@
     "sunIntensity": 1.05,
     "sunPitchDegrees": 28.0,
     "sunYawDegrees": -140.0,
-    "saturation": -22.0,
-    "contrast": 8.0,
-    "postExposure": 0.2,
-    "vignette": 0.2,
-    "filmGrain": 0.2,
-    "noonSunIntensity": 1.25,
-    "dawnSunIntensity": 0.65,
-    "moonIntensity": 0.2,
+    "saturation": -28.0,
+    "contrast": 12.0,
+    "postExposure": -0.25,
+    "vignette": 0.3,
+    "filmGrain": 0.3,
+    "noonSunIntensity": 1.1,
+    "dawnSunIntensity": 0.5,
+    "moonIntensity": 0.35,
     "nightAmbientColor": [
-      0.11,
-      0.13,
-      0.17
+      0.16,
+      0.18,
+      0.24
     ],
     "dawnSunColor": [
       0.85,
@@ -171,13 +171,21 @@
       0.45
     ],
     "nightFogColor": [
-      0.13,
-      0.14,
-      0.18
+      0.1,
+      0.11,
+      0.15
     ],
-    "cloudSunDimming": 0.7,
+    "cloudSunDimming": 0.6,
     "rainParticlesPerSecond": 2500,
-    "snowParticlesPerSecond": 900
+    "snowParticlesPerSecond": 900,
+    "torchRange": 14.0,
+    "torchIntensity": 3.2,
+    "torchColor": [
+      1.0,
+      0.72,
+      0.42
+    ],
+    "torchBurnHours": 2.0
   },
   "weather": {
     "changeIntervalHours": 4,
@@ -428,20 +436,40 @@
     "standingSavesChance": 0.25
   },
   "duel": {
-    "windupSeconds": 0.32,
+    "lightWindupSeconds": 0.3,
+    "heavyWindupSeconds": 0.72,
     "strikeSeconds": 0.12,
-    "recoverSeconds": 0.45,
-    "parryWindowSeconds": 0.14,
+    "lightRecoverSeconds": 0.4,
+    "heavyRecoverSeconds": 0.6,
+    "lightStaminaCost": 10,
+    "heavyStaminaCost": 18,
+    "lightDamageMul": 0.65,
+    "heavyDamageMul": 1.25,
+    "feintStaminaCost": 6,
+    "feintRecoverSeconds": 0.22,
+    "feintLatestSeconds": 0.14,
+    "parryWindowSeconds": 0.2,
     "blockStaminaCost": 10,
-    "swingStaminaCost": 12,
+    "heavyBlockStaminaMul": 1.6,
+    "parryStaggerSeconds": 1.0,
+    "lightHitStaggerSeconds": 0.3,
+    "heavyHitStaggerSeconds": 0.5,
+    "guardBreakSeconds": 0.35,
+    "guardBreakStaminaCost": 8,
+    "guardBreakStaggerSeconds": 1.1,
+    "counterGuardBreakWindowSeconds": 0.3,
+    "guardBreakReach": 1.4,
     "dodgeStaminaCost": 16,
-    "parryStaggerSeconds": 0.9,
-    "hitStaggerSeconds": 0.35,
     "dodgeSeconds": 0.4,
     "dodgeInvulnerableSeconds": 0.25,
     "staminaRegenPerSecond": 9,
-    "staminaRegenBlocking": 3,
+    "staminaRegenGuarding": 5,
     "exhaustedThreshold": 8,
+    "revengePerHitTaken": 0.22,
+    "revengePerBlock": 0.12,
+    "revengeSeconds": 8,
+    "revengeDamageMul": 1.3,
+    "revengeStaggerSeconds": 0.8,
     "yieldBloodBelow": 0.3,
     "yieldChancePerHit": 0.5,
     "unarmedDamage": 6,
@@ -654,5 +682,17 @@
     "infractionsOnRefusal": 5,
     "feastInsultChance": 0.5,
     "feastCharismaWeight": 0.05
+  },
+  "activity": {
+    "prayTimeScale": 12,
+    "prayFavourPerHour": 0.05,
+    "prayHalfLifeHours": 1.0,
+    "prayMaxPerDay": 0.09,
+    "prayMinMinutesToCount": 5,
+    "workTimeScale": 24,
+    "workBeats": 6,
+    "beatSweepSeconds": 1.4,
+    "beatZoneWidth": 0.18,
+    "beatMissPenalty": 0.6
   }
 }

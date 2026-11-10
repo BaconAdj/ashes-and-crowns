@@ -93,7 +93,6 @@ namespace AshesAndCrowns.EditorTools
             var sceneGo = new GameObject(siege ? "Phase9Scene" : "Phase0Scene");
             var driver = sceneGo.AddComponent<Phase0Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
-            var brightness = sceneGo.AddComponent<BrightnessControl>(); brightness.hud = hud;
 
             // ---- player
             var playerGo = new GameObject("Player");
@@ -152,7 +151,7 @@ namespace AshesAndCrowns.EditorTools
             banners.director = director; banners.playerBanner = bannerPlayer; banners.enemyBanner = bannerEnemy;
             var commandGo = new GameObject("CommandController");
             var command = commandGo.AddComponent<CommandController>();
-            command.director = director; command.commandCamera = cmdCam; command.vantage = vantageGo.transform; command.selectionRingMaterial = ring;
+            command.director = director; command.commandCamera = cmdCam; command.vantage = vantageGo.transform; command.selectionRingMaterial = ring; command.lord = playerGo.transform;
             command.enabled = false;
 
             // ---- HUD
@@ -179,7 +178,7 @@ namespace AshesAndCrowns.EditorTools
 
             // ---- wiring
             tpc.target = playerGo.transform;
-            pc.cameraRig = tpc; pc.vitals = vitals;
+            pc.cameraRig = tpc; pc.vitals = vitals; pc.melee = melee; tpc.melee = melee;
             melee.director = director; melee.vitals = vitals; melee.weaponVisual = weaponPivot; melee.facingSource = playerGo.transform;
             driver.terrain = terrain; driver.director = director; driver.banners = banners; driver.command = command; driver.modes = modes;
             driver.player = pc; driver.horse = horse; driver.vitals = vitals; driver.melee = melee; driver.thirdPersonCamera = tpc;

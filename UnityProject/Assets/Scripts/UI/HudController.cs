@@ -38,6 +38,9 @@ namespace AshesAndCrowns.UI
         private Label _wounds, _mode, _hint, _armies, _threat, _fps, _deathText, _commandSummary, _clock, _bellToast, _whisper, _watched;
         private float _whisperUntil;
         private float _bellToastUntil;
+        private VisualElement _guard, _guardTop, _guardLeft, _guardRight, _revengeFill; private Label _guardHint;
+        private VisualElement _activity, _beat, _beatTrack, _beatMarker, _beatZone; private Label _activityTitle, _activityBody, _activityPrompt, _beatTitle;
+        private static readonly Color GuardIdle = new Color(0.25f, 0.25f, 0.27f, 0.85f), GuardHeld = new Color(0.80f, 0.76f, 0.66f, 0.95f), IncomingLight = new Color(0.85f, 0.35f, 0.25f, 0.95f), IncomingHeavy = new Color(0.95f, 0.55f, 0.15f, 0.95f);
         private float _nextTextUpdate;
         private float _fpsAccum; private int _fpsFrames; private float _fpsValue;
         private float _vantageDistance;
@@ -80,15 +83,15 @@ namespace AshesAndCrowns.UI
             {
                 case "Command":
                     _mode.text = L.T("IN COMMAND");
-                    _hint.text = L.T("Left-click a banner to select a unit. Right-click: move. C: charge. H: hold. 1-4: formation. Arrows pan, wheel zooms.\nWalk or ride off the hill and you lose command.");
+                    _hint.text = L.T("Click a banner (Shift adds), Ctrl+A all, Return none, 0-9 groups (Ctrl saves). RMB move, Alt+drag move facing, C/F charge, H hold, Backspace halt, J about face, U withdraw, Shift+1..4 formation.\nWASD/arrows pan, Q/E turn, wheel zoom, Home to you, K hide HUD, P pause. Walk off the hill and you lose command.");
                     break;
                 case "Riding":
                     _mode.text = L.T("RIDING");
-                    _hint.text = L.T("W/S speed, A/D steer, Shift gallop, E dismount. LMB swing, RMB block.");
+                    _hint.text = L.T("W/S speed, A/D steer, Shift gallop, E dismount. Hold Ctrl to fight from the saddle: LMB light, RMB heavy.");
                     break;
                 case "Ranks":
                     _mode.text = L.T("IN THE RANKS");
-                    _hint.text = L.T("You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nLMB swing, RMB block, Space dodge.");
+                    _hint.text = L.T("You do not command. Watch the banner and the sergeant. Hold your place in the ring; break ranks and the provost will hear of it.\nHold Ctrl to guard: mouse picks the stance, LMB light, RMB heavy, Space dodge.");
                     break;
                 case "Dead":
                     _mode.text = L.T("DEAD");
@@ -96,7 +99,7 @@ namespace AshesAndCrowns.UI
                     break;
                 default:
                     _mode.text = L.T("ON FOOT");
-                    _hint.text = L.T("WASD move, Shift sprint, E mount the horse. LMB swing, RMB block. Esc to leave your affairs.");
+                    _hint.text = L.T("WASD move, Shift sprint, E use / mount. Hold Ctrl to take guard (mouse: stance, LMB light, RMB heavy, E break guard, Space dodge, R revenge). Esc to leave your affairs.");
                     break;
             }
         }
@@ -272,6 +275,19 @@ namespace AshesAndCrowns.UI
             _market.style.display = DisplayStyle.Flex;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
         }
+
+        public void ShowActivity(string title, string prompt) { if (_activity == null) return; _activityTitle.text = title; _activityBody.text = string.Empty; _activityPrompt.text = prompt; _activity.style.display = DisplayStyle.Flex; }
+        public void SetActivity(string body, string prompt) { if (_activity == null) return; _activityBody.text = body; _activityPrompt.text = prompt; }
+        public void HideActivity() { if (_activity != null) _activity.style.display = DisplayStyle.None; }
+        public void ShowBeat(string title, float zoneWidth)
+        {
+            if (_beat == null) return;
+            _beatTitle.text = title;
+            _beatZone.style.width = new Length(zoneWidth * 100f, LengthUnit.Percent); _beatZone.style.left = new Length((0.5f - zoneWidth / 2f) * 100f, LengthUnit.Percent);
+            _beatMarker.style.left = 0; _beat.style.display = DisplayStyle.Flex;
+        }
+        public void SetBeatMarker(float pos01) { if (_beatMarker != null) _beatMarker.style.left = new Length(Mathf.Clamp01(pos01) * 100f, LengthUnit.Percent); }
+        public void HideBeat() { if (_beat != null) _beat.style.display = DisplayStyle.None; }
 
         /// <summary>The hands-on moment: a marker sweeps a track; press Space inside the zone. Three beats. Quality 0..1.</summary>
         public void ShowMoment(string kind, string tradeId, System.Action<float> onDone)
@@ -461,6 +477,34 @@ namespace AshesAndCrowns.UI
             _root.Add(_market);
 
             // Hands-on moment
+            // Guard indicator (bottom centre): three plates for high, left and right; the held stance is bright, an incoming blow flashes red (orange: heavy).
+            _guard = new VisualElement { pickingMode = PickingMode.Ignore };
+            _guard.style.position = Position.Absolute; _guard.style.bottom = 120; _guard.style.left = new Length(50, LengthUnit.Percent); _guard.style.marginLeft = -70; _guard.style.width = 140; _guard.style.height = 110;
+            _guard.style.display = DisplayStyle.None;
+            _guardTop = GuardPlate(_guard, 46, 0, 48, 16); _guardLeft = GuardPlate(_guard, 6, 40, 16, 48); _guardRight = GuardPlate(_guard, 118, 40, 16, 48);
+            var revengeTrack = new VisualElement { pickingMode = PickingMode.Ignore }; revengeTrack.style.position = Position.Absolute; revengeTrack.style.left = 20; revengeTrack.style.right = 20; revengeTrack.style.bottom = 8; revengeTrack.style.height = 5; revengeTrack.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+            _revengeFill = new VisualElement { pickingMode = PickingMode.Ignore }; _revengeFill.style.height = new Length(100, LengthUnit.Percent); _revengeFill.style.width = 0; _revengeFill.style.backgroundColor = Blood;
+            revengeTrack.Add(_revengeFill); _guard.Add(revengeTrack);
+            _guardHint = MakeLabel(string.Empty, 11, Parchment); _guardHint.style.position = Position.Absolute; _guardHint.style.bottom = -18; _guardHint.style.left = -160; _guardHint.style.width = 460; _guardHint.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _guard.Add(_guardHint);
+            _root.Add(_guard);
+
+            // Activity panel (bottom centre, above the guard): what you are doing, for how long, and the key that ends it.
+            _activity = MakePanel(null, null, null, 150, 560); _activity.style.left = new Length(50, LengthUnit.Percent); _activity.style.marginLeft = -280; _activity.style.display = DisplayStyle.None;
+            _activityTitle = MakeLabel(string.Empty, 18, Parchment); _activityTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _activityBody = MakeLabel(string.Empty, 13, Parchment); _activityBody.style.whiteSpace = WhiteSpace.Normal;
+            _activityPrompt = MakeLabel(string.Empty, 12, new Color(0.65f, 0.62f, 0.55f));
+            _activity.Add(_activityTitle); _activity.Add(_activityBody); _activity.Add(_activityPrompt);
+            _root.Add(_activity);
+            // Beat track: a marker sweeps, press X in the band.
+            _beat = new VisualElement { pickingMode = PickingMode.Ignore }; _beat.style.position = Position.Absolute; _beat.style.bottom = 250; _beat.style.left = new Length(50, LengthUnit.Percent); _beat.style.marginLeft = -260; _beat.style.width = 520; _beat.style.display = DisplayStyle.None; _beat.style.alignItems = Align.Center;
+            _beatTitle = MakeLabel(string.Empty, 20, Parchment); _beatTitle.style.unityFontStyleAndWeight = FontStyle.Bold; _beatTitle.style.marginBottom = 6;
+            _beatTrack = new VisualElement { pickingMode = PickingMode.Ignore }; _beatTrack.style.width = 520; _beatTrack.style.height = 22; _beatTrack.style.backgroundColor = new Color(0.08f, 0.08f, 0.08f, 0.95f);
+            _beatZone = new VisualElement { pickingMode = PickingMode.Ignore }; _beatZone.style.position = Position.Absolute; _beatZone.style.top = 0; _beatZone.style.bottom = 0; _beatZone.style.backgroundColor = new Color(0.55f, 0.45f, 0.2f, 0.9f);
+            _beatMarker = new VisualElement { pickingMode = PickingMode.Ignore }; _beatMarker.style.position = Position.Absolute; _beatMarker.style.top = -4; _beatMarker.style.width = 6; _beatMarker.style.height = 30; _beatMarker.style.backgroundColor = Parchment;
+            _beatTrack.Add(_beatZone); _beatTrack.Add(_beatMarker); _beat.Add(_beatTitle); _beat.Add(_beatTrack);
+            _root.Add(_beat);
+
             _moment = MakeOverlay(0.35f);
             _momentTitle = MakeLabel(string.Empty, 22, Parchment); _momentTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
             _momentHint = MakeLabel(string.Empty, 14, Parchment); _momentHint.style.marginBottom = 14;
@@ -486,6 +530,8 @@ namespace AshesAndCrowns.UI
         private void Update()
         {
             if (_root == null || _vitals == null) return;
+            bool hide = _command != null && _command.enabled && _command.UiHidden;
+            if ((_root.style.display == DisplayStyle.None) != hide) _root.style.display = hide ? DisplayStyle.None : DisplayStyle.Flex;
             // Bars every frame (cheap style writes), text at 8 Hz to avoid string churn.
             _bloodFill.style.width = new Length(Mathf.Clamp01(_vitals.Body.Blood) * 100f, LengthUnit.Percent);
             _staminaFill.style.width = new Length(Mathf.Clamp01(_vitals.Stamina / _vitals.StaminaMax) * 100f, LengthUnit.Percent);
@@ -494,6 +540,7 @@ namespace AshesAndCrowns.UI
 
             _fpsAccum += Time.unscaledDeltaTime; _fpsFrames++;
             UpdateMoment();
+            UpdateGuard();
             if (_toast != null && _toast.style.display == DisplayStyle.Flex && Time.unscaledTime > _toastUntil) _toast.style.display = DisplayStyle.None;
             if (_whisper != null && _whisper.style.display == DisplayStyle.Flex && Time.unscaledTime > _whisperUntil) _whisper.style.display = DisplayStyle.None;
             if (Time.unscaledTime < _nextTextUpdate) return;
@@ -514,6 +561,8 @@ namespace AshesAndCrowns.UI
             {
                 _fps.text = $"{_fpsValue:F0} fps";
                 _armies.text = string.Empty; _commandSummary.text = FightLine(); _threat.text = _melee != null ? _melee.LastEvent : string.Empty;
+                if (_guardHint != null && _melee != null && _guard.style.display == DisplayStyle.Flex)
+                    _guardHint.text = !_melee.GuardMode ? L.T("Hold Ctrl to take guard") : _melee.Fighter.RevengeReady ? L.T("R: REVENGE") : L.T("Mouse: stance   LMB light   RMB heavy   E break guard / feint   Space dodge");
             }
             _wounds.text = WoundsText();
         }
@@ -527,7 +576,7 @@ namespace AshesAndCrowns.UI
                 if (d == null) continue;
                 sb.Append(d.displayName).Append(d.Dead ? " (dead)" : d.Yielded ? " (yields)" : $"  blood {Mathf.RoundToInt(d.Body.Blood * 100)}%").Append("   ");
             }
-            if (_melee.IsBlocking) sb.Append("\nGuard: ").Append(_melee.Fighter.Dir);
+            if (_melee.GuardMode) sb.Append("\nGuard ").Append(_melee.Stance).Append(_melee.LockTarget != null ? "  locked" : "  no one in reach");
             return sb.ToString();
         }
 
@@ -569,6 +618,30 @@ namespace AshesAndCrowns.UI
             b.style.paddingTop = b.style.paddingBottom = 10; b.style.paddingLeft = b.style.paddingRight = 16;
             b.style.marginBottom = 8; b.style.unityTextAlign = TextAnchor.MiddleLeft;
             return b;
+        }
+
+        private static VisualElement GuardPlate(VisualElement parent, float left, float top, float w, float h)
+        {
+            var p = new VisualElement { pickingMode = PickingMode.Ignore };
+            p.style.position = Position.Absolute; p.style.left = left; p.style.top = top; p.style.width = w; p.style.height = h; p.style.backgroundColor = GuardIdle;
+            parent.Add(p); return p;
+        }
+
+        private void UpdateGuard()
+        {
+            if (_guard == null || _melee == null) return;
+            bool show = _melee.GuardMode || _melee.Duelists.Count > 0;
+            if (_guard.style.display == DisplayStyle.Flex != show) _guard.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!show) return;
+            AttackDir? held = _melee.GuardMode ? _melee.Stance : (AttackDir?)null;
+            AttackDir? incoming = _melee.IncomingDir;
+            Color inColor = _melee.IncomingKind == AttackKind.Heavy ? IncomingHeavy : IncomingLight;
+            _guardTop.style.backgroundColor = incoming == AttackDir.High ? inColor : held == AttackDir.High ? GuardHeld : GuardIdle;
+            _guardLeft.style.backgroundColor = incoming == AttackDir.Left ? inColor : held == AttackDir.Left ? GuardHeld : GuardIdle;
+            _guardRight.style.backgroundColor = incoming == AttackDir.Right ? inColor : held == AttackDir.Right ? GuardHeld : GuardIdle;
+            var f = _melee.Fighter;
+            _revengeFill.style.width = new Length((f.InRevenge ? 100f : Mathf.Clamp01(f.Revenge) * 100f), LengthUnit.Percent);
+            _revengeFill.style.backgroundColor = f.InRevenge ? IncomingHeavy : f.RevengeReady ? GuardHeld : Blood;
         }
 
         private static VisualElement MakePanel(float? top, float? left, float? right, float? bottom, float width)

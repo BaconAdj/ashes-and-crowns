@@ -10,6 +10,7 @@ namespace AshesAndCrowns.Game
     {
         public ThirdPersonCamera cameraRig;
         public PlayerVitals vitals;
+        public MeleeController melee;     // optional: in guard mode the body squares up to the opponent
         private Balance _balance;
         private GameInput _input;
         private CharacterController _cc;
@@ -40,7 +41,18 @@ namespace AshesAndCrowns.Game
             Vector3 velocity = dir * speed + Vector3.up * _verticalVelocity;
             _cc.Move(velocity * Time.deltaTime);
 
-            if (dir.sqrMagnitude > 0.01f)
+            Transform lockOn = melee != null && melee.GuardMode ? melee.LockTarget : null;
+            if (lockOn != null)
+            {
+                Vector3 face = lockOn.position - transform.position; face.y = 0f;
+                if (face.sqrMagnitude > 0.01f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(face.normalized, Vector3.up), 1f - Mathf.Exp(-12f * Time.deltaTime));
+            }
+            else if (melee != null && melee.GuardMode)
+            {
+                // Guard mode with nobody to lock to: face the camera's way so the stance means something.
+                transform.rotation = Quaternion.Slerp(transform.rotation, yaw, 1f - Mathf.Exp(-12f * Time.deltaTime));
+            }
+            else if (dir.sqrMagnitude > 0.01f)
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir, Vector3.up), 1f - Mathf.Exp(-12f * Time.deltaTime));
         }
     }

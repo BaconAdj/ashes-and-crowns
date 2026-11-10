@@ -118,6 +118,7 @@ namespace AshesAndCrowns.Battle
             _morale = new UnitMorale[UnitCount]; _lastAlive = new int[UnitCount]; _rosters = new UnitRoster[UnitCount];
 
             int soldier = 0, unit = 0;
+            _playerRally = playerArmyCentre; _enemyRally = enemyArmyCentre;
             SpawnSide(Side.Player, perPlayer, unitSize, unitsPlayer, playerArmyCentre, playerYaw, playerForm, ref soldier, ref unit);
             SpawnSide(Side.Enemy, perEnemy, unitSize, unitsEnemy, enemyArmyCentre, enemyYaw, enemyForm, ref soldier, ref unit);
 
@@ -600,6 +601,19 @@ namespace AshesAndCrowns.Battle
             else { unit.Target = target; unit.Target.y = _ground.Sample(target.x, target.z); }
             _units[unitIndex] = unit;
         }
+
+        /// <summary>Turn a formation on the spot (radians). Used for about-face and Ctrl+arrow wheeling.</summary>
+        public void SetFacing(int unitIndex, float yawRadians)
+        {
+            if (unitIndex < 0 || unitIndex >= UnitCount) return;
+            UnitState unit = _units[unitIndex];
+            unit.Yaw = yawRadians;
+            _units[unitIndex] = unit;
+        }
+
+        /// <summary>Where this side started the day: the place a withdrawing unit falls back to.</summary>
+        public float3 RallyPoint(Side side) => side == Side.Player ? _playerRally : _enemyRally;
+        private float3 _playerRally, _enemyRally;
 
         public void SetFormation(int unitIndex, FormationType formation)
         {
