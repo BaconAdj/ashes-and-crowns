@@ -20,7 +20,7 @@ namespace AshesAndCrowns.Game
 
         /// <summary>Furnish every building of a village and people it. Huts are assigned to villagers round robin; each trade
         /// gets a station (a prop beside the hut, a field beyond it, or the alehouse bar). Returns the number of villagers made.</summary>
-        public static int Populate(SettlementSite site, Transform root, Mesh man, Material cloth, Material skin, Material wood, Material stone, Material linen, Material fire, Material iron, NameGenerator names, DeterministicRng rng, Terrain terrain, bool lights)
+        public static int Populate(SettlementSite site, Transform root, Mesh man, Mesh woman, Material cloth, Material skin, Material wood, Material stone, Material linen, Material fire, Material iron, NameGenerator names, DeterministicRng rng, Terrain terrain, bool lights)
         {
             if (site.church != null && BuildingKit.Find(site.church, "Door") == null) BuildingKit.Furnish(site.church, BuildingKind.Church, wood, stone, linen, fire, iron, lights);
             if (site.alehouse != null && BuildingKit.Find(site.alehouse, "Door") == null) BuildingKit.Furnish(site.alehouse, BuildingKind.Alehouse, wood, stone, linen, fire, iron, lights);
@@ -33,12 +33,12 @@ namespace AshesAndCrowns.Game
                 string trade = Trades[k];
                 Transform hut = site.huts[k % site.huts.Count];
                 bool female = trade == "brewer" || k % 4 == 3;
-                var v = Spawn(people, site, trade, hut, names.Given(female, false), female, 100 + k, rng, man, cloth, skin, wood, stone, iron, terrain);
+                var v = Spawn(people, site, trade, hut, names.Given(female, false), female, 100 + k, rng, female && woman != null ? woman : man, cloth, skin, wood, stone, iron, terrain);
                 made++;
                 // A second soul in most huts: spouse or grown child, who works the same trade.
                 if (k % 2 == 0)
                 {
-                    Spawn(people, site, trade, hut, names.Given(!female, false), !female, 140 + k, rng, man, cloth, skin, wood, stone, iron, terrain, kin: true, station: v.workStation, stationBuilding: v.workBuilding);
+                    Spawn(people, site, trade, hut, names.Given(!female, false), !female, 140 + k, rng, !female && woman != null ? woman : man, cloth, skin, wood, stone, iron, terrain, kin: true, station: v.workStation, stationBuilding: v.workBuilding);
                     made++;
                 }
             }
@@ -61,7 +61,6 @@ namespace AshesAndCrowns.Game
                 var mf = body.AddComponent<MeshFilter>(); mf.sharedMesh = man;
                 var mr = body.AddComponent<MeshRenderer>(); mr.sharedMaterials = man.subMeshCount >= 2 ? new[] { cloth, skin } : new[] { cloth };
                 var block = new MaterialPropertyBlock(); block.SetColor(BaseColor, Dyes[id % Dyes.Length]); mr.SetPropertyBlock(block, 0);
-                if (female) body.transform.localScale = new Vector3(0.94f, 0.95f, 0.94f);
             }
             else
             {

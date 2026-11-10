@@ -14,7 +14,7 @@ namespace AshesAndCrowns.EditorTools
     {
         public const string BuildingsFolder = "Assets/Art/Buildings";
 
-        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man; public SettlementSite Site; }
+        public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman; public SettlementSite Site; }
 
         public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
         {
@@ -74,26 +74,27 @@ namespace AshesAndCrowns.EditorTools
             // People: huts furnished, a family per trade with a station, a priest by the altar. Shared with the runtime villages.
             Material villagerMat = SceneKit.Mat("Villager", SceneKit.LitShader, new Color(0.3f, 0.26f, 0.2f), 0f, 0.9f);
             Material skinMat = SceneKit.Mat("Skin", SceneKit.LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f);
-            Mesh manMesh = SceneKit.ArtMesh("Characters/Man.fbx");
-            PlantOaks(root, terrain, centre, green, rng, bark);
+            Mesh manMesh = SceneKit.ArtMesh("Characters/Man.fbx"); Mesh womanMesh = SceneKit.ArtMesh("Characters/Woman.fbx");
+            var oaks = PlantOaks(root, terrain, centre, green, rng, bark);
             var site = root.gameObject.AddComponent<SettlementSite>(); site.settlementId = "ashby_village"; site.centre = root; site.church = church; site.alehouse = alehouse; site.radius = 70f;
-            site.huts.AddRange(huts);
+            site.huts.AddRange(huts); site.oaks.AddRange(oaks);
             BuildingKit.Furnish(home, BuildingKind.Hut, darkWood, stone, linen, fire, iron, withLight: true);
             var nameGen = new NameGenerator(DataFiles.LoadNames(), rng.Fork(5));
-            VillageKit.Populate(site, root, manMesh, villagerMat, skinMat, darkWood, stone, linen, fire, iron, nameGen, rng.Fork(7), terrain, lights: true);
+            VillageKit.Populate(site, root, manMesh, womanMesh, villagerMat, skinMat, darkWood, stone, linen, fire, iron, nameGen, rng.Fork(7), terrain, lights: true);
             Transform masters = root.Find("People");
             // Workplace: a bench behind the player's hut; one spot stands in for field, forge, mill and weir in Phase 4.
             var work = new GameObject("Workplace").transform; work.SetParent(root, true);
             work.position = home != null ? home.position - home.forward * 6f : centre + new Vector3(0f, 0f, -green - 10f);
             var workMarker = SceneKit.Primitive(PrimitiveType.Cube, "WorkBench", work, Vector3.zero, new Vector3(1.6f, 0.8f, 0.8f), darkWood, keepCollider: true);
             workMarker.transform.position = new Vector3(work.position.x, SceneKit.GroundY(terrain, work.position) + 0.4f, work.position.z);
-            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Site = site };
+            return new Result { Root = root, Church = church, Alehouse = alehouse, Home = home, Workplace = work, Masters = masters, Green = centre, Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, Villager = villagerMat, Skin = skinMat, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh, Man = manMesh, Woman = womanMesh, Site = site };
         }
 
         /// <summary>A loose ring of oaks beyond the huts when the Blender oak exists; nothing otherwise (the moor stays bare).</summary>
-        private static void PlantOaks(Transform root, Terrain terrain, Vector3 centre, float green, DeterministicRng rng, Material bark)
+        private static System.Collections.Generic.List<Transform> PlantOaks(Transform root, Terrain terrain, Vector3 centre, float green, DeterministicRng rng, Material bark)
         {
-            Mesh oak = SceneKit.ArtMesh("Nature/Oak.fbx"); if (oak == null) return;
+            var list = new System.Collections.Generic.List<Transform>(26);
+            Mesh oak = SceneKit.ArtMesh("Nature/Oak.fbx"); if (oak == null) return list;
             Material leaf = SceneKit.Mat("OakLeaf", SceneKit.LitShader, new Color(0.30f, 0.36f, 0.20f), 0f, 0.95f);
             var trees = new GameObject("Oaks").transform; trees.SetParent(root, true);
             for (int i = 0; i < 26; i++)
@@ -103,7 +104,9 @@ namespace AshesAndCrowns.EditorTools
                 var t = SceneKit.MeshChild("Oak_" + i, trees, oak, bark, leaf, collider: true);
                 t.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, rng.Range(0f, 360f), 0f));
                 float s = rng.Range(0.8f, 1.25f); t.transform.localScale = new Vector3(s, s, s); t.isStatic = true;
+                list.Add(t.transform);
             }
+            return list;
         }
 
         private static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)

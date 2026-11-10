@@ -680,8 +680,12 @@ namespace AshesAndCrowns.UI
             if (right.HasValue) p.style.right = right.Value; if (bottom.HasValue) p.style.bottom = bottom.Value;
             p.style.width = width;
             p.style.backgroundColor = Panel;
-            p.style.paddingLeft = p.style.paddingRight = 12; p.style.paddingTop = p.style.paddingBottom = 8;
+            p.style.paddingLeft = p.style.paddingRight = 14; p.style.paddingTop = p.style.paddingBottom = 10;
             p.style.borderBottomLeftRadius = p.style.borderBottomRightRadius = p.style.borderTopLeftRadius = p.style.borderTopRightRadius = 2;
+            // A hairline of old gold on the top edge, the one ornament the HUD allows itself.
+            p.style.borderTopWidth = 1; p.style.borderTopColor = new Color(0.62f, 0.52f, 0.32f, 0.85f);
+            p.style.borderLeftWidth = p.style.borderRightWidth = p.style.borderBottomWidth = 1;
+            p.style.borderLeftColor = p.style.borderRightColor = p.style.borderBottomColor = new Color(0f, 0f, 0f, 0.35f);
             return p;
         }
 
@@ -689,6 +693,7 @@ namespace AshesAndCrowns.UI
         {
             var l = new Label(text) { pickingMode = PickingMode.Ignore };
             l.style.fontSize = size; l.style.color = color; l.style.marginBottom = 2;
+            if (size <= 11) { l.style.letterSpacing = 3; l.style.color = new Color(0.66f, 0.58f, 0.42f); }   // small caps headers in old gold
             return l;
         }
 

@@ -15,6 +15,7 @@ run gen_alehouse Buildings/Alehouse.fbx
 run gen_keep     Buildings/Keep.fbx
 run gen_soldier  Characters/Soldier.fbx
 run gen_man      Characters/Man.fbx
+run gen_woman    Characters/Woman.fbx
 run gen_horse    Characters/Horse.fbx
 run gen_oak      Nature/Oak.fbx
 run gen_wall     Siege/WallSegment.fbx

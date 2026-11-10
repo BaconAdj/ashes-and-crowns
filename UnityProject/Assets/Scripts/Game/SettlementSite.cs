@@ -11,6 +11,7 @@ namespace AshesAndCrowns.Game
         public float radius = 60f;
         public List<Transform> huts = new List<Transform>(12);        // serialized: Ashby is baked into the scene
         public List<Villager> villagers = new List<Villager>(16);
+        public List<Transform> oaks = new List<Transform>(30);          // wood to be cut, with an axe and an hour
         /// <summary>Open ground the village uses: the well on the green.</summary>
         public Transform Green => centre;
         public Transform Altar => BuildingKit.Find(church, "Altar");

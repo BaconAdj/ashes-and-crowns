@@ -396,6 +396,17 @@
    "armour": 0,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "firewood",
+   "name": "Firewood (bundle)",
+   "category": "good",
+   "basePrice": 1,
+   "nutrition": 0,
+   "weight": 6,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

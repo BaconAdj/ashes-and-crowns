@@ -71,6 +71,7 @@ namespace AshesAndCrowns.Game
                 Vector3 toGreen = centre - pos; toGreen.y = 0f;
                 hutList.Add(Place(root, "Hut_" + i, assets.hut, new[] { assets.wattle, assets.thatch }, pos, Quaternion.LookRotation(toGreen.normalized) * Quaternion.Euler(0f, rng.Range(-10f, 10f), 0f)));
             }
+            var oakList = new List<Transform>(14);
             if (assets.oak != null)
             {
                 for (int i = 0; i < 14; i++)
@@ -79,6 +80,7 @@ namespace AshesAndCrowns.Game
                     Vector3 pos = centre + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
                     var t = Place(root, "Oak_" + i, assets.oak, new[] { assets.bark != null ? assets.bark : assets.darkWood, assets.leaf != null ? assets.leaf : assets.thatch }, pos, Quaternion.Euler(0f, rng.Range(0f, 360f), 0f));
                     float sc = rng.Range(0.8f, 1.25f); t.localScale = new Vector3(sc, sc, sc);
+                    oakList.Add(t);
                 }
             }
             if (s.Type == SettlementType.Castle && assets.keep != null) Place(root, "Keep", assets.keep, new[] { assets.stone, assets.darkWood }, centre + new Vector3(-green - 22f, 0f, green + 10f), Quaternion.identity);
@@ -86,9 +88,9 @@ namespace AshesAndCrowns.Game
             well.transform.localScale = new Vector3(1.6f, 0.5f, 1.6f); well.transform.position = centre + Vector3.up * 0.5f; well.GetComponent<Renderer>().sharedMaterial = assets.stone;
             var site = root.gameObject.AddComponent<SettlementSite>();
             site.settlementId = s.Id; site.centre = root; site.church = church; site.alehouse = ale; site.radius = 60f;
-            site.huts.AddRange(hutList);
+            site.huts.AddRange(hutList); site.oaks.AddRange(oakList);
             if (_names == null) _names = DataFiles.LoadNames();
-            VillageKit.Populate(site, root, assets.man, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.linen != null ? assets.linen : assets.wattle, assets.fire != null ? assets.fire : assets.thatch, assets.iron != null ? assets.iron : assets.slate, new NameGenerator(_names, rng.Fork(5)), rng.Fork(7), assets.terrain, lights: true);
+            VillageKit.Populate(site, root, assets.man, assets.woman, assets.villager != null ? assets.villager : assets.wattle, assets.skin != null ? assets.skin : assets.wattle, assets.darkWood, assets.stone, assets.linen != null ? assets.linen : assets.wattle, assets.fire != null ? assets.fire : assets.thatch, assets.iron != null ? assets.iron : assets.slate, new NameGenerator(_names, rng.Fork(5)), rng.Fork(7), assets.terrain, lights: true);
             _sites.Add(site);
         }
 

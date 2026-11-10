@@ -102,6 +102,7 @@ namespace AshesAndCrowns.Game
             Check(Spot(church, "Altar"), "church", ref best); Check(Spot(alehouse, "Bar"), "alehouse", ref best); Check(Spot(home, "Hearth"), "home", ref best); Check(workplace, "work", ref best);
             if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(Spot(_site.church, "Altar"), "church", ref best); Check(Spot(_site.alehouse, "Bar"), "alehouse", ref best); }
             if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
+            if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
         }
 
@@ -190,6 +191,7 @@ namespace AshesAndCrowns.Game
                 case "alehouse": return "The alewife's bar";
                 case "home": return "Your hearth";
                 case "work": return "Work the day";
+                case "wood": return RunSession.Context.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : "An oak. You would need an axe.";
                 case "master": { var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; return (v != null && !v.WillTalk ? "Wake " : "Speak with ") + MasterName(_nearest); }
                 default: return "Use";
             }
@@ -213,6 +215,7 @@ namespace AshesAndCrowns.Game
                 case "alehouse": Alehouse(); break;
                 case "home": Home(); break;
                 case "work": WorkTheDay(); break;
+                case "wood": CutWood(at); break;
                 case "master": Master(at); break;
             }
         }
@@ -749,6 +752,30 @@ namespace AshesAndCrowns.Game
             };
             if (activity != null) activity.BeginWork(def, 10f, finish);
             else hud.ShowMoment(def.momentKind, def.id, finish);
+        }
+
+        /// <summary>Two hours at an oak with an axe: beats on the stroke, bundles of firewood by the quality. Anyone's chore.</summary>
+        private void CutWood(Transform oak)
+        {
+            var ctx = RunSession.Context;
+            if (ctx.Inventory.Count("axe") <= 0) { Dialogue("The oak", "Bark like iron. You have no axe.", ("Leave", null)); return; }
+            if (activity == null) { ctx.Inventory.Add("firewood", 2); clock.SkipHours(2f); hud.Toast("Two hours of chopping. Two bundles."); return; }
+            if (clock.Calendar.HourOfDay > 19f || clock.Calendar.HourOfDay < 5f) { Dialogue("The oak", "Too dark to swing an axe without losing a foot.", ("Leave", null)); return; }
+            _busy = true; _openKind = Open.Moment;
+            Vector3 face = oak.position - player.transform.position; face.y = 0f;
+            if (face.sqrMagnitude > 0.01f) player.transform.rotation = Quaternion.LookRotation(face.normalized, Vector3.up);
+            var def = new TradeDef { id = "woodcutting", momentKind = "rhythm" };
+            activity.BeginWork(def, 2f, quality =>
+            {
+                _busy = false; _openKind = Open.None;
+                int bundles = 1 + Mathf.RoundToInt(quality * 4f);
+                ctx.Inventory.Add("firewood", bundles);
+                ctx.Character.Use(Skill.Carpentry, _balance.character, 0.5f);
+                bool hurt = quality < 0.2f && GameBootstrap.Instance.Rng.Fork(77).Chance(0.3f);
+                if (hurt) vitals.Body.ApplyHit(BodyPart.LeftLeg, 0.08f, "your own axe");
+                Dialogue("Firewood", $"Two hours of swinging. {bundles} bundle{(bundles == 1 ? "" : "s")} of split oak, a penny each at any market, and a back that knows about it." + (hurt ? " The axe glanced and opened your shin." : ""), ("Done", null));
+                saveManager?.SaveNow(AffairsChoice.None);
+            });
         }
 
         // ------------------------------------------------------------------ masters and apprenticeship
