@@ -44,17 +44,17 @@ namespace AshesAndCrowns.Game
 
         /// <summary>The player's kin, spawned under the player's roof when a life begins: they share the hearth, work the same
         /// land and keep the same hours. A knight's household gets a steward and a groom besides.</summary>
-        public void SpawnHousehold(Transform home, RunContext ctx, DeterministicRng rng)
+        public Transform SpawnHousehold(Transform home, RunContext ctx, DeterministicRng rng)
         {
-            if (home == null || ctx == null) return;
+            if (home == null || ctx == null) return null;
             SettlementSite site = null; float best = float.MaxValue;
             foreach (var s in _sites) { if (s == null || s.centre == null) continue; float d = (s.centre.position - home.position).sqrMagnitude; if (d < best) { best = d; site = s; } }
-            if (site == null) return;
+            if (site == null) return null;
             foreach (Villager old in home.GetComponentsInChildren<Villager>()) Destroy(old.gameObject);   // a second life under the same roof
             var people = home.Find("Household"); if (people == null) { people = new GameObject("Household").transform; people.SetParent(home, false); }
             string trade = string.IsNullOrEmpty(ctx.Character.Trade) ? "farmer" : ctx.Character.Trade;
-            Transform work = null;
-            foreach (Villager v in site.villagers) if (v != null && v.Tag != null && v.Tag.trade == trade && v.workStation != null) { work = v.workStation; break; }
+            // Your own station beside your roof: the strips, the anvil, the bench. Your kin work it with you.
+            Transform work = VillageKit.MakeStation(trade, home, site, assets.darkWood, assets.stone, assets.iron != null ? assets.iron : assets.slate, assets.terrain, rng.Fork(3));
             int id = 300;
             foreach (Npc kin in ctx.Family)
             {
@@ -68,6 +68,7 @@ namespace AshesAndCrowns.Game
             {
                 VillageKit.Spawn(people, site, "steward", home, "Osbert", false, id++, rng, assets.man, assets.villager, assets.skin, assets.darkWood, assets.stone, assets.iron, assets.terrain, station: BuildingKit.Find(home, "Dais"), stationBuilding: home).Tag.displayName = "Osbert";
             }
+            return work;
         }
 
         private static string RelationWord(Relation r)

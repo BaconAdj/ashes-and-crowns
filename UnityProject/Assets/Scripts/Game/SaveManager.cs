@@ -507,7 +507,7 @@ namespace AshesAndCrowns.Game
                     Vector3 face = villageLife.HomeBuilding.position - hearth.position; face.y = 0f;
                     PlaceBody(hearth.position, face.sqrMagnitude > 0.01f ? Quaternion.LookRotation(face.normalized) : Quaternion.identity, keepHorseOutside: true);
                 }
-                if (spawner != null) spawner.SpawnHousehold(villageLife.HomeBuilding, ctx, GameBootstrap.Instance.Rng.Fork(48));
+                if (spawner != null) { Transform station = spawner.SpawnHousehold(villageLife.HomeBuilding, ctx, GameBootstrap.Instance.Rng.Fork(48)); if (station != null) villageLife.workplace = station; }
             }
             PortraitCamera(false);
             Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false;

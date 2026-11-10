@@ -77,6 +77,16 @@ namespace AshesAndCrowns.Game
         }
 
         /// <summary>Where the trade is worked: a prop in the yard for crafts, a field for the land, the bar for the brewer.</summary>
+        /// <summary>A station for the player's own trade, beside their roof: the field strips, the anvil, the bench. Work happens there.</summary>
+        public static Transform MakeStation(string trade, Transform home, SettlementSite site, Material wood, Material stone, Material iron, Terrain terrain, DeterministicRng rng)
+        {
+            var probe = new GameObject("StationProbe").AddComponent<Villager>();
+            Station(probe, trade, home, site, wood, stone, iron, terrain, rng);
+            Transform station = probe.workStation;
+            Object.Destroy(probe.gameObject);
+            return station;
+        }
+
         private static void Station(Villager v, string trade, Transform hut, SettlementSite site, Material wood, Material stone, Material iron, Terrain terrain, DeterministicRng rng)
         {
             Transform yard = new GameObject("Station_" + trade).transform; yard.SetParent(hut.parent, true);

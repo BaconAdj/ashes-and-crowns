@@ -214,7 +214,7 @@ namespace AshesAndCrowns.Game
                 case "alehouse": return "Buy a pot of ale (1 penny)";
                 case "keep": return KeepPrompt();
                 case "home": return RunSession.Context.Character.Rank >= Rank.Knight ? "Your hall" : "Your hearth";
-                case "work": return "Work the day";
+                case "work": return WorkPrompt();
                 case "wood": return RunSession.Context.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : "An oak. You would need an axe.";
                 case "deer": return RunSession.Context.Inventory.Count("bow") > 0 ? "Stalk and loose at the deer" : "Deer. You would need a bow.";
                 case "carcass": return "Dress the kill";
@@ -788,6 +788,24 @@ namespace AshesAndCrowns.Game
         }
 
         // ------------------------------------------------------------------ work
+
+        private string WorkPrompt()
+        {
+            var ctx = RunSession.Context;
+            string trade = ctx.Apprenticeship.Active ? ctx.Apprenticeship.Trade : ctx.Character.Trade;
+            switch (trade)
+            {
+                case "farmer": return "Work the strips (the day)";
+                case "blacksmith": return "Light the forge (the day)";
+                case "carpenter": return "Take up the drawknife (the day)";
+                case "miller": return "Work the quern (the day)";
+                case "brewer": return "Brew (the day)";
+                case "shepherd": return "Take the flock out (the day)";
+                case "fisherman": return "Mend and set the traps (the day)";
+                case "hunter": return "Go out after game (the day)";
+                default: return "Work the day";
+            }
+        }
 
         private void WorkTheDay()
         {
