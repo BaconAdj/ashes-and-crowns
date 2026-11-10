@@ -100,6 +100,7 @@ namespace AshesAndCrowns.EditorTools
             var sceneGo = new GameObject("Phase1Scene");
             var driver = sceneGo.AddComponent<Phase1Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
+            var brightness = sceneGo.AddComponent<BrightnessControl>(); brightness.hud = hud;
             var narration = sceneGo.AddComponent<OpeningNarration>(); narration.hud = hud; narration.gameplayCamera = cam;
             var appearance = playerGo.AddComponent<PlayerAppearance>(); appearance.body = playerGo.transform.Find("Body"); appearance.head = playerGo.transform.Find("Head");
             var growth = sceneGo.AddComponent<SkillGrowth>(); growth.horse = horse; growth.melee = melee;

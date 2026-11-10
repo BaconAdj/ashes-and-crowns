@@ -93,6 +93,7 @@ namespace AshesAndCrowns.EditorTools
             var sceneGo = new GameObject(siege ? "Phase9Scene" : "Phase0Scene");
             var driver = sceneGo.AddComponent<Phase0Scene>();
             var perf = sceneGo.AddComponent<PerfProbe>();
+            var brightness = sceneGo.AddComponent<BrightnessControl>(); brightness.hud = hud;
 
             // ---- player
             var playerGo = new GameObject("Player");

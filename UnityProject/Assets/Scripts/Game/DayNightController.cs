@@ -45,7 +45,7 @@ namespace AshesAndCrowns.Game
             Color sunColor = Color.Lerp(_daySun, _dawnSun, lowSun * 0.85f);
             float sunIntensity = night
                 ? _balance.look.moonIntensity * (1f - cloud * 0.7f)
-                : Mathf.Lerp(_balance.look.dawnSunIntensity, _balance.look.noonSunIntensity, Mathf.InverseLerp(0f, 35f, elevation)) * cloudDim * Mathf.Max(daylight, 0.15f);
+                : Mathf.Lerp(_balance.look.dawnSunIntensity, _balance.look.noonSunIntensity, Mathf.InverseLerp(0f, 35f, elevation)) * cloudDim * Mathf.Max(daylight, 0.3f);
             sun.color = night ? new Color(0.55f, 0.6f, 0.75f) : sunColor;
             sun.intensity = sunIntensity;
             sun.shadowStrength = Mathf.Lerp(0.5f, 0.9f, 1f - cloud);

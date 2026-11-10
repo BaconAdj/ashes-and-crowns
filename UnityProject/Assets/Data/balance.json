@@ -135,14 +135,14 @@
   "look": {
     "fogDensity": 0.0035,
     "fogColor": [
-      0.62,
-      0.65,
-      0.68
+      0.66,
+      0.69,
+      0.72
     ],
     "ambientColor": [
-      0.36,
-      0.39,
-      0.44
+      0.48,
+      0.51,
+      0.56
     ],
     "sunColor": [
       0.8,
@@ -152,18 +152,18 @@
     "sunIntensity": 1.05,
     "sunPitchDegrees": 28.0,
     "sunYawDegrees": -140.0,
-    "saturation": -28.0,
-    "contrast": 12.0,
-    "postExposure": -0.25,
-    "vignette": 0.3,
-    "filmGrain": 0.3,
-    "noonSunIntensity": 1.1,
-    "dawnSunIntensity": 0.45,
-    "moonIntensity": 0.08,
+    "saturation": -22.0,
+    "contrast": 8.0,
+    "postExposure": 0.2,
+    "vignette": 0.2,
+    "filmGrain": 0.2,
+    "noonSunIntensity": 1.25,
+    "dawnSunIntensity": 0.65,
+    "moonIntensity": 0.2,
     "nightAmbientColor": [
-      0.05,
-      0.06,
-      0.09
+      0.11,
+      0.13,
+      0.17
     ],
     "dawnSunColor": [
       0.85,
@@ -171,11 +171,11 @@
       0.45
     ],
     "nightFogColor": [
-      0.08,
-      0.09,
-      0.12
+      0.13,
+      0.14,
+      0.18
     ],
-    "cloudSunDimming": 0.55,
+    "cloudSunDimming": 0.7,
     "rainParticlesPerSecond": 2500,
     "snowParticlesPerSecond": 900
   },

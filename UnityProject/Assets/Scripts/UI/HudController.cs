@@ -54,10 +54,13 @@ namespace AshesAndCrowns.UI
         /// <summary>Date line under the army panel. Call at low cadence (strings allocate).</summary>
         public void SetClock(string text) { if (_clock != null) _clock.text = text; }
 
-        public void ShowBell(string bellName)
+        public void ShowBell(string bellName) => ShowToast(L.T("The bells ring ") + bellName + ".");
+
+        /// <summary>A short italic line under the date that fades after a few seconds.</summary>
+        public void ShowToast(string text)
         {
             if (_bellToast == null) return;
-            _bellToast.text = L.T("The bells ring ") + bellName + ".";
+            _bellToast.text = text;
             _bellToast.style.display = DisplayStyle.Flex;
             _bellToastUntil = Time.unscaledTime + 6f;
         }

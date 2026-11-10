@@ -90,16 +90,16 @@ namespace AshesAndCrowns.Sim
     {
         public float fogDensity = 0.011f;
         public float[] fogColor = { 0.62f, 0.65f, 0.68f };
-        public float[] ambientColor = { 0.30f, 0.33f, 0.38f };
+        public float[] ambientColor = { 0.48f, 0.51f, 0.56f };
         public float[] sunColor = { 0.80f, 0.84f, 0.92f };
         public float sunIntensity = 1.05f, sunPitchDegrees = 28f, sunYawDegrees = -140f;
-        public float saturation = -42f, contrast = 14f, postExposure = -0.25f, vignette = 0.36f, filmGrain = 0.38f;
+        public float saturation = -22f, contrast = 8f, postExposure = 0.2f, vignette = 0.2f, filmGrain = 0.2f;
         // Day/night
-        public float noonSunIntensity = 1.1f, dawnSunIntensity = 0.45f, moonIntensity = 0.08f;
-        public float[] nightAmbientColor = { 0.05f, 0.06f, 0.09f };
+        public float noonSunIntensity = 1.25f, dawnSunIntensity = 0.65f, moonIntensity = 0.2f;
+        public float[] nightAmbientColor = { 0.11f, 0.13f, 0.17f };
         public float[] dawnSunColor = { 0.85f, 0.62f, 0.45f };
-        public float[] nightFogColor = { 0.08f, 0.09f, 0.12f };
-        public float cloudSunDimming = 0.55f;   // sun intensity multiplier at full cloud cover
+        public float[] nightFogColor = { 0.13f, 0.14f, 0.18f };
+        public float cloudSunDimming = 0.7f;   // sun intensity multiplier at full cloud cover
         public float rainParticlesPerSecond = 2500f, snowParticlesPerSecond = 900f;
     }
 
