@@ -19,7 +19,6 @@ namespace AshesAndCrowns.Game
         private Light _light;
         private float _hoursLeft;
         private float _flicker;
-        private bool _warnedEmpty;
 
         public bool Lit => _light != null && _light.enabled;
         public float HoursLeft => _hoursLeft;
@@ -68,7 +67,7 @@ namespace AshesAndCrowns.Game
                 if (ctx == null || ctx.Inventory.Count("torch") <= 0)
                 {
                     hud?.ShowToast(L.T("You have no torch. The market sells them for a penny; a chandler or your own tallow will do."));
-                    _warnedEmpty = true; return;
+                    return;
                 }
                 ctx.Inventory.Remove("torch");
                 _hoursLeft = _balance.look.torchBurnHours;

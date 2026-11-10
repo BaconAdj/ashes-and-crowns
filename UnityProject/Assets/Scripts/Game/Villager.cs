@@ -52,15 +52,15 @@ namespace AshesAndCrowns.Game
             if (r != null && _tag != null) { var block = new MaterialPropertyBlock(); block.SetColor(Shader.PropertyToID("_BaseColor"), VillageKit.Dye(_tag.npcId)); r.SetPropertyBlock(block, 0); }
         }
 
-        private float Random_(float max) => ((_tag != null ? _tag.npcId : GetInstanceID()) * 0.618f % 1f) * max;
+        private float Random_(float max) => ((_tag != null ? _tag.npcId : variant + 7) * 0.618f % 1f) * max;
 
         private static void Lookup()
         {
             if (Time.unscaledTime < s_nextPlayerLookup) return;
             s_nextPlayerLookup = Time.unscaledTime + 2f;
             if (s_balance == null && GameBootstrap.Instance != null) s_balance = GameBootstrap.Instance.Balance;
-            if (s_clock == null) s_clock = FindFirstObjectByType<WorldClock>();
-            if (s_player == null) { var pc = FindFirstObjectByType<PlayerController>(); if (pc != null) s_player = pc.transform; }
+            if (s_clock == null) s_clock = FindAnyObjectByType<WorldClock>();
+            if (s_player == null) { var pc = FindAnyObjectByType<PlayerController>(); if (pc != null) s_player = pc.transform; }
         }
 
         private void Update()
