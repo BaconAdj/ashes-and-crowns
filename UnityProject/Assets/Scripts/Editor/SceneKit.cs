@@ -280,7 +280,7 @@ namespace AshesAndCrowns.EditorTools
         {
             var playerGo = new GameObject("Player");
             var pcc = playerGo.AddComponent<CharacterController>();
-            pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f;
+            pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f; pcc.stepOffset = 0.5f;   // thresholds, sills, the lip of a bridge
             Mesh man = ArtMesh("Characters/Man.fbx");
             if (man != null) MeshChild("Body", playerGo.transform, man, leather, Mat("Skin", LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f));
             else

@@ -21,6 +21,9 @@ namespace AshesAndCrowns.Game
         public int variant;                // spreads habits across the village
         public bool female;
 
+        /// <summary>In a town: the streets, so that people walk round the houses and not at them. Null in a village.</summary>
+        public static TownRoutes Streets;
+        private static readonly float[] s_routeBuffer = new float[32];
         private static Transform s_player;
         private static WorldClock s_clock;
         private static Balance s_balance;
@@ -31,7 +34,7 @@ namespace AshesAndCrowns.Game
         private VillagerActivity _activity = VillagerActivity.Home;
         private bool _planned;
         private Transform _building;          // the building we are inside, or null
-        private readonly Vector3[] _route = new Vector3[5]; private int _routeCount, _routeIndex, _exitDoorIndex = -1;
+        private readonly Vector3[] _route = new Vector3[24]; private int _routeCount, _routeIndex, _exitDoorIndex = -1;
         private Vector3 _goal; private Transform _goalBuilding;
         private float _vy, _dodgeUntil, _dodgeSign = 1f, _bob, _nextThink, _stuck; private Vector3 _lastPos;
         private Vector3 _restPos; private Quaternion _restRot;
@@ -41,6 +44,10 @@ namespace AshesAndCrowns.Game
         public VillagerTag Tag => _tag;
         public string Doing => VillageDay.Describe(_activity, _tag != null ? _tag.trade : string.Empty);
         public bool WillTalk => _activity != VillagerActivity.Asleep;
+
+        private bool _settle;
+        /// <summary>Stood up in the middle of a day: be where the hour says at once, do not walk there from the door.</summary>
+        public void Settle() { _settle = true; _planned = false; _nextThink = 0f; }
 
         private void Awake() { _tag = GetComponent<VillagerTag>(); _cc = GetComponent<CharacterController>(); }
 
@@ -81,6 +88,7 @@ namespace AshesAndCrowns.Game
                 bool mass = Festivals.IsMassWindow(cal, s_balance.time) && (sunday || Festivals.FeastOn(cal) != Feast.None);
                 VillagerActivity want = VillageDay.At(cal.HourOfDay, sunday, mass, variant, b);
                 if (want != _activity || !_planned) { _activity = want; _planned = true; Plan(); }
+                if (_settle) { _settle = false; Teleport(); }
             }
             bool near = s_player != null && (transform.position - s_player.position).sqrMagnitude < b.awakeRadiusMetres * b.awakeRadiusMetres;
             if (!near) { if (_routeCount > 0) Teleport(); return; }
@@ -120,6 +128,17 @@ namespace AshesAndCrowns.Game
             _exitDoor = _building != null && _building != targetBuilding ? Door.For(_building) : null;
             _enterDoor = targetBuilding != null && targetBuilding != _building ? Door.For(targetBuilding) : null;
             if (_building != null && _building != targetBuilding) { Add(Marker(_building, "Inside")); Add(Marker(_building, "Door")); _exitDoorIndex = 1; }
+            if (Streets != null)
+            {
+                Vector3 from = _routeCount > 0 ? _route[_routeCount - 1] : transform.position;
+                Vector3 to = targetBuilding != null && targetBuilding != _building ? Marker(targetBuilding, "Door") : goal;
+                if ((to - from).sqrMagnitude > 20f * 20f)
+                {
+                    int n = Streets.Route(from.x, from.z, to.x, to.z, s_routeBuffer);
+                    float side = ((variant * 7) % 5 - 2) * 0.55f;   // keep to your own line of the street
+                    for (int i = 0; i < n; i++) Add(new Vector3(s_routeBuffer[i * 2] + side, from.y, s_routeBuffer[i * 2 + 1] + side));
+                }
+            }
             if (targetBuilding != null && targetBuilding != _building) { Add(Marker(targetBuilding, "Door")); Add(Marker(targetBuilding, "Inside")); }
             Add(goal);
         }
@@ -160,6 +179,14 @@ namespace AshesAndCrowns.Game
                 // Wedged against a bench or a post: after a couple of seconds, count the waypoint as reached.
                 if ((transform.position - _lastPos).sqrMagnitude < 0.0004f) _stuck += dt; else _stuck = 0f;
                 _lastPos = transform.position;
+                if (_stuck > 6f)
+                {
+                    // Properly wedged (a cart, a corner, a neighbour): be at the waypoint and carry on.
+                    if (_cc != null) _cc.enabled = false;
+                    transform.position = new Vector3(target.x, transform.position.y + 0.05f, target.z);
+                    if (_cc != null) _cc.enabled = true;
+                    d = 0f;
+                }
                 if (d < 0.35f || (_stuck > 2.5f && d < 2.5f))
                 {
                     _stuck = 0f;

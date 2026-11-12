@@ -107,7 +107,8 @@ namespace AshesAndCrowns.Game
                 if (clock != null && clock.IsReady && RunSession.CarriedTotalHours >= 0) clock.Resume(RunSession.CarriedTotalHours, RunSession.CarriedWeather, RunSession.CarriedWeatherRng);
                 if (RunSession.CarriedBody != null && vitals != null && vitals.Body != null) { vitals.Body.Import(RunSession.CarriedBody); RunSession.CarriedBody = null; }
                 if (spawner != null && RunSession.Context.Settlements.Count > 0) spawner.Build(RunSession.Context.Settlements, GameBootstrap.Instance.World.overworld.terrainSizeMetres, GameBootstrap.Instance.Rng.Fork(46));
-                Transform back = FindSpawn(RunSession.Context.HomeSettlementId);
+                Transform back = FindSpawn(!string.IsNullOrEmpty(RunSession.ArrivalSpawnId) ? RunSession.ArrivalSpawnId : RunSession.Context.HomeSettlementId);
+                RunSession.ArrivalSpawnId = null;
                 if (back != null && spawnPoints != null) PlaceBody(back.position, back.rotation);
                 if (RunSession.ReturnChronicle != null && RunSession.ReturnChronicle.Count > 0) { hud.ShowChronicle("After the battle", RunSession.ReturnChronicle); _chronicleOpen = true; Cursor.lockState = CursorLockMode.None; Cursor.visible = true; RunSession.ReturnChronicle = null; }
                 SaveNow(AffairsChoice.None);

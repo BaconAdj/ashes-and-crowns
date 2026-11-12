@@ -16,18 +16,16 @@ namespace AshesAndCrowns.EditorTools
 
         public sealed class Result { public Transform Root; public Transform Church; public Transform Alehouse; public Transform Home; public Transform HallHouse; public Transform Workplace; public Transform Masters; public Vector3 Green; public Material Wattle, Thatch, Stone, Slate, DarkWood, Bark, Linen, Fire, Iron, Villager, Skin, DeerCoat, Antler, Earth; public Mesh HutMesh, AlehouseMesh, ChurchMesh, Man, Woman, Deer; public SettlementSite Site; }
 
-        public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
+        /// <summary>The building materials and meshes every settlement is made of, as a Result with nothing placed yet.</summary>
+        public static Result Assets(Balance balance)
         {
             VillageBalance v = balance.village;
-            Texture2D wattleTex = SceneKit.NoiseTexture(Paths.Generated + "/WattleAlbedo.png", new Color(0.52f, 0.46f, 0.36f), new Color(0.64f, 0.58f, 0.47f), 8f, 31f, 256, 2.6f);
-            Texture2D thatchTex = SceneKit.NoiseTexture(Paths.Generated + "/ThatchAlbedo.png", new Color(0.36f, 0.30f, 0.18f), new Color(0.50f, 0.42f, 0.26f), 3f, 40f, 256, 5.5f);
-            Texture2D stoneTex = SceneKit.NoiseTexture(Paths.Generated + "/StoneAlbedo.png", new Color(0.42f, 0.41f, 0.38f), new Color(0.56f, 0.54f, 0.50f), 10f, 29f, 256, 9.1f);
-            Texture2D slateTex = SceneKit.NoiseTexture(Paths.Generated + "/SlateAlbedo.png", new Color(0.20f, 0.21f, 0.24f), new Color(0.30f, 0.31f, 0.34f), 12f, 36f, 256, 12.4f);
-            Material wattle = SceneKit.TexturedMat("Wattle", wattleTex, Color.white, 0.95f, SceneKit.NormalTexture(Paths.Generated + "/WattleNormal.png", 8f, 31f, 2.6f, 2.5f));
-            Material thatch = SceneKit.TexturedMat("Thatch", thatchTex, Color.white, 0.98f, SceneKit.NormalTexture(Paths.Generated + "/ThatchNormal.png", 3f, 40f, 5.5f, 3.5f));
-            Material stone = SceneKit.TexturedMat("ChurchStone", stoneTex, Color.white, 0.92f, SceneKit.NormalTexture(Paths.Generated + "/StoneNormal.png", 10f, 29f, 9.1f, 3.0f));
-            Material slate = SceneKit.TexturedMat("Slate", slateTex, Color.white, 0.75f, SceneKit.NormalTexture(Paths.Generated + "/SlateNormal.png", 12f, 36f, 12.4f, 2.0f));
-            Material darkWood = SceneKit.Mat("DarkWood", SceneKit.LitShader, new Color(0.18f, 0.14f, 0.10f), 0f, 0.9f);
+            // Surfaces drawn as what they are (Editor/SurfaceTextures): the models carry texture coordinates in metres.
+            Material wattle = SurfaceTextures.Make("DaubWall", SurfaceTextures.Kind.Daub, 2.4f, 0.95f);
+            Material thatch = SurfaceTextures.Make("ThatchRoof", SurfaceTextures.Kind.Thatch, 2.0f, 0.98f);
+            Material stone = SurfaceTextures.Make("RubbleStone", SurfaceTextures.Kind.Rubble, 2.2f, 0.92f);
+            Material slate = SurfaceTextures.Make("SlateRoof", SurfaceTextures.Kind.Slate, 1.6f, 0.75f);
+            Material darkWood = SurfaceTextures.Make("OakBoards", SurfaceTextures.Kind.Plank, 1.5f, 0.9f);
             Material bark = SceneKit.Mat("Bark", SceneKit.LitShader, new Color(0.33f, 0.27f, 0.20f), 0f, 0.95f);
             Material linen = SceneKit.Mat("Linen", SceneKit.LitShader, new Color(0.62f, 0.58f, 0.48f), 0f, 0.95f);
             Material iron = SceneKit.Mat("Iron", SceneKit.LitShader, new Color(0.30f, 0.31f, 0.33f), 0.6f, 0.55f);
@@ -38,6 +36,15 @@ namespace AshesAndCrowns.EditorTools
             Mesh aleMesh = LoadOrMake("Alehouse", () => ProceduralBuildings.Alehouse(v.alehouseFootprint[0], v.alehouseFootprint[1], v.alehouseWallHeight));
             Mesh churchMesh = LoadOrMake("Church", () => ProceduralBuildings.Church(v.churchNave[0], v.churchNave[1], v.churchNave[2], v.churchTowerHeight));
 
+            return new Result { Wattle = wattle, Thatch = thatch, Stone = stone, Slate = slate, DarkWood = darkWood, Bark = bark, Linen = linen, Fire = fire, Iron = iron, HutMesh = hutMesh, AlehouseMesh = aleMesh, ChurchMesh = churchMesh };
+        }
+
+        public static Result Build(Terrain terrain, Vector3 centre, Balance balance, DeterministicRng rng, string villageName)
+        {
+            VillageBalance v = balance.village;
+            Result made = Assets(balance);
+            Material wattle = made.Wattle, thatch = made.Thatch, stone = made.Stone, slate = made.Slate, darkWood = made.DarkWood, bark = made.Bark, linen = made.Linen, iron = made.Iron, fire = made.Fire;
+            Mesh hutMesh = made.HutMesh, aleMesh = made.AlehouseMesh, churchMesh = made.ChurchMesh;
             var root = new GameObject("Village_" + villageName).transform;
             root.position = centre;
             float green = v.greenRadiusMetres;
@@ -122,7 +129,7 @@ namespace AshesAndCrowns.EditorTools
             return list;
         }
 
-        private static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)
+        public static Transform Place(Transform root, string name, Mesh mesh, Material[] mats, Terrain terrain, Vector3 pos, Quaternion rot)
         {
             var go = new GameObject(name);
             go.transform.SetParent(root, true);

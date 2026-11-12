@@ -91,7 +91,17 @@ namespace AshesAndCrowns.Game
 
         private static void Station(Villager v, string trade, Transform hut, SettlementSite site, Material wood, Material stone, Material iron, Terrain terrain, DeterministicRng rng)
         {
+            // A town house has its shop at the front and its yard behind; there is no room beside it for a station.
+            Transform bench = BuildingKit.Find(hut, "Bench");
+            bool land = trade == "farmer" || trade == "shepherd" || trade == "hunter" || trade == "fisherman";
+            if (bench != null && !land) { v.workStation = bench; v.workBuilding = hut; return; }
             Transform yard = new GameObject("Station_" + trade).transform; yard.SetParent(hut.parent, true);
+            if (bench != null)
+            {
+                Vector3 behind = hut.position - hut.forward * 10f;
+                if (terrain != null) behind.y = terrain.SampleHeight(behind) + terrain.transform.position.y;
+                yard.position = behind; v.workStation = yard; v.workBuilding = null; return;
+            }
             Vector3 side = hut.right * (hut.GetSiblingIndex() % 2 == 0 ? 1f : -1f);
             Vector3 pos = hut.position + hut.forward * 1.5f + side * 4.2f;
             switch (trade)

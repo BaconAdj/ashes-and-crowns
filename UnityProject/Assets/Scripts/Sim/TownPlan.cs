@@ -104,7 +104,7 @@ namespace AshesAndCrowns.Sim
             p.Priory = new TownRect { Name = "Holy Trinity priory", X0 = -205f, Z0 = 16f, X1 = -45f, Z1 = 150f };
             p.Kinecroft = new TownRect { Name = "the Kinecroft", X0 = -hw + 30f, Z0 = -295f, X1 = -45f, Z1 = -45f };
             p.Bullcroft = new TownRect { Name = "the Bullcroft", X0 = -hw + 30f, Z0 = 165f, X1 = -45f, Z1 = hd - 30f };
-            p.BridgeX0 = hw - 2f; p.BridgeX1 = p.RiverX1 + 26f; p.BridgeZ = 0f; p.BridgeWidth = 5f;
+            p.BridgeX0 = hw + 3.2f;   // from the outer face of the Bridge Gate p.BridgeX1 = p.RiverX1 + 26f; p.BridgeZ = 0f; p.BridgeWidth = 5f;
             p.Garrison = 150; p.Monks = 9;
 
             // ---- gates and streets

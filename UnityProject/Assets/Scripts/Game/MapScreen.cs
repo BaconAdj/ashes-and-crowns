@@ -13,6 +13,7 @@ namespace AshesAndCrowns.Game
         public SaveManager saveManager;
         public Transform player;
         public float terrainSize = 8192f;
+        public TownScene town;            // set in a town scene: the body is shown at the town's place in England
         private Texture2D _map;
         private bool _open;
 
@@ -26,7 +27,7 @@ namespace AshesAndCrowns.Game
             if (!_open) { hud.HideMap(); return; }
             if (_map == null) _map = Draw(DataFiles.LoadCoast());
             var ctx = RunSession.Context;
-            hud.ShowMap(_map, ctx.Settlements, new Vector2(player.position.x / terrainSize, player.position.z / terrainSize), ctx.ActiveJob != null ? ctx.ActiveJob.ToId : null);
+            hud.ShowMap(_map, ctx.Settlements, town != null ? town.mapPosition : new Vector2(player.position.x / terrainSize, player.position.z / terrainSize), ctx.ActiveJob != null ? ctx.ActiveJob.ToId : null);
         }
 
         private static Texture2D Draw(CoastData coast)

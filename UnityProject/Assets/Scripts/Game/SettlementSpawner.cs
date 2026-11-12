@@ -13,6 +13,7 @@ namespace AshesAndCrowns.Game
         public WorldAssets assets;
         public Transform fixedSitesRoot;    // SettlementSite children created by the scene builder (home village, keeps)
         public Transform strongholdsRoot;   // the scene builder's keeps, named Keep_<settlement id>
+        public bool townMode;               // a town scene: the one baked site is all there is; no villages are raised and the ground is left alone
         private readonly List<SettlementSite> _sites = new List<SettlementSite>(24);
         private NamesData _names;
         private bool _built;
@@ -23,6 +24,19 @@ namespace AshesAndCrowns.Game
         {
             if (_built) return;
             _built = true;
+            if (townMode)
+            {
+                if (fixedSitesRoot != null) foreach (Transform t in fixedSitesRoot) { var fixedSite = t.GetComponent<SettlementSite>(); if (fixedSite != null) _sites.Add(fixedSite); }
+                var run = RunSession.Context;
+                if (run != null)
+                    foreach (var townSite in _sites)
+                    {
+                        var st = run.FindSettlement(townSite.settlementId);
+                        if (st == null || st.Market == null || townSite.goods.Count > 0) continue;
+                        VillageKit.BuildMarket(townSite, townSite.transform, st.Market, run.Items, assets.darkWood, assets.linen != null ? assets.linen : assets.wattle, assets.terrain, true);
+                    }
+                return;
+            }
             // Work on a copy: SetHeights on the saved TerrainData would dent the asset permanently in the editor.
             var td = Instantiate(assets.terrain.terrainData); td.name = assets.terrain.terrainData.name + " (runtime)";
             assets.terrain.terrainData = td;

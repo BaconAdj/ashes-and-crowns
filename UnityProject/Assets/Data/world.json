@@ -49,9 +49,10 @@
       "nx": 0.61223,
       "nz": 0.28926,
       "type": "castle",
-      "population": 900,
+      "population": 2000,
       "garrison": 150,
       "allegiance": "matilda",
+   "notes": "Brien FitzCount's castle and borough. Built at full size as its own scene (Town_Wallingford): about 43 ha inside the ramparts, some 460 houses, eleven parishes.",
       "lat": 51.6,
       "lon": -1.125
     },

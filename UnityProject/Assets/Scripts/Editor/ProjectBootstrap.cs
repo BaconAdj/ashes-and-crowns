@@ -57,6 +57,21 @@ namespace AshesAndCrowns.EditorTools
             RegisterScenes();
         }
 
+        [MenuItem("Ashes and Crowns/Rebuild/Wallingford (the town at full size)", priority = 23)]
+        public static void RebuildTownMenu()
+        {
+            EnsureProjectSettings();
+            Phase1SceneBuilder.Build(town: true);
+            RegisterScenes();
+        }
+
+        [MenuItem("Ashes and Crowns/Open Wallingford", priority = 5)]
+        public static void OpenTownMenu()
+        {
+            if (!File.Exists(Paths.TownScene)) RebuildTownMenu();
+            EditorSceneManager.OpenScene(Paths.TownScene);
+        }
+
         [MenuItem("Ashes and Crowns/Rebuild/Battlefield Scene", priority = 21)]
         public static void RebuildSceneMenu()
         {
@@ -114,7 +129,58 @@ namespace AshesAndCrowns.EditorTools
 
         // ---------------------------------------------------------------- URP
 
+        /// <summary>The picture settings, applied on every setup so an older asset is brought up: four shadow cascades with
+        /// soft edges, a larger shadow map, HDR, 4x MSAA, and ambient occlusion so things sit on the ground and in their corners.
+        /// Everything is set through serialized properties or reflection and skipped quietly where this URP names it differently.</summary>
+        private static void EnsureQuality(UniversalRenderPipelineAsset asset)
+        {
+            if (asset == null) return;
+            try
+            {
+                var so = new SerializedObject(asset);
+                void Set(string prop, System.Action<SerializedProperty> apply) { var sp = so.FindProperty(prop); if (sp != null) apply(sp); }
+                Set("m_ShadowDistance", sp => sp.floatValue = 140f);
+                Set("m_ShadowCascadeCount", sp => sp.intValue = 4);
+                Set("m_SoftShadowsSupported", sp => sp.boolValue = true);
+                Set("m_MainLightShadowmapResolution", sp => sp.intValue = 4096);
+                Set("m_AdditionalLightShadowsSupported", sp => sp.boolValue = true);
+                Set("m_AdditionalLightsShadowmapResolution", sp => sp.intValue = 2048);
+                Set("m_SupportsHDR", sp => sp.boolValue = true);
+                Set("m_MSAA", sp => sp.intValue = 4);
+                Set("m_RequireDepthTexture", sp => sp.boolValue = true);
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(asset);
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Ashes and Crowns] picture settings not applied: " + e.Message); }
+            try
+            {
+                var data = AssetDatabase.LoadAssetAtPath<ScriptableObject>(Paths.UrpRenderer);
+                if (data == null) return;
+                System.Type ssaoType = null;
+                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies()) { ssaoType = asm.GetType("UnityEngine.Rendering.Universal.ScreenSpaceAmbientOcclusion"); if (ssaoType != null) break; }
+                var prop = data.GetType().GetProperty("rendererFeatures");
+                var list = prop != null ? prop.GetValue(data) as System.Collections.IList : null;
+                if (ssaoType == null || list == null) return;
+                foreach (object f in list) if (f != null && f.GetType() == ssaoType) return;   // already there
+                var feature = ScriptableObject.CreateInstance(ssaoType); feature.name = "AmbientOcclusion";
+                AssetDatabase.AddObjectToAsset(feature, data);
+                list.Add(feature);
+                var validate = data.GetType().GetMethod("OnValidate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                if (validate != null) validate.Invoke(data, null);
+                EditorUtility.SetDirty(data);
+                Debug.Log("[Ashes and Crowns] ambient occlusion added to the renderer");
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Ashes and Crowns] ambient occlusion not added: " + e.Message); }
+        }
+
         public static UniversalRenderPipelineAsset EnsureUrp()
+        {
+            var made = EnsureUrpAsset();
+            EnsureQuality(made);
+            return made;
+        }
+
+        private static UniversalRenderPipelineAsset EnsureUrpAsset()
         {
             var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(Paths.UrpAsset);
             if (asset == null)
@@ -212,6 +278,7 @@ namespace AshesAndCrowns.EditorTools
             if (File.Exists(Paths.Phase1Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase1Scene, true));
             if (File.Exists(Paths.Phase0Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase0Scene, true));
             if (File.Exists(Paths.Phase9Scene)) list.Add(new EditorBuildSettingsScene(Paths.Phase9Scene, true));
+            if (File.Exists(Paths.TownScene)) list.Add(new EditorBuildSettingsScene(Paths.TownScene, true));
             EditorBuildSettings.scenes = list.ToArray();
         }
     }

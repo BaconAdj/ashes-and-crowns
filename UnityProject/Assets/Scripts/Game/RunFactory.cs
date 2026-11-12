@@ -34,6 +34,8 @@ namespace AshesAndCrowns.Game
             CoastData coast = DataFiles.LoadCoast();
             ctx.Baronage = BaronageGenerator.Generate(balance.baronage, anchors, coast.mapSideKm, nameGen, boot.Rng.Fork(43));
             ctx.SpawnLocationId = RunSetup.ChooseSpawn(ctx.Character, villages, castles, boot.Rng.Fork(44));
+            var townScene = UnityEngine.Object.FindAnyObjectByType<TownScene>();
+            if (townScene != null && !string.IsNullOrEmpty(townScene.settlementId)) ctx.SpawnLocationId = townScene.settlementId;   // a life begun in a town scene begins in that town
             ctx.EnsureSurvival(balance, DataFiles.LoadItems(), DataFiles.LoadTrades());
             ctx.Names = names;
             ctx.MapSideKm = coast.mapSideKm;

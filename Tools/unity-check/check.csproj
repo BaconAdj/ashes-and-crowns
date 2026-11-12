@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Type-checks every game script outside Unity. Not a build: the output is thrown away. See check.sh. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0649;CS0414;CS0169;CS0618;CS0108;CS1591;CS8632;CS0219;CS0168;CS0067</NoWarn>
+    <DefineConstants>UNITY_EDITOR;UNITY_6000_0_OR_NEWER;ENABLE_INPUT_SYSTEM</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../UnityProject/Assets/Scripts/**/*.cs" Exclude="../../UnityProject/Assets/Scripts/Tests/**" />
+    <Compile Include="Stubs/**/*.cs" />
+    <Reference Include="refs/um/lib/net45/*.dll" />
+    <Reference Include="UnityEditor"><HintPath>refs/sdk/lib/UnityEditor.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

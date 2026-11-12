@@ -35,6 +35,8 @@ namespace AshesAndCrowns.Game
         public IntrigueDirector intrigue;   // optional: the knife in the dark
         public DevCheats cheats;            // optional: F10 / ` testing menu
         public HouseholdDirector household; // optional: a knight's duties
+        public Transform[] roadsOut = new Transform[0];   // a town scene: where the roads leave by the gates
+        public const string TownSceneName = "Town_Wallingford", EnglandSceneName = "Phase1_England", TownSettlementId = "wallingford";
         public ActivityDirector activity;   // optional: kneeling prayer and the working day
         private enum Open : byte { None, Dialogue, Market, Moment }
         private Open _openKind;
@@ -121,6 +123,7 @@ namespace AshesAndCrowns.Game
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
             if (_site != null) foreach (Deer deer in _site.deer) if (deer != null && deer.gameObject.activeSelf) Check(deer.transform, deer.Dead ? "carcass" : "deer", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
+            for (int i = 0; i < roadsOut.Length; i++) if (roadsOut[i] != null) Check(roadsOut[i], "road", ref best);
             // Doors shut fast, and what lies behind other people's.
             Vector3 here = Body().position; Transform mine = HomeBuilding;
             var doors = Door.All;
@@ -248,7 +251,8 @@ namespace AshesAndCrowns.Game
                 case "wood": e = ctx.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : null; if (e == null) return "An oak. You would need an axe."; break;
                 case "deer": e = ctx.Inventory.Count("bow") > 0 ? "Stalk and loose" : null; if (e == null) return "Deer. You would need a bow."; break;
                 case "carcass": e = "Dress the kill"; break;
-                case "keep": e = KeepPrompt(); break;
+                case "keep": e = KeepPrompt(); f = TownBelow() ? "Go down into the town" : null; break;
+                case "road": e = "Take the road out of " + (ctx.Current != null ? ctx.Current.Name : "the town"); break;
                 case "muster": MusterPrompt(ctx, out e, out f); break;
                 case "good": GoodPrompt(ctx, out e, out f); break;
                 case "well": WellPrompt(ctx, out e, out f); break;
@@ -368,6 +372,7 @@ namespace AshesAndCrowns.Game
                 case "well": WellUse(ctx); break;
                 case "master": Master(at); break;
                 case "door": Knock(at.GetComponent<Door>()); break;
+                case "road": Travel(EnglandSceneName, TownSettlementId); break;
                 case "strongbox": RifleChest(ctx, at); break;
             }
         }
@@ -384,6 +389,7 @@ namespace AshesAndCrowns.Game
                 case "well": WellAlt(ctx); break;
                 case "master": PersonAlt(at); break;
                 case "door": PickDoor(ctx, at.GetComponent<Door>()); break;
+                case "keep": if (TownBelow()) Travel(TownSceneName, "gate_north_gate"); break;
             }
         }
 
@@ -797,6 +803,21 @@ namespace AshesAndCrowns.Game
             saveManager?.SaveNow(AffairsChoice.None);
             CarryAcrossScenes();
             UnityEngine.SceneManagement.SceneManager.LoadScene("Phase0_Battlefield");
+        }
+
+        /// <summary>A town built at full size is its own scene: the England map shows only its keep. True at that keep.</summary>
+        private bool TownBelow() => roadsOut.Length == 0 && _site != null && _site.settlementId == TownSettlementId && Application.CanStreamedLevelBeLoaded(TownSceneName);
+
+        /// <summary>Walk from one scene into another (the overworld and a town): the run, the clock and the body come along.</summary>
+        private void Travel(string scene, string arriveAt)
+        {
+            if (!Application.CanStreamedLevelBeLoaded(scene)) { Say("The road", "The road is not built yet. (Rebuild the scenes from the Ashes and Crowns menu.)"); return; }
+            if (activity != null) activity.Abort();
+            if (horse != null && horse.Mounted) horse.Dismount(player.transform);
+            saveManager?.SaveNow(AffairsChoice.None);
+            CarryAcrossScenes();
+            RunSession.ArrivalSpawnId = arriveAt;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
         }
 
         /// <summary>Stash what the next scene cannot read from the save: the clock and the body.</summary>

@@ -23,11 +23,13 @@ namespace AshesAndCrowns.Game
         public static double CarriedTotalHours = -1;
         public static WeatherSnapshot CarriedWeather = default; public static ulong CarriedWeatherRng;
         public static BodySnapshot CarriedBody;
+        /// <summary>Where the body stands after the next scene load (a spawn point's name): the gate you came in by, the town you left.</summary>
+        public static string ArrivalSpawnId;
         /// <summary>The living run: character, family, baronage. Null until a character exists.</summary>
         public static RunContext Context;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; PendingBattle = null; ReturnChronicle = null; CarriedTotalHours = -1; CarriedWeather = default; CarriedBody = null; }
+        private static void Reset() { PendingResume = null; NextSeed = 0; LaunchHandled = false; Context = null; PendingBattle = null; ReturnChronicle = null; CarriedTotalHours = -1; CarriedWeather = default; CarriedBody = null; ArrivalSpawnId = null; }
     }
 
     public sealed class BattleLaunch

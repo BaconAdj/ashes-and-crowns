@@ -20,3 +20,28 @@ Send a screenshot or a pasted red console line for anything that fails.
 12. **Command mode (battlefield scene).** Open `Phase0_Battlefield`. At the vantage: Ctrl+A, Return, RMB move, Alt+drag, C charge, J about face, Q/E rotate camera, K hide HUD, P pause.
 
 Known gaps tonight: the keep has no interior; villagers do not trade or gossip with each other; climbing has no arm animation; fighting has no body animation beyond the weapon.
+
+## Phase 16: doors, locks, Wallingford
+
+Setup: pull, then `Ashes and Crowns > Setup Project`, `Rebuild > England Scene`, `Rebuild > Wallingford (the town at full size)`. Delete the old save.
+
+### Doors (England scene, Ashby)
+1. Begin a life. Walk at your own door from inside: it swings outward and you walk out. Turn round and walk in: it swings inward.
+2. Walk into the alehouse and the church the same way. Nothing blocks the doorway; a villager in your way steps aside.
+3. Wait for night (the tester's menu on the ` key jumps to night). Walk at a neighbour's door: it stays shut. The prompt offers Knock, and with a knife, Slip the bar.
+4. Slip the bar: move the mouse (or A and D) until holding E carries the bar all the way. Off the mark it binds and the bar reddens; ease off.
+5. Inside, the chest offers Rifle the chest. A sleeper may wake.
+6. Your own door never bars you out.
+
+### Wallingford
+1. `Ashes and Crowns > Open Wallingford`, press Play, make a character. You begin at a hearth on St Mary's Street.
+2. Walk north to the crossroads, east along the High Street to the Bridge Gate and over the bridge.
+3. Walk to the market place (stalls, well, cross), into St Mary-le-More, into an alehouse.
+4. Walk up Castle Street to Castle Lane and the castle gate; look for the motte and keep.
+5. Watch the people: houses near you have folk in them, they walk along the streets, not through walls.
+6. Find a milestone outside a gate: E takes the road to England. At Wallingford's keep in England, F goes back down into the town.
+7. Note the frame rate in the market and on the High Street.
+
+### What to look at
+- Do the textures (daub, thatch, stone, slate, boards) sit right on the buildings, or are any stretched or sideways?
+- Is anything pink, or does the console show a red line about the renderer or ambient occlusion?

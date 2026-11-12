@@ -290,14 +290,19 @@ def _write_obj(b, path):
             normals_out.append(key)
         return normal_index[key]
     tris = 0
-    # Texture coordinates: planar by the face's dominant axis, one unit per metre, so tiling textures (daub, thatch,
-    # stone courses, planks) sit at true scale on every model. Walls get u along the wall and v up; flats get u east, v north.
+    # Texture coordinates, one unit per metre, so tiling textures (daub, thatch, stone courses, planks) sit at true scale
+    # on every model.
     uv_out, uv_index = [], {}
     def uvidx(p, n):
-        ax, ay, az = abs(n[0]), abs(n[1]), abs(n[2])       # written space: y is up
-        if ay >= ax and ay >= az: uv = (p[0], p[2])
-        elif ax >= az: uv = (p[2], p[1])
-        else: uv = (p[0], p[1])
+        # written space: y is up. Flats map east and north. Everything else maps u along the surface on the level and v up
+        # the surface, so courses of stone lie level and thatch hangs down the slope whatever the pitch.
+        if abs(n[1]) > 0.98: uv = (p[0], p[2])
+        else:
+            l = math.sqrt(n[0] * n[0] + n[2] * n[2])
+            r = (-n[2] / l, 0.0, n[0] / l)
+            sv = _cross(n, r)
+            if sv[1] < 0: sv = (-sv[0], -sv[1], -sv[2])
+            uv = (_dot(p, r), _dot(p, sv))
         key = (round(uv[0], 3), round(uv[1], 3))
         if key not in uv_index:
             uv_index[key] = len(uv_out) + 1
