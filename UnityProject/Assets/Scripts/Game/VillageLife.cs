@@ -82,6 +82,10 @@ namespace AshesAndCrowns.Game
                 return;
             }
 
+            // Hands busy (kneeling, working, at a lock): the keys belong to that, and the key that ends it does nothing else.
+            bool handsBusy = activity != null && activity.Active;
+            if (handsBusy || _handsWereBusy) { _handsWereBusy = handsBusy; if (handsBusy) hud.SetPrompt(string.Empty); return; }
+
             // Quick actions
             if (kb.gKey.wasPressedThisFrame) EatSomething();
             if (kb.iKey.wasPressedThisFrame) ShowInventory();
@@ -117,8 +121,19 @@ namespace AshesAndCrowns.Game
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
             if (_site != null) foreach (Deer deer in _site.deer) if (deer != null && deer.gameObject.activeSelf) Check(deer.transform, deer.Dead ? "carcass" : "deer", ref best);
             if (mastersRoot != null) foreach (Transform m in mastersRoot) if (m.GetComponent<Villager>() == null) Check(m, "master", ref best);
+            // Doors shut fast, and what lies behind other people's.
+            Vector3 here = Body().position; Transform mine = HomeBuilding;
+            var doors = Door.All;
+            for (int i = 0; i < doors.Count; i++)
+            {
+                Door d = doors[i]; if (d == null) continue;
+                if ((d.transform.position - here).sqrMagnitude > 144f) continue;
+                if (d.Locked && !d.IsOpen) Check(d.transform, "door", ref best);
+                if (d.building != null && d.building != mine && d.lockKind != LockKind.None && d.building != (_site != null ? _site.alehouse : null)) Check(BuildingKit.Find(d.building, "Chest"), "strongbox", ref best);
+            }
         }
 
+        private bool _handsWereBusy;
         private float _nextGreeting;
         /// <summary>Villagers you brush past say something, by standing: a nod, a word, or a turned back.</summary>
         private void Passing(RunContext ctx)
@@ -153,6 +168,7 @@ namespace AshesAndCrowns.Game
                     if (d <= site.radius && d < bestD) { bestD = d; best = site; }
                 }
             _site = best;
+            Door own = Door.For(HomeBuilding); if (own != null) own.playersOwn = true;   // your own door is never barred to you
             string id = best != null ? best.settlementId : string.Empty;
             ctx.CurrentSettlementId = id;
             if (id != _lastSiteId)
@@ -237,6 +253,16 @@ namespace AshesAndCrowns.Game
                 case "good": GoodPrompt(ctx, out e, out f); break;
                 case "well": WellPrompt(ctx, out e, out f); break;
                 case "master": PersonPrompt(ctx, out e, out f); break;
+                case "strongbox": e = "Rifle the chest"; break;
+                case "door":
+                    {
+                        Door d = _nearest != null ? _nearest.GetComponent<Door>() : null; if (d == null) break;
+                        bool bar = d.lockKind == LockKind.Bar; bool have = ctx.Inventory.Count(LockRules.Tool(d.lockKind)) > 0;
+                        e = "Knock";
+                        if (have) f = bar ? "Slip the bar with your knife" : "Work the lock with a picklock";
+                        else return "[E] Knock     " + (bar ? "Barred from within. A knife in the gap would lift it." : "Locked. It wants a picklock.");
+                        break;
+                    }
             }
             if (e == null && f == null) return string.Empty;
             return (e != null ? "[E] " + e : string.Empty) + (f != null ? (e != null ? "     " : string.Empty) + "[F] " + f : string.Empty);
@@ -341,6 +367,8 @@ namespace AshesAndCrowns.Game
                 case "good": BuyGood(ctx, at.GetComponent<MarketGoodTag>()); break;
                 case "well": WellUse(ctx); break;
                 case "master": Master(at); break;
+                case "door": Knock(at.GetComponent<Door>()); break;
+                case "strongbox": RifleChest(ctx, at); break;
             }
         }
 
@@ -355,7 +383,89 @@ namespace AshesAndCrowns.Game
                 case "good": SellGood(ctx, at.GetComponent<MarketGoodTag>()); break;
                 case "well": WellAlt(ctx); break;
                 case "master": PersonAlt(at); break;
+                case "door": PickDoor(ctx, at.GetComponent<Door>()); break;
             }
+        }
+
+        // ------------------------------------------------------------------ doors, locks and other people's chests
+
+        private float Stealth01(RunContext ctx) => Mathf.Clamp01(ctx.Character.Get(Skill.Stealth) / _balance.character.skillCap);
+
+        /// <summary>Is anybody awake close enough to hear iron on iron?</summary>
+        private bool Earshot()
+        {
+            if (_site == null) return false;
+            Vector3 p = Body().position; float r = _balance.locks.heardRadiusMetres;
+            foreach (Villager v in _site.villagers) if (v != null && v.WillTalk && (v.transform.position - p).sqrMagnitude < r * r) return true;
+            return false;
+        }
+
+        private void Knock(Door d)
+        {
+            if (d == null) return;
+            bool night = LockRules.IsNight(clock.Calendar.HourOfDay, _balance.locks);
+            string who = string.IsNullOrEmpty(d.householder) ? "A voice within" : d.householder;
+            string line = d.lockKind == LockKind.Strong ? "Nobody answers. This door is not opened for the asking."
+                : d.lockKind == LockKind.Warded && !night ? "Nobody comes. Whoever holds the key is elsewhere."
+                : night ? "\"Who knocks at this hour? Go to your bed. The door stays barred till Prime.\"" : "\"Not now.\"";
+            Say(who, line);
+        }
+
+        private void PickDoor(RunContext ctx, Door d)
+        {
+            if (d == null || activity == null || activity.Active) return;
+            string tool = LockRules.Tool(d.lockKind);
+            if (ctx.Inventory.Count(tool) <= 0) return;
+            var rng = GameBootstrap.Instance.Rng.Fork(106); rng.State ^= (ulong)clock.Calendar.TotalHours * 40503UL + (ulong)Mathf.Abs(Mathf.RoundToInt(d.transform.position.x * 13f + d.transform.position.z * 7f));
+            LockState state = LockRules.Begin(d.lockKind, Stealth01(ctx), rng, _balance.locks);
+            var s = ctx.Current;
+            activity.BeginLockpick(d.lockKind == LockKind.Bar ? "A barred door" : "A locked door", state, Stealth01(ctx),
+                () => ctx.Inventory.Count(tool), () => ctx.Inventory.Remove(tool), Earshot,
+                (opened, heard) =>
+                {
+                    ctx.Character.Use(Skill.Stealth, _balance.character, opened ? 1f : 0.3f);
+                    if (opened) d.ForceOpen();
+                    if (heard) { Caught(ctx, s, "A shutter bangs open across the way. You have been seen at another man's door.", 2); return; }
+                    if (opened) hud.ShowToast(d.lockKind == LockKind.Bar ? "The bar lifts. The door gives." : "The bolt slides back.");
+                });
+        }
+
+        private readonly System.Collections.Generic.Dictionary<Transform, long> _rifled = new System.Collections.Generic.Dictionary<Transform, long>();
+
+        /// <summary>Another household's chest. What is in it is theirs; taking it is theft whether or not anyone wakes.</summary>
+        private void RifleChest(RunContext ctx, Transform chest)
+        {
+            if (chest == null) return;
+            Transform building = chest.parent; var s = ctx.Current;
+            long today = JobBoard.Today(clock.Calendar);
+            if (_rifled.TryGetValue(building, out long day) && today - day < 14) { Say("The chest", "Rags, a cracked bowl, a spindle. You have had what there was."); return; }
+            _rifled[building] = today;
+            var rng = GameBootstrap.Instance.Rng.Fork(107); rng.State ^= (ulong)clock.Calendar.TotalHours * 69069UL;
+            Door door = Door.For(building);
+            int take = LockRules.ChestPennies(door != null ? door.lockKind : LockKind.Bar, rng, _balance.locks);
+            ctx.Character.Coins += take; ctx.Character.Use(Skill.Stealth, _balance.character);
+            // Somebody under this roof, awake or woken?
+            bool seen = false;
+            if (_site != null)
+                foreach (Villager v in _site.villagers)
+                {
+                    if (v == null || v.home != building || (v.transform.position - chest.position).sqrMagnitude > 64f) continue;
+                    if (v.WillTalk || rng.Chance(_balance.locks.sleeperWakesChance * (1f - 0.6f * Stealth01(ctx)))) { seen = true; break; }
+                }
+            if (seen) { Caught(ctx, s, $"{take} pennies in your fist, and a face in the dark, staring. Then the shouting starts.", 1); return; }
+            float wanted = ctx.Crime.Commit(CrimeKind.Theft, s != null ? s.Id : "road", today, 0, rng, ctx.Reputation);
+            if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
+            Say("The chest", $"{take} pennies knotted in a cloth under the linen. Nobody stirs.");
+        }
+
+        private void Caught(RunContext ctx, Settlement s, string line, int witnesses)
+        {
+            var rng = GameBootstrap.Instance.Rng.Fork(108); rng.State ^= (ulong)clock.Calendar.TotalHours * 31UL;
+            float wanted = ctx.Crime.Commit(CrimeKind.Theft, s != null ? s.Id : "road", JobBoard.Today(clock.Calendar), witnesses, rng, ctx.Reputation);
+            if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
+            ctx.Standing.TheftSeen();
+            Say("Seen", line);
+            if (s != null) LawCheck(s);
         }
 
         private void Say(string who, string line) => hud.Speak(who, line);

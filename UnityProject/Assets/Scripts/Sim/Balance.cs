@@ -183,6 +183,7 @@ namespace AshesAndCrowns.Sim
         public ActivityBalance activity = new ActivityBalance();
         public VillageDayBalance villageDay = new VillageDayBalance();
         public WildlifeBalance wildlife = new WildlifeBalance();
+        public LockBalance locks = new LockBalance();
         public MoraleBalance morale = new MoraleBalance();
         public ServiceBalance service = new ServiceBalance();
         public SiegeBalance siege = new SiegeBalance();
@@ -201,6 +202,14 @@ namespace AshesAndCrowns.Sim
             var errors = new List<string>();
             if (b == null) { errors.Add("balance is null"); return errors; }
             Positive(errors, b.player.walkSpeed, "player.walkSpeed");
+            if (b.locks == null) errors.Add("locks section missing");
+            else
+            {
+                Positive(errors, b.locks.turnSeconds, "locks.turnSeconds"); Positive(errors, b.locks.relaxSeconds, "locks.relaxSeconds"); Positive(errors, b.locks.strainSeconds, "locks.strainSeconds");
+                Positive(errors, b.locks.strainRecoverSeconds, "locks.strainRecoverSeconds"); Positive(errors, b.locks.falloff, "locks.falloff"); Positive(errors, b.locks.toleranceStrong, "locks.toleranceStrong");
+                Positive(errors, b.locks.doorSwingSeconds, "locks.doorSwingSeconds"); Positive(errors, b.locks.doorReachMetres, "locks.doorReachMetres");
+                if (b.locks.toleranceBar < b.locks.toleranceWarded || b.locks.toleranceWarded < b.locks.toleranceStrong) errors.Add("locks: a bar must be easier than wards, wards easier than a strong lock");
+            }
             Positive(errors, b.player.sprintSpeed, "player.sprintSpeed");
             Positive(errors, b.player.staminaMax, "player.staminaMax");
             Positive(errors, b.horse.walkSpeed, "horse.walkSpeed");

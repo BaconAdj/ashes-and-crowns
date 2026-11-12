@@ -17,6 +17,7 @@ namespace AshesAndCrowns.Game
         public Transform workStation;      // where the day's work happens (outside or inside a building)
         public Transform workBuilding;     // if the station is indoors (the brewer's alehouse), the building it is in
         public Transform visual;           // the body child
+        public Transform church, alehouse, idleSpot;   // a townsman's own parish church, local alehouse and corner; null uses the site's
         public int variant;                // spreads habits across the village
         public bool female;
 
@@ -34,6 +35,7 @@ namespace AshesAndCrowns.Game
         private Vector3 _goal; private Transform _goalBuilding;
         private float _vy, _dodgeUntil, _dodgeSign = 1f, _bob, _nextThink, _stuck; private Vector3 _lastPos;
         private Vector3 _restPos; private Quaternion _restRot;
+        private Door _exitDoor, _enterDoor;
 
         public VillagerActivity Activity => _activity;
         public VillagerTag Tag => _tag;
@@ -103,11 +105,11 @@ namespace AshesAndCrowns.Game
                         else { Vector3 back = (home != null ? home.position : transform.position) - workStation.position; back.y = 0f; goal = workStation.position + (back.sqrMagnitude > 0.01f ? back.normalized : Vector3.back) * 0.9f; }   // stand at the station, not in it
                         break;
                     }
-                case VillagerActivity.Drinking: targetBuilding = site != null ? site.alehouse : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
-                case VillagerActivity.Praying: targetBuilding = site != null ? site.church : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
+                case VillagerActivity.Drinking: targetBuilding = alehouse != null ? alehouse : site != null ? site.alehouse : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
+                case VillagerActivity.Praying: targetBuilding = church != null ? church : site != null ? site.church : null; goal = MarkerOr(targetBuilding, "Seat", variant % 4); break;
                 default:
                     {
-                        Transform g = site != null ? site.Green : null;
+                        Transform g = idleSpot != null ? idleSpot : site != null ? site.Green : null;
                         float a = (variant * 1.7f + 0.4f) % (Mathf.PI * 2f); float r = 3.5f + (variant % 3) * 1.4f;
                         goal = g != null ? g.position + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r) : transform.position;
                         break;
@@ -115,6 +117,8 @@ namespace AshesAndCrowns.Game
             }
             _goal = goal; _goalBuilding = targetBuilding;
             _routeCount = 0; _routeIndex = 0; _exitDoorIndex = -1;
+            _exitDoor = _building != null && _building != targetBuilding ? Door.For(_building) : null;
+            _enterDoor = targetBuilding != null && targetBuilding != _building ? Door.For(targetBuilding) : null;
             if (_building != null && _building != targetBuilding) { Add(Marker(_building, "Inside")); Add(Marker(_building, "Door")); _exitDoorIndex = 1; }
             if (targetBuilding != null && targetBuilding != _building) { Add(Marker(targetBuilding, "Door")); Add(Marker(targetBuilding, "Inside")); }
             Add(goal);
@@ -142,6 +146,12 @@ namespace AshesAndCrowns.Game
         private void Walk(float dt, VillageDayBalance b)
         {
             Vector3 vel = Vector3.zero;
+            // Doors open for the household going about its day.
+            if (_routeIndex < _routeCount)
+            {
+                if (_exitDoor != null && (transform.position - _exitDoor.Centre).sqrMagnitude < 4f) _exitDoor.Nudge(transform.position);
+                if (_enterDoor != null && (transform.position - _enterDoor.Centre).sqrMagnitude < 4f) _enterDoor.Nudge(transform.position);
+            }
             if (_routeIndex < _routeCount)
             {
                 Vector3 target = _route[_routeIndex];
@@ -175,6 +185,17 @@ namespace AshesAndCrowns.Game
             {
                 Vector3 face = site.Green.position - transform.position; face.y = 0f;
                 if (face.sqrMagnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(face.normalized, Vector3.up), 1f - Mathf.Exp(-3f * dt));
+            }
+            // Nobody stands in your way: a villager you walk into steps aside, so a doorway is never plugged by its owner.
+            if (s_player != null && _activity != VillagerActivity.Asleep)
+            {
+                Vector3 away = transform.position - s_player.position; away.y = 0f;
+                float sq = away.sqrMagnitude;
+                if (sq < 0.85f * 0.85f)
+                {
+                    Vector3 push = sq > 0.0004f ? away / Mathf.Sqrt(sq) : transform.right;
+                    vel += (push + Vector3.Cross(Vector3.up, push) * 0.6f) * 1.8f;
+                }
             }
             if (_cc != null && _cc.enabled)
             {

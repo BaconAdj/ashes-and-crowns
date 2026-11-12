@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AshesAndCrowns.Game
 {
-    public enum ActivityKind : byte { None = 0, Pray = 1, Work = 2, Rest = 3 }
+    public enum ActivityKind : byte { None = 0, Pray = 1, Work = 2, Rest = 3, Lockpick = 4 }
     public enum RestPose : byte { Lying = 0, Sitting = 1, Standing = 2 }
 
     /// <summary>
@@ -35,6 +35,10 @@ namespace AshesAndCrowns.Game
         private System.Action<float> _onWorkDone;             // quality
         // rest-like spans (sleep, mass, a meal, ale)
         private float _restHours; private RestPose _restPose; private string _restTitle, _restLeaveHint; private bool _restCanLeave; private System.Action<float, bool> _onRestDone;   // hours, left early
+
+        // a lock under the hands
+        private LockState _lock; private float _pick = 0.5f, _stealth; private System.Func<int> _toolsLeft; private System.Action _spendTool; private System.Func<bool> _earshot; private System.Action<bool, bool> _onLockDone; private bool _heard;
+        private ThirdPersonCamera _rig; private DeterministicRng _lockRng;
 
         public ActivityKind Current => _kind;
         public bool Active => _kind != ActivityKind.None;
@@ -146,6 +150,60 @@ namespace AshesAndCrowns.Game
             done?.Invoke(hours, early);
         }
 
+        // ------------------------------------------------------------------ locks
+
+        /// <summary>Crouch at a door or a chest and work it open: the mouse (or A and D) sets the iron, E or the left button
+        /// turns. Off the true position the bolt binds; forcing it snaps the iron. onDone(opened, somebodyHeard).</summary>
+        public void BeginLockpick(string title, LockState state, float stealth01, System.Func<int> toolsLeft, System.Action spendTool, System.Func<bool> earshot, System.Action<bool, bool> onDone)
+        {
+            if (Active || _balance == null || state == null) return;
+            _lock = state; _pick = 0.5f; _stealth = stealth01; _toolsLeft = toolsLeft; _spendTool = spendTool; _earshot = earshot; _onLockDone = onDone; _heard = false;
+            if (_lockRng == null) _lockRng = GameBootstrap.Instance.Rng.Fork(105);
+            _lockRng.State ^= (ulong)clock.Calendar.TotalHours * 2654435761UL;
+            Enter(ActivityKind.Lockpick, clock.timeScale);
+            Pose(kneel: true);
+            if (_rig == null) _rig = FindAnyObjectByType<ThirdPersonCamera>();
+            if (_rig != null) _rig.enabled = false;   // the mouse is in your fingers now, not your eyes
+            hud.ShowActivity(title, L.T("Mouse or A and D: feel for the place. Hold E or click: turn. Ease off when it binds. Q: leave it."));
+            hud.ShowLock(state.Kind == LockKind.Bar ? L.T("The blade in the gap") : L.T("The iron in the wards"));
+            hud.SetActivity(L.T("Quietly."), string.Empty);
+        }
+
+        private void UpdateLock(UnityEngine.InputSystem.Keyboard kb)
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            float move = 0f;
+            if (mouse != null) move += mouse.delta.ReadValue().x * 0.0016f;
+            if (kb != null) { if (kb.aKey.isPressed) move -= 0.45f * Time.unscaledDeltaTime; if (kb.dKey.isPressed) move += 0.45f * Time.unscaledDeltaTime; }
+            _pick = Mathf.Clamp01(_pick + move);
+            bool turning = (kb != null && kb.eKey.isPressed) || (mouse != null && mouse.leftButton.isPressed);
+            if (_elapsedReal < 0.35f) turning = false;   // the E that began this is still down
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            LockEvent e = LockRules.Tick(_lock, _pick, turning, dt, _balance.locks);
+            hud.SetLock(_pick, _lock.Turn, _lock.Strain);
+            if ((turning || e == LockEvent.PickBroke) && _earshot != null && !_heard && _lockRng.Chance(LockRules.HeardChance(e, dt, _stealth, _balance.locks)) && _earshot()) _heard = true;
+            if (e == LockEvent.PickBroke)
+            {
+                _spendTool?.Invoke();
+                int left = _toolsLeft != null ? _toolsLeft() : 0;
+                hud.ShowToast(left > 0 ? L.T("The iron snaps. ") + left + L.T(" left.") : L.T("The iron snaps. That was your last."));
+                if (left <= 0) { EndLock(false); return; }
+            }
+            if (Time.frameCount % 6 == 0)
+                hud.SetActivity(e == LockEvent.Binding ? L.T("It binds. Ease off.") : _lock.Turn > 0.6f ? L.T("It is going.") : _lock.Turn > 0.05f ? L.T("Something gives.") : L.T("Quietly."), _heard ? L.T("A voice, somewhere close.") : string.Empty);
+            if (e == LockEvent.Opened) { EndLock(true); return; }
+            if (_heard) { EndLock(false); return; }
+            if (kb != null && (kb.qKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame) && _elapsedReal > 0.3f) EndLock(false);
+        }
+
+        private void EndLock(bool opened)
+        {
+            bool heard = _heard;
+            var done = _onLockDone; _onLockDone = null; _lock = null;
+            Leave();
+            done?.Invoke(opened, heard);
+        }
+
         // ------------------------------------------------------------------ shared
 
         private void Enter(ActivityKind kind, float timeScale)
@@ -158,7 +216,7 @@ namespace AshesAndCrowns.Game
         }
 
         /// <summary>Death, arrest or a scene change: stop whatever is running without callbacks.</summary>
-        public void Abort() { if (Active) { _onPrayerDone = null; _onWorkDone = null; _onRestDone = null; Leave(); } }
+        public void Abort() { if (Active) { _onPrayerDone = null; _onWorkDone = null; _onRestDone = null; _onLockDone = null; _lock = null; Leave(); } }
 
         private void Leave()
         {
@@ -166,6 +224,7 @@ namespace AshesAndCrowns.Game
             clock.timeScale = _savedTimeScale;
             Unpose();
             hud.HideActivity(); hud.HideBeat();
+            if (_kind == ActivityKind.Lockpick && _rig != null) _rig.enabled = true;
             _kind = ActivityKind.None;
             if (player != null) player.enabled = horse == null || !horse.Mounted;
             if (horse != null) horse.enabled = true;
@@ -204,6 +263,7 @@ namespace AshesAndCrowns.Game
             if (vitals != null && vitals.IsDead) { Abort(); return; }
             var kb = UnityEngine.InputSystem.Keyboard.current;
             _elapsedReal += Time.unscaledDeltaTime;
+            if (_kind == ActivityKind.Lockpick) { UpdateLock(kb); return; }
             if (_kind == ActivityKind.Pray)
             {
                 // a working bob of the shoulders while kneeling

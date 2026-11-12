@@ -360,11 +360,24 @@ namespace AshesAndCrowns.UI
         public void ShowBeat(string title, float zoneWidth)
         {
             if (_beat == null) return;
-            _beatTitle.text = title;
+            _beatTitle.text = title; _beatZone.style.backgroundColor = new Color(0.55f, 0.45f, 0.2f, 0.9f);
             _beatZone.style.width = new Length(zoneWidth * 100f, LengthUnit.Percent); _beatZone.style.left = new Length((0.5f - zoneWidth / 2f) * 100f, LengthUnit.Percent);
             _beatMarker.style.left = 0; _beat.style.display = DisplayStyle.Flex;
         }
         public void SetBeatMarker(float pos01) { if (_beatMarker != null) _beatMarker.style.left = new Length(Mathf.Clamp01(pos01) * 100f, LengthUnit.Percent); }
+        /// <summary>The lock gauge: the marker is where the iron sits, the bar is how far the bolt has gone, and it reddens as the iron strains.</summary>
+        public void ShowLock(string title)
+        {
+            if (_beat == null) return;
+            _beatTitle.text = title; _beatZone.style.left = 0; _beatZone.style.width = 0; _beat.style.display = DisplayStyle.Flex;
+        }
+        public void SetLock(float pick01, float turn01, float strain01)
+        {
+            if (_beat == null) return;
+            _beatMarker.style.left = new Length(Mathf.Clamp01(pick01) * 100f, LengthUnit.Percent);
+            _beatZone.style.left = 0; _beatZone.style.width = new Length(Mathf.Clamp01(turn01) * 100f, LengthUnit.Percent);
+            _beatZone.style.backgroundColor = Color.Lerp(new Color(0.55f, 0.45f, 0.2f, 0.9f), new Color(0.7f, 0.12f, 0.08f, 0.95f), Mathf.Clamp01(strain01));
+        }
         public void HideBeat() { if (_beat != null) _beat.style.display = DisplayStyle.None; }
 
         /// <summary>The hands-on moment: a marker sweeps a track; press Space inside the zone. Three beats. Quality 0..1.</summary>

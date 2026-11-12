@@ -13,10 +13,15 @@ b.box(0, 0, 0.0, W + 0.4, D + 0.4, 0.35)
 b.room(0, 0, 0.35, W, D, H - 0.35, 0.3, doors=(("N", 0.0, 1.3, 0.0, 2.3),), windows=(("N", -3.2, 0.7, 1.15, 0.8), ("N", -1.8, 0.7, 1.15, 0.8), ("N", 1.8, 0.7, 1.15, 0.8), ("N", 3.2, 0.7, 1.15, 0.8), ("S", -2.5, 0.7, 1.15, 0.8), ("S", 2.5, 0.7, 1.15, 0.8)), batter=0.03)
 for x in (-W / 2, -W / 4, 0.0, W / 4, W / 2):
     for y in (-D / 2, D / 2):
+        if x == 0.0 and y > 0: continue                                 # no post in the doorway
         b.box(x, y, 0.3, 0.22, 0.22, H)
 for y in (-D / 4, 0.0, D / 4):
     b.box(-W / 2, y, 0.3, 0.22, 0.22, H); b.box(W / 2, y, 0.3, 0.22, 0.22, H)
-b.box(0, 0, 1.6, W + 0.1, D + 0.1, 0.12)                              # mid rail
+for sgn in (-1, 1):                                                    # mid rail round the outside, broken at the door
+    b.box(sgn * (W / 2 + 0.02), 0, 1.6, 0.08, D + 0.1, 0.12)
+b.box(0, -D / 2 - 0.02, 1.6, W + 0.1, 0.08, 0.12)
+for sgn in (-1, 1):
+    b.box(sgn * (W / 4 + 0.75), D / 2 + 0.02, 1.6, W / 2 - 1.5, 0.08, 0.12)
 b.gable(0, 0, H, W, D, H * 1.1, 0.7, drop=0.5)                        # thatch
 b.box(0, 0, H + H * 1.1 - 0.1, 0.35, D + 1.3, 0.25, roof=True)         # ridge
 b.box(0, 0, H + H * 1.1 - 0.3, 1.0, 1.4, 0.7)                          # smoke louvre
@@ -27,10 +32,10 @@ b.box(0, D / 2 + 0.9, 0.0, 2.8, 1.9, 0.35)                              # porch 
 b.box(-1.3, D / 2 + 0.9, 0.35, 0.2, 1.9, PH - 0.35)
 b.box(1.3, D / 2 + 0.9, 0.35, 0.2, 1.9, PH - 0.35)
 b.box(0, D / 2 + 0.9, PH - 0.2, 2.8, 1.9, 0.2)
-b.box(0.6, D / 2 + 1.82, 0.35, 0.08, 0.1, 2.2, roof=True)               # door leaf, open
 b.gable(0, D / 2 + 0.9, PH, 2.8, 1.9, 1.0, 0.35, drop=0.2)
 # ale-stake and sign
 b.tube((W / 2 + 0.9, D / 2 + 0.4, 0.0), (W / 2 + 0.9, D / 2 + 0.4, 3.6), 0.09, 0.08, n=6)
 b.box(W / 2 + 0.9, D / 2 + 0.4, 3.4, 0.08, 1.2, 0.08)
 b.box(W / 2 + 0.9, D / 2 + 0.9, 2.6, 0.05, 0.7, 0.75, roof=True)
+check_walk(b, [(0, D / 2 + 3.2, 0.35), (0, D / 2 - 1.0, 0.35), (0, 0, 0.35), (-3.0, -1.4, 0.35)], label="porch door")
 export_fbx(b.finish(walls, roof), out)

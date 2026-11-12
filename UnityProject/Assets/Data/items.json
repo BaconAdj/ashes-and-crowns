@@ -418,6 +418,17 @@
    "armour": 0,
    "damage": 0,
    "tradeTool": ""
+  },
+  {
+   "id": "picklock",
+   "name": "Picklock (bent iron)",
+   "category": "tool",
+   "basePrice": 2,
+   "nutrition": 0,
+   "weight": 0.1,
+   "armour": 0,
+   "damage": 0,
+   "tradeTool": ""
   }
  ]
 }

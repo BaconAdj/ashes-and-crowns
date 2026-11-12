@@ -12,6 +12,8 @@ fi
 run gen_hut      Buildings/Hut.fbx
 run gen_church   Buildings/Church.fbx
 run gen_alehouse Buildings/Alehouse.fbx
+run gen_townhouse Buildings/TownHouse.fbx
+run gen_chapel   Buildings/Chapel.fbx
 run gen_keep     Buildings/Keep.fbx
 run gen_soldier  Characters/Soldier.fbx
 run gen_man      Characters/Man.fbx
@@ -21,5 +23,7 @@ run gen_deer     Characters/Deer.fbx
 run gen_oak      Nature/Oak.fbx
 run gen_wall     Siege/WallSegment.fbx
 run gen_tower    Siege/Tower.fbx
+run gen_palisade Siege/Palisade.fbx
+run gen_gatehouse Siege/Gatehouse.fbx
 run gen_cart     Props/Cart.fbx
-echo "Done. Back in Unity: Ashes and Crowns > Rebuild > (England, Battlefield, Siege) picks the models up automatically."
+echo "Done. Back in Unity: Ashes and Crowns > Rebuild > (England, Wallingford, Battlefield, Siege) picks the models up automatically."

@@ -729,5 +729,30 @@
     "hitChanceAtWorst": 0.1,
     "meatPerDeer": 2,
     "poachingWitnessChance": 0.25
+  },
+  "locks": {
+    "nightLockHour": 21,
+    "dawnUnlockHour": 5.5,
+    "toleranceBar": 0.12,
+    "toleranceWarded": 0.07,
+    "toleranceStrong": 0.04,
+    "skillTolerance": 0.05,
+    "falloff": 0.3,
+    "turnSeconds": 1.0,
+    "relaxSeconds": 0.4,
+    "strainSeconds": 0.8,
+    "strainRecoverSeconds": 2.5,
+    "heardRadiusMetres": 10,
+    "heardPerSecond": 0.02,
+    "heardOnBreak": 0.35,
+    "sleeperWakesChance": 0.25,
+    "chestPenniesMin": 2,
+    "chestPenniesMax": 14,
+    "strongChestPenniesMax": 90,
+    "doorOpenDegrees": 105,
+    "doorSwingSeconds": 0.4,
+    "doorReachMetres": 1.6,
+    "doorCloseAfterSeconds": 2.5,
+    "doorAwakeMetres": 30
   }
 }
