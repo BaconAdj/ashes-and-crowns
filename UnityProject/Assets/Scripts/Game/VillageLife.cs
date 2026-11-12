@@ -411,6 +411,17 @@ namespace AshesAndCrowns.Game
             foreach (Job j in s.Jobs) { if (j.State != JobState.Offered) continue; if (k == 0) return j; k--; }
             return null;
         }
+        private void DeliverJob(Settlement s)
+        {
+            var ctx = RunSession.Context; var job = ctx.ActiveJob;
+            int pay = JobBoard.Complete(job, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing);
+            ctx.Reputation.Record(pay > 0 ? Deed.HonouredContract : Deed.BrokeContract);
+            if (pay > 0) ctx.Character.Use(Skill.Haggling, _balance.character, 0.5f);
+            Say("At " + s.Name, pay > 0 ? $"You hand over {job.Employer}'s business and are paid {pay} pennies." : "You arrive too late. Nobody pays for yesterday's errand, and they will remember it.");
+            ctx.ActiveJob = null;
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+
         private void NoticeTake(RunContext ctx)
         {
             var s = ctx.Current; if (s == null) return;
