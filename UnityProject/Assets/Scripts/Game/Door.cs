@@ -23,6 +23,8 @@ namespace AshesAndCrowns.Game
         private static Transform s_player; private static WorldClock s_clock; private static Balance s_balance; private static float s_nextLookup;
 
         private float _angle, _sign = 1f, _lastWanted = -100f, _nudgedUntil = -100f;
+        private Collider _shell; private bool _shellLooked, _passing;
+        private static CharacterController s_body;
         private bool _picked, _pickedAtNight;
 
         public static IReadOnlyList<Door> All => s_all;
@@ -64,7 +66,19 @@ namespace AshesAndCrowns.Game
         }
 
         private void OnEnable() { s_all.Add(this); }
-        private void OnDisable() { s_all.Remove(this); }
+        private void OnDisable() { s_all.Remove(this); Pass(false); }
+
+        /// <summary>While the player stands in an open doorway the building's walls do not push back at all: whatever the
+        /// frame, the lintel or the sill are shaped like, a doorway that is open can be walked through. The moment the body
+        /// is out of the opening (to either side of it, or a stride beyond) the walls are solid again.</summary>
+        private void Pass(bool on)
+        {
+            if (on == _passing) return;
+            if (!_shellLooked) { _shellLooked = true; if (building != null) _shell = building.GetComponent<Collider>(); }
+            if (_shell == null || s_body == null) return;
+            Physics.IgnoreCollision(s_body, _shell, on);
+            _passing = on;
+        }
 
         private static void Lookup()
         {
@@ -72,7 +86,7 @@ namespace AshesAndCrowns.Game
             s_nextLookup = Time.unscaledTime + 2f;
             if (s_balance == null && GameBootstrap.Instance != null) s_balance = GameBootstrap.Instance.Balance;
             if (s_clock == null) s_clock = FindAnyObjectByType<WorldClock>();
-            if (s_player == null) { var pc = FindAnyObjectByType<PlayerController>(); if (pc != null) s_player = pc.transform; }
+            if (s_player == null) { var pc = FindAnyObjectByType<PlayerController>(); if (pc != null) { s_player = pc.transform; s_body = pc.GetComponent<CharacterController>(); } }
         }
 
         private void Update()
@@ -83,7 +97,7 @@ namespace AshesAndCrowns.Game
             Vector3 to = s_player.position - Centre;
             float sq = to.x * to.x + to.z * to.z;
             bool nudged = Time.time < _nudgedUntil;
-            if (sq > lb.doorAwakeMetres * lb.doorAwakeMetres && !nudged && _angle == 0f) return;
+            if (sq > lb.doorAwakeMetres * lb.doorAwakeMetres && !nudged && _angle == 0f) { Pass(false); return; }
 
             // A forced door is made fast again when the night turns to day or the day to night.
             if (_picked && s_clock != null && s_clock.IsReady && LockRules.IsNight(s_clock.Calendar.HourOfDay, lb) != _pickedAtNight && !IsOpen) _picked = false;
@@ -104,6 +118,11 @@ namespace AshesAndCrowns.Game
                 leaf.localRotation = Quaternion.Euler(0f, _angle, 0f);
             }
             if (plank != null) { bool solid = locked && !IsOpen; if (plank.enabled != solid) plank.enabled = solid; }
+            // In the opening itself: along the door within the jambs, and within a stride of the wall line either way.
+            Vector3 rel = s_player.position - transform.position;
+            float along = Vector3.Dot(rel, transform.right), through = Vector3.Dot(rel, transform.forward);
+            bool inOpening = (!locked || IsOpen) && along > 0.12f && along < width - 0.12f && Mathf.Abs(through) < 1.1f && Mathf.Abs(rel.y) < 2.5f;
+            Pass(inOpening);
         }
     }
 }

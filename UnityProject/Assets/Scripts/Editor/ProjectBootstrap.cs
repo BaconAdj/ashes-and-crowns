@@ -129,8 +129,8 @@ namespace AshesAndCrowns.EditorTools
 
         // ---------------------------------------------------------------- URP
 
-        /// <summary>The picture settings, applied on every setup so an older asset is brought up: four shadow cascades with
-        /// soft edges, a larger shadow map, HDR, 4x MSAA, and ambient occlusion so things sit on the ground and in their corners.
+        /// <summary>The picture settings, applied on every setup so an older asset is brought up: three soft shadow cascades,
+        /// HDR, 2x MSAA, and ambient occlusion so things sit on the ground and in their corners.
         /// Everything is set through serialized properties or reflection and skipped quietly where this URP names it differently.</summary>
         private static void EnsureQuality(UniversalRenderPipelineAsset asset)
         {
@@ -139,14 +139,14 @@ namespace AshesAndCrowns.EditorTools
             {
                 var so = new SerializedObject(asset);
                 void Set(string prop, System.Action<SerializedProperty> apply) { var sp = so.FindProperty(prop); if (sp != null) apply(sp); }
-                Set("m_ShadowDistance", sp => sp.floatValue = 140f);
-                Set("m_ShadowCascadeCount", sp => sp.intValue = 4);
+                Set("m_ShadowDistance", sp => sp.floatValue = 90f);      // a laptop has to draw a whole town: shadows near, not far
+                Set("m_ShadowCascadeCount", sp => sp.intValue = 3);
                 Set("m_SoftShadowsSupported", sp => sp.boolValue = true);
-                Set("m_MainLightShadowmapResolution", sp => sp.intValue = 4096);
-                Set("m_AdditionalLightShadowsSupported", sp => sp.boolValue = true);
+                Set("m_MainLightShadowmapResolution", sp => sp.intValue = 2048);
+                Set("m_AdditionalLightShadowsSupported", sp => sp.boolValue = false);
                 Set("m_AdditionalLightsShadowmapResolution", sp => sp.intValue = 2048);
                 Set("m_SupportsHDR", sp => sp.boolValue = true);
-                Set("m_MSAA", sp => sp.intValue = 4);
+                Set("m_MSAA", sp => sp.intValue = 2);
                 Set("m_RequireDepthTexture", sp => sp.boolValue = true);
                 so.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(asset);

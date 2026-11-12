@@ -68,6 +68,7 @@ namespace AshesAndCrowns.EditorTools
             }
 
             Camera cam = SceneKit.BuildGameplayCamera(SceneKit.Col(balance.look.fogColor), out ThirdPersonCamera tpc);
+            if (town) cam.farClipPlane = 1400f;   // the town ends at its fields; nothing further needs drawing
             var bootGo = new GameObject("GameBootstrap"); bootGo.AddComponent<GameBootstrap>();
 
             var clockGo = new GameObject("WorldClock");

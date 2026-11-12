@@ -144,10 +144,12 @@ class MeshBuilder:
                (cx, y0, z1 - t), (cx, y1, z1 - t), (x0 + t, y0, ze - t * 0.5), (x0 + t, y1, ze - t * 0.5), (x1 - t, y1, ze - t * 0.5), (x1 - t, y0, ze - t * 0.5)]
         c = (cx, cy, z0 + height / 2)
         polys = [(2, 3, 1, 0), (4, 5, 0, 1),            # outer slopes
-                 (8, 9, 7, 6), (10, 11, 6, 7),           # underside
                  (2, 8, 9, 3), (4, 10, 11, 5),           # eave faces
                  (0, 6, 8, 2), (3, 9, 7, 1), (1, 7, 10, 4), (5, 11, 6, 0)]   # gable edges
         self._prim(pts, polys, True, c)
+        # The underside faces down into the room. Wound from a point far above so it is seen (and hit by the camera's
+        # collision ray) from inside: without it a house looks roofless from within and the camera rises through the thatch.
+        self._prim(pts, [(8, 9, 7, 6), (10, 11, 6, 7)], True, (cx, cy, z1 + 1000.0))
         o = overhang
         self._prim([(x1 - o, y1 - o, z0), (x0 + o, y1 - o, z0), (cx, y1 - o, z1)], [(0, 1, 2)], False, (cx, cy, z0))
         self._prim([(x0 + o, y0 + o, z0), (x1 - o, y0 + o, z0), (cx, y0 + o, z1)], [(0, 1, 2)], False, (cx, cy, z0))
@@ -232,10 +234,11 @@ def _tri_box(tri, c, h):
     return True
 
 
-def check_walk(builder, path, width=0.86, height=1.98, step=0.4, label=""):
+def check_walk(builder, path, width=0.86, height=2.3, step=0.4, label=""):
     """Slide a person-sized box along `path` (modelling-space points on the floor line: x, y, floor z) and fail loudly if any
-    part of the model is in the way. width covers the capsule and its skin; the bottom `step` of the box is ignored
-    because a walker steps over that much. Every generator with a door calls this, so a blocked doorway cannot ship."""
+    part of the model is in the way. width covers the capsule and its skin. height is the walker's 1.8 m plus skin plus the
+    0.3 m the physics lifts a body while it tries a step: a lintel lower than that stops the body dead even though the
+    figure would visibly fit. The bottom `step` of the box is ignored because a walker steps over that much. Every generator with a door calls this, so a blocked doorway cannot ship."""
     tris = []
     for idx, roof, group, smooth in builder.faces:
         pts = [builder.verts[i] for i in idx]

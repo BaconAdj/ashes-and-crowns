@@ -25,6 +25,7 @@ namespace AshesAndCrowns.EditorTools
             m.SetColor("_BaseColor", Color.white); m.SetTexture("_BaseMap", albedo); m.SetFloat("_Smoothness", 1f - roughness); m.SetFloat("_Metallic", 0f);
             m.SetTexture("_BumpMap", normal); m.SetFloat("_BumpScale", 1f); m.EnableKeyword("_NORMALMAP");
             m.SetTextureScale("_BaseMap", Vector2.one / metresPerTile);
+            m.enableInstancing = true;   // four hundred houses of one shape draw as a handful of batches
             EditorUtility.SetDirty(m);
             return m;
         }

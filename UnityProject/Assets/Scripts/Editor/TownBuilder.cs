@@ -188,6 +188,39 @@ namespace AshesAndCrowns.EditorTools
             if (hallHome >= 0) { var h = homes[hallHome]; h.reserved = true; homes[hallHome] = h; r.HallHouse = h.building; BuildingKit.Furnish(h.building, BuildingKind.Hall, r.DarkWood, r.Stone, r.Linen, r.Fire, r.Iron, withLight: true); }
             result.Homes = homes.ToArray();
 
+            // ---- what stands about a house: the plot's wattle fences running back, a butt by the door, a woodpile, a cart
+            {
+                Transform dressing = Group(root, "Dressing"); Mesh cart = SceneKit.ArtMesh("Props/Cart.fbx"); var drng = rng.Fork(61);
+                foreach (TownBuilding b in plan.Buildings)
+                {
+                    if (!TownPlanData.IsDwelling(b.Kind) || !byId.TryGetValue(b.Id, out Transform t)) continue;
+                    Vector3 P(float lx, float ly, float lz) => t.position + t.right * lx + t.forward * lz + Vector3.up * (0.15f + ly);
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        var fence = SceneKit.Primitive(PrimitiveType.Cube, "Fence", dressing, Vector3.zero, new Vector3(0.08f, 1.1f, 7f), r.Wattle);
+                        fence.transform.SetPositionAndRotation(P(side * (b.HalfWidth + 0.7f), 0.5f, -b.HalfDepth - 3.5f), t.rotation); fence.isStatic = true;
+                        fence.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    }
+                    if (drng.Chance(0.45f))
+                    {
+                        var butt = SceneKit.Primitive(PrimitiveType.Cylinder, "Butt", dressing, Vector3.zero, new Vector3(0.62f, 0.45f, 0.62f), r.DarkWood, keepCollider: true);
+                        butt.transform.position = P(b.HalfWidth - 0.5f, 0.42f, b.HalfDepth + 0.55f); butt.isStatic = true;
+                    }
+                    if (drng.Chance(0.3f))
+                        for (int k = 0; k < 3; k++)
+                        {
+                            var log = SceneKit.Primitive(PrimitiveType.Cylinder, "Logs", dressing, Vector3.zero, new Vector3(0.26f, 0.7f, 0.26f), r.Bark);
+                            log.transform.SetPositionAndRotation(P(-b.HalfWidth - 0.35f, 0.14f + (k == 2 ? 0.24f : 0f), -1f + (k == 2 ? 0.15f : k * 0.3f)), t.rotation * Quaternion.Euler(0f, 0f, 90f)); log.isStatic = true;
+                            log.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        }
+                    if (cart != null && drng.Chance(0.07f))
+                    {
+                        var c = SceneKit.MeshChild("Cart", dressing, cart, r.DarkWood, r.Iron, collider: true);
+                        c.transform.SetPositionAndRotation(P(drng.Range(-1f, 1f), -0.1f, -b.HalfDepth - 4f), t.rotation * Quaternion.Euler(0f, drng.Range(-40f, 40f), 0f)); c.isStatic = true;
+                    }
+                }
+            }
+
             // ---- the site the rest of the game knows the town by
             var site = root.gameObject.AddComponent<SettlementSite>();
             site.settlementId = plan.Id; site.centre = root; site.radius = 760f; site.oaks.AddRange(oaks);

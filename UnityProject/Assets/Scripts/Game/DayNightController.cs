@@ -10,6 +10,8 @@ namespace AshesAndCrowns.Game
         public Light sun;
         private Balance _balance;
         private Color _daySun, _dawnSun, _dayAmbient, _nightAmbient, _dayFog, _nightFog;
+        private Material _sky;
+        private static readonly int SkyExposure = Shader.PropertyToID("_Exposure"), SkyTint = Shader.PropertyToID("_SkyTint"), SkyGround = Shader.PropertyToID("_GroundColor");
 
         public float CurrentDaylight { get; private set; }
 
@@ -22,6 +24,7 @@ namespace AshesAndCrowns.Game
             _dayFog = Col(l.fogColor); _nightFog = Col(l.nightFogColor);
             RenderSettings.fog = true; RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            if (RenderSettings.skybox != null) { _sky = new Material(RenderSettings.skybox); RenderSettings.skybox = _sky; }   // our own copy: the asset is not edited at play time
         }
 
         private void LateUpdate()
@@ -56,6 +59,13 @@ namespace AshesAndCrowns.Game
             fog = Color.Lerp(fog, fog * 0.85f, cloud * 0.5f);
             RenderSettings.fogColor = fog;
             RenderSettings.fogDensity = clock.Weather.FogDensityFactor;
+            if (_sky != null)
+            {
+                // Blue and bright under a clear noon, grey and low under cloud, near black at night with the moon as the disc.
+                _sky.SetFloat(SkyExposure, Mathf.Lerp(0.06f, Mathf.Lerp(1.2f, 0.7f, cloud), daylight));
+                _sky.SetColor(SkyTint, Color.Lerp(new Color(0.44f, 0.52f, 0.66f), new Color(0.58f, 0.59f, 0.60f), cloud));
+                _sky.SetColor(SkyGround, fog);
+            }
             Camera main = Camera.main;
             if (main != null) main.backgroundColor = fog;
         }

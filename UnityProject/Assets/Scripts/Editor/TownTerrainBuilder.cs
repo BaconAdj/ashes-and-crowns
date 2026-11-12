@@ -99,6 +99,42 @@ namespace AshesAndCrowns.EditorTools
                 alphas[iz, ix, 0] = grass / sum; alphas[iz, ix, 1] = mud / sum; alphas[iz, ix, 2] = rock / sum;
             }
             data.SetAlphamaps(0, 0, alphas);
+
+            // ---- grass: tufts wherever the ground is green and nothing stands on it
+            try
+            {
+                Texture2D tuft = GrassTuft(Paths.Generated + "/GrassTuft.png");
+                data.detailPrototypes = new[]
+                {
+                    new DetailPrototype { prototypeTexture = tuft, renderMode = DetailRenderMode.GrassBillboard, usePrototypeMesh = false, minWidth = 0.55f, maxWidth = 1.0f, minHeight = 0.22f, maxHeight = 0.5f,
+                        noiseSpread = 0.25f, healthyColor = new Color(0.40f, 0.45f, 0.27f), dryColor = new Color(0.47f, 0.43f, 0.27f) },
+                };
+                const int dres = 1024;
+                data.SetDetailResolution(dres, 16);
+                // Newer Unity counts coverage by default; ask for plain instance counts where the call exists.
+                var scatter = typeof(TerrainData).GetMethod("SetDetailScatterMode");
+                var scatterEnum = typeof(TerrainData).Assembly.GetType("UnityEngine.DetailScatterMode");
+                if (scatter != null && scatterEnum != null) scatter.Invoke(data, new[] { System.Enum.Parse(scatterEnum, "InstanceCountMode") });
+                var map = new int[dres, dres]; float dstep = Size / dres;
+                for (int iz = 0; iz < dres; iz++)
+                for (int ix = 0; ix < dres; ix++)
+                {
+                    int az = Mathf.Min(ares - 1, iz * ares / dres), ax = Mathf.Min(ares - 1, ix * ares / dres);
+                    float g = alphas[az, ax, 0];
+                    if (g < 0.8f) continue;
+                    float n = Mathf.PerlinNoise(ix * 0.07f + 5f, iz * 0.07f + 9f);
+                    map[iz, ix] = n > 0.62f ? 3 : n > 0.4f ? 2 : 1;
+                }
+                foreach (TownBuilding b in p.Buildings)
+                {
+                    float r = Mathf.Max(b.HalfWidth, b.HalfDepth) + 1.5f;
+                    int x0 = Mathf.Clamp(Mathf.FloorToInt((b.X - r + half) / dstep), 0, dres - 1), x1 = Mathf.Clamp(Mathf.CeilToInt((b.X + r + half) / dstep), 0, dres - 1);
+                    int z0 = Mathf.Clamp(Mathf.FloorToInt((b.Z - r + half) / dstep), 0, dres - 1), z1 = Mathf.Clamp(Mathf.CeilToInt((b.Z + r + half) / dstep), 0, dres - 1);
+                    for (int iz = z0; iz <= z1; iz++) for (int ix = x0; ix <= x1; ix++) map[iz, ix] = 0;
+                }
+                data.SetDetailLayer(0, 0, 0, map);
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Ashes and Crowns] grass not planted: " + e.Message); }
             EditorUtility.SetDirty(data);
 
             GameObject terrainGo = Terrain.CreateTerrainGameObject(data);
@@ -112,7 +148,8 @@ namespace AshesAndCrowns.EditorTools
                 if (tm == null) { tm = new Material(terrainShader) { name = "TerrainEngland" }; AssetDatabase.CreateAsset(tm, matPath); }
                 terrain.materialTemplate = tm;
             }
-            terrain.heightmapPixelError = 4f; terrain.basemapDistance = 600f; terrain.shadowCastingMode = ShadowCastingMode.TwoSided; terrain.drawInstanced = true;
+            terrain.heightmapPixelError = 7f; terrain.basemapDistance = 600f; terrain.shadowCastingMode = ShadowCastingMode.TwoSided; terrain.drawInstanced = true;
+            terrain.detailObjectDistance = 85f; terrain.detailObjectDensity = 0.9f;
 
             // ---- water: the river, and the ditch fed from it
             var water = new GameObject("Water").transform;
@@ -123,6 +160,41 @@ namespace AshesAndCrowns.EditorTools
             Plane(water, "DitchNorth", new Vector3(nsX, ditchY, p.HalfDepth + off), nsLen, p.DitchWidth, waterMaterial);
             Plane(water, "DitchSouth", new Vector3(nsX, ditchY, -p.HalfDepth - off), nsLen, p.DitchWidth, waterMaterial);
             return new Result { Terrain = terrain, Water = water };
+        }
+
+        /// <summary>A tuft of grass blades on a clear ground, for the terrain's billboard grass.</summary>
+        public static Texture2D GrassTuft(string assetPath)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (existing != null) return existing;
+            const int n = 64;
+            var px = new Color[n * n];
+            for (int i = 0; i < px.Length; i++) px[i] = new Color(0.4f, 0.45f, 0.27f, 0f);
+            for (int blade = 0; blade < 9; blade++)
+            {
+                float bx = 0.12f + blade * 0.095f + Mathf.Sin(blade * 2.3f) * 0.02f, lean = Mathf.Sin(blade * 1.7f + 0.5f) * 0.22f, height = 0.55f + 0.4f * Mathf.Abs(Mathf.Sin(blade * 3.1f + 1f)), wide = 0.035f + 0.012f * (blade % 3);
+                for (int y = 0; y < n; y++)
+                {
+                    float t = (y + 0.5f) / n / height; if (t > 1f) break;
+                    float cx = bx + lean * t * t, w = wide * (1f - t * 0.92f);
+                    for (int x = 0; x < n; x++)
+                    {
+                        float u = (x + 0.5f) / n;
+                        if (Mathf.Abs(u - cx) > w) continue;
+                        float shade = 0.62f + 0.38f * t + (blade % 2) * 0.06f;
+                        px[y * n + x] = new Color(0.36f * shade, 0.44f * shade, 0.22f * shade, 1f);
+                    }
+                }
+            }
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+            tex.SetPixels(px); tex.Apply();
+            System.IO.File.WriteAllBytes(assetPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(assetPath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+            importer.alphaIsTransparency = true; importer.wrapMode = TextureWrapMode.Clamp; importer.mipmapEnabled = true;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
         }
 
         private static void Plane(Transform parent, string name, Vector3 pos, float sizeX, float sizeZ, Material mat)

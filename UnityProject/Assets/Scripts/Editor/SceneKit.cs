@@ -236,7 +236,19 @@ namespace AshesAndCrowns.EditorTools
             sun.color = Col(balance.look.sunColor); sun.intensity = balance.look.sunIntensity;
             sunGo.transform.rotation = Quaternion.Euler(balance.look.sunPitchDegrees, balance.look.sunYawDegrees, 0f);
             RenderSettings.sun = sun;
-            RenderSettings.skybox = null;
+            // A sky: Unity's procedural one, which follows the sun. DayNightController dims and greys it by the hour and the cloud.
+            Shader skyShader = Shader.Find("Skybox/Procedural");
+            Material sky = null;
+            if (skyShader != null)
+            {
+                string skyPath = Paths.Palette + "/Sky.mat";
+                sky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+                if (sky == null) { sky = new Material(skyShader) { name = "Sky" }; AssetDatabase.CreateAsset(sky, skyPath); }
+                sky.SetFloat("_SunSize", 0.035f); sky.SetFloat("_SunSizeConvergence", 6f); sky.SetFloat("_AtmosphereThickness", 0.9f); sky.SetFloat("_Exposure", 1.1f);
+                sky.SetColor("_SkyTint", new Color(0.46f, 0.52f, 0.62f)); sky.SetColor("_GroundColor", Col(balance.look.fogColor));
+                EditorUtility.SetDirty(sky);
+            }
+            RenderSettings.skybox = sky;
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = Col(balance.look.ambientColor);
             RenderSettings.fog = true; RenderSettings.fogMode = FogMode.ExponentialSquared;
@@ -267,7 +279,7 @@ namespace AshesAndCrowns.EditorTools
         {
             var camGo = new GameObject("GameplayCamera");
             var cam = camGo.AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = background;
+            cam.clearFlags = RenderSettings.skybox != null ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor; cam.backgroundColor = background;
             cam.farClipPlane = 3000f; cam.nearClipPlane = 0.1f; cam.fieldOfView = 58f;
             cam.GetUniversalAdditionalCameraData().renderPostProcessing = true;
             camGo.AddComponent<AudioListener>();
@@ -280,7 +292,7 @@ namespace AshesAndCrowns.EditorTools
         {
             var playerGo = new GameObject("Player");
             var pcc = playerGo.AddComponent<CharacterController>();
-            pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f; pcc.stepOffset = 0.5f;   // thresholds, sills, the lip of a bridge
+            pcc.height = balance.player.height; pcc.radius = 0.35f; pcc.center = new Vector3(0f, balance.player.height * 0.5f, 0f); pcc.slopeLimit = 55f; pcc.stepOffset = 0.3f; pcc.skinWidth = 0.04f;   // a tall step makes the physics lift the body before it moves, and a lifted head meets the lintel
             Mesh man = ArtMesh("Characters/Man.fbx");
             if (man != null) MeshChild("Body", playerGo.transform, man, leather, Mat("Skin", LitShader, new Color(0.58f, 0.46f, 0.37f), 0f, 0.9f));
             else

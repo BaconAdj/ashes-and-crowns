@@ -144,25 +144,25 @@
       0.68
     ],
     "ambientColor": [
-      0.36,
-      0.39,
-      0.44
+      0.42,
+      0.44,
+      0.47
     ],
     "sunColor": [
       0.8,
       0.84,
       0.92
     ],
-    "sunIntensity": 1.05,
+    "sunIntensity": 1.4,
     "sunPitchDegrees": 28.0,
     "sunYawDegrees": -140.0,
-    "saturation": -28.0,
-    "contrast": 12.0,
-    "postExposure": -0.25,
-    "vignette": 0.3,
-    "filmGrain": 0.3,
-    "noonSunIntensity": 1.1,
-    "dawnSunIntensity": 0.5,
+    "saturation": -12.0,
+    "contrast": 16.0,
+    "postExposure": 0.0,
+    "vignette": 0.22,
+    "filmGrain": 0.12,
+    "noonSunIntensity": 1.45,
+    "dawnSunIntensity": 0.7,
     "moonIntensity": 0.35,
     "nightAmbientColor": [
       0.16,
@@ -250,11 +250,11 @@
       0.07
     ],
     "blendHours": 0.5,
-    "fogDensityClear": 0.004,
-    "fogDensityOvercast": 0.008,
-    "fogDensityRain": 0.014,
+    "fogDensityClear": 0.0018,
+    "fogDensityOvercast": 0.004,
+    "fogDensityRain": 0.007,
     "fogDensityFog": 0.045,
-    "fogDensitySnow": 0.018,
+    "fogDensitySnow": 0.01,
     "windClear": 0.2,
     "windOvercast": 0.4,
     "windRain": 0.7,

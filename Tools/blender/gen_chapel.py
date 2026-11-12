@@ -11,7 +11,7 @@ walls = material("Walls", (0.42, 0.41, 0.38)); roof = material("Roof", (0.36, 0.
 b = MeshBuilder("Chapel")
 NW, NL, NH = 5.5, 10.0, 4.2
 b.box(0, 0, 0.0, NW + 0.4, NL + 0.4, 0.35)
-b.room(0, 0, 0.35, NW, NL, NH - 0.35, 0.45, doors=(("E", -2.5, 1.3, 0.0, 2.3), ("N", 0.0, 2.6, 0.0, 3.2)),
+b.room(0, 0, 0.35, NW, NL, NH - 0.35, 0.45, doors=(("E", -2.5, 1.3, 0.0, 2.5), ("N", 0.0, 2.6, 0.0, 3.2)),
        windows=(("E", 2.0, 0.4, 1.8, 1.2), ("W", -2.0, 0.4, 1.8, 1.2), ("W", 2.0, 0.4, 1.8, 1.2)), batter=0.02)
 b.gable(0, 0, NH, NW, NL, 3.0, 0.4, drop=0.2)
 b.box(0, 0, NH + 3.0 - 0.1, 0.28, NL + 0.7, 0.26, roof=True)
@@ -23,8 +23,8 @@ b.box(0, -NL / 2, NH + 2.2, 1.5, 0.5, 1.9)                                # bell
 b.box(0, -NL / 2, NH + 2.9, 0.5, 0.56, 0.8, roof=True)                    # the opening, dark
 b.gable(0, -NL / 2, NH + 4.1, 1.5, 0.5, 0.6, 0.15)
 for sgn in (-1, 1):
-    b.box(NW / 2 + 0.12, -2.5 + sgn * 0.8, 0.35, 0.3, 0.28, 2.3)          # door jambs
-b.box(NW / 2 + 0.12, -2.5, 2.65, 0.3, 1.9, 0.3)                           # lintel
+    b.box(NW / 2 + 0.12, -2.5 + sgn * 0.8, 0.35, 0.3, 0.28, 2.5)          # door jambs
+b.box(NW / 2 + 0.12, -2.5, 2.85, 0.3, 1.9, 0.3)                           # lintel
 for y in (-NL / 2 + 0.4, NL / 2 - 0.4):
     for sgn in (-1, 1):
         b.box(sgn * (NW / 2 + 0.25), y, 0, 0.5, 0.8, NH * 0.6)            # corner buttresses

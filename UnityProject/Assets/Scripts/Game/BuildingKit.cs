@@ -45,10 +45,10 @@ namespace AshesAndCrowns.Game
         {
             switch (k)
             {
-                case BuildingKind.Hut: centre = new Vector3(0f, HutFloor, 2.0f - 0.14f); outward = Vector3.forward; width = 1.2f; height = 2.0f; break;
-                case BuildingKind.Alehouse: case BuildingKind.Hall: centre = new Vector3(0f, AleFloor, 3.5f - 0.15f); outward = Vector3.forward; width = 1.3f; height = 2.3f; break;
-                case BuildingKind.TownHouse: centre = new Vector3(0f, TownFloor, 4.5f - 0.14f); outward = Vector3.forward; width = 1.2f; height = 2.05f; break;
-                case BuildingKind.Chapel: centre = new Vector3(2.75f - 0.2f, ChapelFloor, -2.5f); outward = Vector3.right; width = 1.3f; height = 2.3f; break;
+                case BuildingKind.Hut: centre = new Vector3(0f, HutFloor, 2.0f - 0.14f); outward = Vector3.forward; width = 1.2f; height = 2.45f; break;
+                case BuildingKind.Alehouse: case BuildingKind.Hall: centre = new Vector3(0f, AleFloor, 3.5f - 0.15f); outward = Vector3.forward; width = 1.3f; height = 2.5f; break;
+                case BuildingKind.TownHouse: centre = new Vector3(0f, TownFloor, 4.5f - 0.14f); outward = Vector3.forward; width = 1.2f; height = 2.45f; break;
+                case BuildingKind.Chapel: centre = new Vector3(2.75f - 0.2f, ChapelFloor, -2.5f); outward = Vector3.right; width = 1.3f; height = 2.5f; break;
                 default: centre = new Vector3(4.5f - 0.25f, ChurchFloor, -4.5f); outward = Vector3.right; width = 1.6f; height = 2.6f; break;
             }
         }
