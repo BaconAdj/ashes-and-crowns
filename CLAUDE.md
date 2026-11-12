@@ -32,6 +32,9 @@ docs/                 GDD.md, DECISIONS.md, audio-list.md, sources.md
 `Sim` ← `Save` ← `Battle` ← `Combat` ← `UI` ← `Game` ← `Editor`. `Save` (engine-free: RunState, codec, store) references `Sim` only; `Trades` references `Sim` only (for now).
 Sim must never reference UnityEngine. Battle must never reference Game.
 
+## The one interface rule (from the user, 2026-11-12)
+- **No menus, whatsoever.** Every action is done at the thing in the world: E does the obvious thing at what you are looking at, F is the second verb, the prompt line is the whole interface. Words from people and events are speech panels with no buttons. The only screens are the character sheet at birth, the Esc "leave your affairs" screen, the death screen and the map. When a situation truly puts a question (an offer, a trial), the speech panel shows one option at a time: E takes it, F shows the next, Q leaves. Never add a list of choices; add a place or an object.
+
 ## Coding standards
 - No magic numbers: every tunable goes in `Assets/Data/balance.json` and the matching `Sim.Balance` class. Add a `BalanceValidator` check for new fields when sensible.
 - Deterministic: all randomness through `Sim.DeterministicRng` (seeded per run, `Fork(streamId)` per system). Never `UnityEngine.Random` or `System.Random` in gameplay.

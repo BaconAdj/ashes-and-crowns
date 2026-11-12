@@ -88,8 +88,9 @@ namespace AshesAndCrowns.Game
 
             if (Time.unscaledTime >= _nextSiteScan) { _nextSiteScan = Time.unscaledTime + 1f; ScanSite(); Passing(ctx); }
             FindNearest();
-            if (Time.unscaledTime >= _nextPrompt) { _nextPrompt = Time.unscaledTime + 0.25f; hud.SetPrompt(_nearest != null ? "[E] " + PromptFor(_nearestKind) : string.Empty); UpdateHudLines(ctx); }
+            if (Time.unscaledTime >= _nextPrompt) { _nextPrompt = Time.unscaledTime + 0.25f; hud.SetPrompt(_nearest != null ? PromptFor(_nearestKind) : string.Empty); UpdateHudLines(ctx); }
             if (HasPlaceInReach && GameBootstrap.Instance.Input.Mount.WasPressedThisFrame() && !(melee != null && melee.GuardMode)) Use(_nearestKind, _nearest);
+            if (HasPlaceInReach && kb.fKey.wasPressedThisFrame && !(melee != null && melee.GuardMode)) UseAlt(_nearestKind, _nearest);
         }
 
         private static bool DigitPressed(Keyboard kb, int i)
@@ -102,9 +103,16 @@ namespace AshesAndCrowns.Game
         private void FindNearest()
         {
             _nearest = null; float best = useRadius;
-            Check(Spot(church, "Altar"), "church", ref best); Check(Spot(alehouse, "Bar"), "alehouse", ref best); Check(Spot(HomeBuilding, "Hearth"), "home", ref best); Check(workplace, "work", ref best);
-            if (_site != null && _site.settlementId != RunSession.Context.HomeSettlementId) { Check(Spot(_site.church, "Altar"), "church", ref best); Check(Spot(_site.alehouse, "Bar"), "alehouse", ref best); }
+            Transform ch = _site != null && _site.church != null ? _site.church : church;
+            Transform ale = _site != null && _site.alehouse != null ? _site.alehouse : alehouse;
+            Check(Spot(ch, "Altar"), "altar", ref best); Check(Spot(ch, "Nave"), "nave", ref best);
+            Check(Spot(ale, "Bar"), "alehouse", ref best); Check(BuildingKit.Find(ale, "Notice"), "notice", ref best);
+            Check(BuildingKit.Find(HomeBuilding, "Hearth"), "hearth", ref best); Check(BuildingKit.Find(HomeBuilding, "Bed"), "bed", ref best); Check(BuildingKit.Find(HomeBuilding, "Chest"), "chest", ref best);
+            Check(workplace, "work", ref best);
             if (_site != null && _site.keep != null) Check(_site.keep, "keep", ref best);
+            if (_site != null && _site.muster != null) Check(_site.muster, "muster", ref best);
+            if (_site != null) foreach (MarketGoodTag g in _site.goods) if (g != null) Check(g.transform, "good", ref best);
+            if (_site != null && _site.Green != null) Check(_site.Green, "well", ref best);
             if (_site != null) foreach (Villager v in _site.villagers) if (v != null) Check(v.transform, "master", ref best);
             if (_site != null) foreach (Transform oak in _site.oaks) if (oak != null) Check(oak, "wood", ref best);
             if (_site != null) foreach (Deer deer in _site.deer) if (deer != null && deer.gameObject.activeSelf) Check(deer.transform, deer.Dead ? "carcass" : "deer", ref best);
@@ -201,26 +209,105 @@ namespace AshesAndCrowns.Game
         {
             if (t == null) return;
             Vector3 p = Body().position; Vector3 q = t.position; q.y = p.y;
-            bool furnished = t.parent != null && t.parent.GetComponent<MeshFilter>() != null && (t.name == "Altar" || t.name == "Bar" || t.name == "Hearth");
-            float d = Vector3.Distance(p, q) - (furnished ? 0f : kind == "church" ? 8f : kind == "alehouse" ? 6f : kind == "keep" ? 12f : kind == "deer" ? _balance.wildlife.shotRangeMetres - useRadius : 0f);
+            bool furnished = t.parent != null && t.parent.GetComponent<MeshFilter>() != null;
+            float d = Vector3.Distance(p, q) - (furnished ? 0f : kind == "altar" ? 8f : kind == "alehouse" ? 6f : kind == "keep" ? 12f : kind == "nave" ? 3f : kind == "well" ? -1.5f : kind == "deer" ? _balance.wildlife.shotRangeMetres - useRadius : 0f);
             if (d < best) { best = d; _nearest = t; _nearestKind = kind; }
         }
 
+        /// <summary>What E does here, and what F does if anything. The prompt is the whole interface.</summary>
         private string PromptFor(string kind)
         {
+            var ctx = RunSession.Context;
+            string e = null, f = null;
             switch (kind)
             {
-                case "church": return "Kneel at the altar";
-                case "alehouse": return "Buy a pot of ale (1 penny)";
-                case "keep": return KeepPrompt();
-                case "home": return RunSession.Context.Character.Rank >= Rank.Knight ? "Your hall" : "Your hearth";
-                case "work": return WorkPrompt();
-                case "wood": return RunSession.Context.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : "An oak. You would need an axe.";
-                case "deer": return RunSession.Context.Inventory.Count("bow") > 0 ? "Stalk and loose at the deer" : "Deer. You would need a bow.";
-                case "carcass": return "Dress the kill";
-                case "master": { var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; return (v != null && !v.WillTalk ? "Wake " : "Speak with ") + MasterName(_nearest); }
-                default: return "Use";
+                case "altar": e = "Kneel"; break;
+                case "nave": e = Festivals.IsMassWindow(clock.Calendar, _balance.time) ? "Stand for mass" : null; break;
+                case "alehouse": e = "A pot of ale (1 penny)"; break;
+                case "notice": NoticePrompt(ctx, out e, out f); break;
+                case "hearth": e = BestFood(ctx, out _) != null ? "Sit and eat" : "Sit by the fire"; break;
+                case "bed": e = "Lie down until Prime"; break;
+                case "chest": e = HasUntreatedWound() ? "Wash and bind your wounds" : "Open the chest"; break;
+                case "work": e = WorkPrompt(); break;
+                case "wood": e = ctx.Inventory.Count("axe") > 0 ? "Cut firewood (two hours)" : null; if (e == null) return "An oak. You would need an axe."; break;
+                case "deer": e = ctx.Inventory.Count("bow") > 0 ? "Stalk and loose" : null; if (e == null) return "Deer. You would need a bow."; break;
+                case "carcass": e = "Dress the kill"; break;
+                case "keep": e = KeepPrompt(); break;
+                case "muster": MusterPrompt(ctx, out e, out f); break;
+                case "good": GoodPrompt(ctx, out e, out f); break;
+                case "well": WellPrompt(ctx, out e, out f); break;
+                case "master": PersonPrompt(ctx, out e, out f); break;
             }
+            if (e == null && f == null) return string.Empty;
+            return (e != null ? "[E] " + e : string.Empty) + (f != null ? (e != null ? "     " : string.Empty) + "[F] " + f : string.Empty);
+        }
+
+        private void PersonPrompt(RunContext ctx, out string e, out string f)
+        {
+            var v = _nearest != null ? _nearest.GetComponent<Villager>() : null; var tag = _nearest != null ? _nearest.GetComponent<VillagerTag>() : null;
+            e = (v != null && !v.WillTalk ? "Wake " : "Talk to ") + MasterName(_nearest); f = null;
+            if (v == null || tag == null || !v.WillTalk) return;
+            if (tag.trade == "priest") { f = ctx.Standing.Value < 0.6f ? "Confess" : null; return; }
+            bool kin = tag.trade.StartsWith("your ");
+            if (!kin && v.Activity == VillagerActivity.Working && VillageKit.IsTrade(tag.trade) && ctx.Character.Trade != tag.trade && !ctx.Apprenticeship.Active) f = "Offer yourself as apprentice";
+            else if (!kin && (v.Activity == VillagerActivity.Drinking || v.Activity == VillagerActivity.Idling)) f = "Lift their purse";
+            else if (kin && intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) f = "Voice your suspicions";
+        }
+
+        private void GoodPrompt(RunContext ctx, out string e, out string f)
+        {
+            var tag = _nearest != null ? _nearest.GetComponent<MarketGoodTag>() : null; e = null; f = null;
+            if (tag == null) return;
+            Market market = ctx.Current != null && ctx.Current.Market != null ? ctx.Current.Market : ctx.Market;
+            var def = ctx.Items.Find(tag.itemId); var good = market.Find(tag.itemId);
+            if (def == null) return;
+            int month = clock.Calendar.Month; float standing = ctx.Standing.Value;
+            e = good != null && good.Stock >= 1f ? $"Buy {def.name} ({market.BuyPrice(tag.itemId, month, standing)}d)" : $"{def.name}: none left";
+            int have = ctx.Inventory.Count(tag.itemId);
+            if (have > 0) f = $"Sell one of yours ({market.SellPrice(tag.itemId, month, standing)}d, you have {have})";
+        }
+
+        private void NoticePrompt(RunContext ctx, out string e, out string f)
+        {
+            e = null; f = null; var s = ctx.Current; if (s == null) return;
+            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken)
+            {
+                var to = ctx.FindSettlement(ctx.ActiveJob.ToId);
+                bool serveHere = ctx.ActiveJob.DaysRequired > 0 && ctx.ActiveJob.ToId == s.Id;
+                e = serveHere ? $"Serve a day for {ctx.ActiveJob.Employer} ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})" : $"Your bond: {JobBoard.KindName(ctx.ActiveJob.Kind)} to {(to != null ? to.Name : ctx.ActiveJob.ToId)}, {ctx.ActiveJob.DeadlineDay - JobBoard.Today(clock.Calendar)} days";
+                f = "Tear up the bond (your name suffers)";
+                return;
+            }
+            RefreshNotices(ctx, s);
+            Job job = NoticeAt(s, _noticeIndex);
+            if (job == null) { e = "Nothing posted today"; return; }
+            bool can = JobBoard.CanTake(job, ctx.Character, ctx.Inventory);
+            e = (can ? "Take it: " : "Not for you: ") + JobBoard.KindName(job.Kind) + ", " + job.Blurb;
+            if (CountNotices(s) > 1) f = "Read the next notice";
+        }
+
+        private void MusterPrompt(RunContext ctx, out string e, out string f)
+        {
+            e = null; f = null; var s = ctx.Current; if (s == null) return;
+            if (!ctx.Service.Active)
+            {
+                var company = s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
+                if (company != null) e = $"Take the penny: {company.Name} ({company.Captain}, for {company.Employer}, {_balance.service.mercenaryWagePerDay}d a day)";
+                if (ctx.Castle != null && ctx.Castle.Stage != CastleStage.None && s.Type >= SettlementType.Town) f = $"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies}d)";
+                return;
+            }
+            if (ctx.Siege != null) { e = "Your company is at the siege"; return; }
+            var hostile = NearestHostileCastle(ctx, ctx.Service.Side);
+            e = hostile != null && siege != null && ctx.Service.Role != ServiceRole.Household ? $"Muster: march to besiege {hostile.Name}" : $"Muster of {ctx.Service.CompanyName}: march to battle";
+            f = "A day in camp";
+        }
+
+        private void WellPrompt(RunContext ctx, out string e, out string f)
+        {
+            e = null; f = null; var s = ctx.Current; if (s == null) return;
+            if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) e = "Enter the festival melee (stake 1 penny)";
+            if (s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) f = "Stake out a castle on this land (unlicensed)";
+            if (e == null && f == null) { e = "Drink from the well"; }
         }
 
         private void UpdateHudLines(RunContext ctx)
@@ -235,54 +322,186 @@ namespace AshesAndCrowns.Game
 
         private void Use(string kind, Transform at)
         {
+            var ctx = RunSession.Context;
             switch (kind)
             {
-                case "church": Church(); break;
+                case "altar": BeginPrayer(); break;
+                case "nave": Mass(); break;
                 case "alehouse": BuyAle(); break;
+                case "notice": NoticeTake(ctx); break;
                 case "keep": AtTheGate(); break;
-                case "home": Home(); break;
+                case "hearth": EatAtHearth(); break;
+                case "bed": SleepUntilPrime(); break;
+                case "chest": OpenChest(ctx); break;
                 case "work": WorkTheDay(); break;
                 case "wood": CutWood(at); break;
                 case "deer": Hunt(at.GetComponent<Deer>()); break;
                 case "carcass": DressKill(at.GetComponent<Deer>()); break;
+                case "muster": MusterUse(ctx); break;
+                case "good": BuyGood(ctx, at.GetComponent<MarketGoodTag>()); break;
+                case "well": WellUse(ctx); break;
                 case "master": Master(at); break;
             }
         }
 
-        private void Church()
+        /// <summary>The second verb at the thing you are looking at.</summary>
+        private void UseAlt(string kind, Transform at)
+        {
+            var ctx = RunSession.Context;
+            switch (kind)
+            {
+                case "notice": NoticeAlt(ctx); break;
+                case "muster": MusterAlt(ctx); break;
+                case "good": SellGood(ctx, at.GetComponent<MarketGoodTag>()); break;
+                case "well": WellAlt(ctx); break;
+                case "master": PersonAlt(at); break;
+            }
+        }
+
+        private void Say(string who, string line) => hud.Speak(who, line);
+        private bool HasUntreatedWound() { foreach (var w in vitals.Body.Wounds) if (!w.Treated) return true; return false; }
+
+        // ---- home
+        private void OpenChest(RunContext ctx)
+        {
+            if (HasUntreatedWound())
+            {
+                int n = vitals.Body.TreatAll(); ctx.Character.Use(Skill.Medicine, _balance.character, n > 0 ? 1f : 0.2f); clock.SkipHours(0.5f);
+                Say("The chest", n > 0 ? $"Linen from the chest. You wash and bind {n} wound{(n == 1 ? "" : "s")}." : "Nothing needs binding.");
+            }
+            else ShowInventory();
+        }
+
+        // ---- church
+        private void Mass()
         {
             var ctx = RunSession.Context; var cal = clock.Calendar;
             long today = Calendar.JulianDayNumber(cal.Year, cal.Month, cal.Day);
-            if (Festivals.IsMassWindow(cal, _balance.time))
+            if (!Festivals.IsMassWindow(cal, _balance.time)) { Say("The nave", "Cold stone and tallow. No mass now."); return; }
+            if (ctx.LastMassDay == today) { Say("The nave", "You have heard mass already today. The priest nods."); return; }
+            Feast f = Festivals.FeastOn(cal);
+            if (activity == null) { ctx.LastMassDay = today; ctx.Standing.AttendedMass(); clock.SkipHours(1.5f); return; }
+            _busy = true; _openKind = Open.Moment;
+            Transform nave = Spot(_site != null && _site.church != null ? _site.church : church, "Nave");
+            activity.BeginRest("Mass", "E to slip out early (the village will notice)", nave, RestPose.Standing, 1.5f, _balance.activity.massTimeScale, true, (hours, early) =>
             {
-                if (ctx.LastMassDay == today) { Dialogue("The church", "You have heard mass already today. The priest nods.", ("Leave", null)); return; }
-                Feast f = Festivals.FeastOn(cal);
-                if (activity != null)
-                {
-                    _busy = true; _openKind = Open.Moment;
-                    Transform nave = Spot(_site != null && _site.church != null ? _site.church : church, "Nave");
-                    activity.BeginRest("Mass", "E to slip out early (the village will notice)", nave, RestPose.Standing, 1.5f, _balance.activity.massTimeScale, true, (hours, early) =>
-                    {
-                        _busy = false; _openKind = Open.None;
-                        if (early && hours < 1.0f) { ctx.Standing.MissedMass(); Dialogue("Mass", "You slip out before the elevation. Heads turn. That will be remembered.", ("Go out into the cold", null)); return; }
-                        ctx.LastMassDay = today; ctx.Standing.AttendedMass();
-                        Dialogue("Mass", $"You stand at the back with the village while the priest sings the {Festivals.Name(f)} mass in a Latin nobody follows. People saw you come. ({ctx.Standing.Describe()})", ("Go out into the cold", null));
-                    });
-                    return;
-                }
+                _busy = false; _openKind = Open.None;
+                if (early && hours < 1.0f) { ctx.Standing.MissedMass(); Say("Mass", "You slip out before the elevation. Heads turn. That will be remembered."); return; }
                 ctx.LastMassDay = today; ctx.Standing.AttendedMass();
-                clock.SkipHours(1.5f);
-                Dialogue("Mass", $"You stand at the back with the village while the priest sings the {Festivals.Name(f)} mass in a Latin nobody follows. People saw you come. ({ctx.Standing.Describe()})", ("Go out into the cold", null));
-            }
-            else
+                Say("Mass", $"You stand at the back with the village while the priest sings the {Festivals.Name(f)} mass in a Latin nobody follows. People saw you come. ({ctx.Standing.Describe()})");
+            });
+        }
+
+        // ---- the notice board by the alehouse door
+        private int _noticeIndex;
+        private void RefreshNotices(RunContext ctx, Settlement s)
+        {
+            if (Time.unscaledTime < _nextNoticeRefresh) return;
+            _nextNoticeRefresh = Time.unscaledTime + 30f;
+            var rng = GameBootstrap.Instance.Rng.Fork(103); rng.State ^= (ulong)clock.Calendar.TotalHours;
+            int next = ctx.NextJobId;
+            JobBoard.Refresh(s, ctx.Settlements, ctx.MapSideKm, _balance.settlements, _balance.jobs, clock.Calendar, new NameGenerator(ctx.Names, rng.Fork(1)), rng, ref next);
+            ctx.NextJobId = next;
+        }
+        private float _nextNoticeRefresh;
+        private static int CountNotices(Settlement s) { int n = 0; foreach (Job j in s.Jobs) if (j.State == JobState.Offered) n++; return n; }
+        private static Job NoticeAt(Settlement s, int index)
+        {
+            int n = CountNotices(s); if (n == 0) return null; int k = ((index % n) + n) % n;
+            foreach (Job j in s.Jobs) { if (j.State != JobState.Offered) continue; if (k == 0) return j; k--; }
+            return null;
+        }
+        private void NoticeTake(RunContext ctx)
+        {
+            var s = ctx.Current; if (s == null) return;
+            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken)
             {
-                Feast f = Festivals.FeastOn(cal);
-                string next = f != Feast.None ? "Mass is sung between Terce and Sext." : "There is no mass today. Sunday is " + DaysToSunday(today) + " days off.";
-                if (activity != null)
-                    Dialogue("The church", "Cold stone and the smell of tallow. " + next, ("Kneel at the altar", BeginPrayer), ("Leave", null));
-                else
-                    Dialogue("The church", "Cold stone and the smell of tallow. " + next, ("Pray a while (half an hour)", () => { clock.SkipHours(0.5f); }), ("Leave", null));
+                if (ctx.ActiveJob.DaysRequired > 0 && ctx.ActiveJob.ToId == s.Id) ServeDay(); else Say("Your bond", "The work is elsewhere. Go and do it.");
+                return;
             }
+            Job job = NoticeAt(s, _noticeIndex); if (job == null) { Say("The board", "Nothing posted. Come back another day."); return; }
+            if (!JobBoard.CanTake(job, ctx.Character, ctx.Inventory)) { Say(job.Employer, "\"Not you.\" The employer looks past you."); return; }
+            JobBoard.Take(job, ctx.Character); ctx.ActiveJob = job;
+            Say(job.Employer, "\"Good. Don't make me regret it.\"" + (job.Advance > 0 ? $" {job.Advance} pennies pressed into your hand." : ""));
+            saveManager?.SaveNow(AffairsChoice.None);
+        }
+        private void NoticeAlt(RunContext ctx)
+        {
+            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken)
+            {
+                ctx.ActiveJob.State = JobState.Failed; ctx.Standing.DebtDefaulted(); ctx.Reputation.Record(Deed.BrokeContract); ctx.ActiveJob = null;
+                Say("The board", "You tear the bond in two. People remember who keeps their word.");
+                return;
+            }
+            _noticeIndex++;
+        }
+
+        // ---- the market stalls
+        private void BuyGood(RunContext ctx, MarketGoodTag tag)
+        {
+            if (tag == null) return;
+            Market market = ctx.Current != null && ctx.Current.Market != null ? ctx.Current.Market : ctx.Market;
+            var def = ctx.Items.Find(tag.itemId); if (def == null) return;
+            if (market.Buy(tag.itemId, 1, clock.Calendar.Month, ctx.Standing.Value, ctx.Character, ctx.Inventory, out int paid))
+            {
+                ctx.Character.Use(Skill.Haggling, _balance.character, 0.1f);
+                Say("The stall", $"{def.name}, {paid} pennies. Yours.");
+                melee?.RefreshLoadout(); saveManager?.SaveNow(AffairsChoice.None);
+            }
+            else Say("The stall", ctx.Character.Coins < market.BuyPrice(tag.itemId, clock.Calendar.Month, ctx.Standing.Value) ? "\"Show me the pennies first.\"" : "None left today.");
+        }
+        private void SellGood(RunContext ctx, MarketGoodTag tag)
+        {
+            if (tag == null) return;
+            Market market = ctx.Current != null && ctx.Current.Market != null ? ctx.Current.Market : ctx.Market;
+            var def = ctx.Items.Find(tag.itemId); if (def == null) return;
+            if (market.Sell(tag.itemId, 1, clock.Calendar.Month, ctx.Standing.Value, ctx.Character, ctx.Inventory, out int earned))
+            {
+                ctx.Character.Use(Skill.Haggling, _balance.character, 0.1f);
+                Say("The stall", $"Your {def.name.ToLowerInvariant()} for {earned} pennies. Counted twice.");
+                melee?.RefreshLoadout(); saveManager?.SaveNow(AffairsChoice.None);
+            }
+            else Say("The stall", "You have none to sell.");
+        }
+
+        // ---- the muster post
+        private void MusterUse(RunContext ctx)
+        {
+            var s = ctx.Current; if (s == null) return;
+            if (!ctx.Service.Active) { var company = s.Type >= SettlementType.Town ? EnsureCompany(s) : null; if (company != null) Enlist(company); return; }
+            if (ctx.Siege != null) return;
+            var hostile = NearestHostileCastle(ctx, ctx.Service.Side);
+            if (hostile != null && siege != null && ctx.Service.Role != ServiceRole.Household) siege.BeginAsGrunt(hostile); else MarchToBattle();
+        }
+        private void MusterAlt(RunContext ctx)
+        {
+            var s = ctx.Current; if (s == null) return;
+            if (!ctx.Service.Active) { if (ctx.Castle != null && ctx.Castle.Stage != CastleStage.None && s.Type >= SettlementType.Town) HireGarrison(); return; }
+            CampDay();
+        }
+
+        // ---- the well on the green
+        private void WellUse(RunContext ctx)
+        {
+            if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) { encounter.FestivalMelee(1); return; }
+            Say("The well", "Cold and iron-tasting. It will do.");
+        }
+        private void WellAlt(RunContext ctx)
+        {
+            var s = ctx.Current; if (s == null) return;
+            if (s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) RaiseCastle();
+        }
+
+        // ---- people, second verb
+        private void PersonAlt(Transform t)
+        {
+            var ctx = RunSession.Context; var tag = t.GetComponent<VillagerTag>(); var v = t.GetComponent<Villager>();
+            if (tag == null || v == null || !v.WillTalk) return;
+            if (tag.trade == "priest") { clock.SkipHours(0.5f); ctx.Standing.Prayed(0.01f); Say("Father " + tag.displayName, "You tell him the smaller sins. He gives you three paternosters and a look."); return; }
+            bool kin = tag.trade.StartsWith("your ");
+            if (!kin && v.Activity == VillagerActivity.Working && VillageKit.IsTrade(tag.trade) && ctx.Character.Trade != tag.trade && !ctx.Apprenticeship.Active) { Apprentice(t, tag); return; }
+            if (!kin && (v.Activity == VillagerActivity.Drinking || v.Activity == VillagerActivity.Idling)) { Steal(tag.displayName); return; }
+            if (kin && intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) intrigue.Suspicions();
         }
 
         private void BeginPrayer()
@@ -299,7 +518,7 @@ namespace AshesAndCrowns.Game
                               favour > 0.03f ? $"You rise stiff after {mins / 60}h {mins % 60:00}m. Two women by the font saw the whole of it; by Vespers the village will know. ({ctx.Standing.Describe()})" :
                               favour > 0.005f ? $"You rise after {mins} minutes. The priest nods once. ({ctx.Standing.Describe()})" :
                               "You rise. God knows; the village does not yet.";
-                Dialogue("The altar", line, ("Go out into the cold", null));
+                Say("The altar", line);
                 saveManager?.SaveNow(AffairsChoice.None);
             });
         }
@@ -322,58 +541,10 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             if (ctx.Character.Coins < 1) { hud.Toast("No penny, no ale."); return; }
             ctx.Character.Coins -= 1; ctx.Needs.Eat(0.15f);
-            if (activity == null) { clock.SkipHours(1f); Dialogue("Rumour", Rumour(), ("Enough", null)); return; }
+            if (activity == null) { clock.SkipHours(1f); Say("Rumour", Rumour()); return; }
             _busy = true; _openKind = Open.Moment;
             Transform seat = BuildingKit.Find(_site != null && _site.alehouse != null ? _site.alehouse : alehouse, "Seat", 1);
-            activity.BeginRest("A pot of ale", "E to drink up and go", seat, RestPose.Sitting, 1f, _balance.activity.mealTimeScale, true, (hours, early) => { _busy = false; _openKind = Open.None; Dialogue("Rumour", Rumour(), ("Enough", null)); });
-        }
-
-        /// <summary>Talking to the alewife: she trades, she knows who is hiring, she knows everything else too.</summary>
-        private void Alewife(Transform t)
-        {
-            var ctx = RunSession.Context; var s = ctx.Current;
-            string name = MasterName(t);
-            var opts = new List<(string, System.Action)>(6) { ("Buy and sell", () => OpenMarket(true)), ("Ask who is hiring", AskForWork) };
-            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken && ctx.ActiveJob.DaysRequired > 0 && s != null && ctx.ActiveJob.ToId == s.Id) opts.Add(($"Serve a day ({ctx.ActiveJob.DaysServed}/{ctx.ActiveJob.DaysRequired})", ServeDay));
-            opts.Add(("What news?", () => Dialogue(name, Rumour(), ("Enough", null))));
-            if (OtherMattersCount(ctx, s) > 0) opts.Add(("Other matters", () => OtherMatters(name)));
-            opts.Add(("Leave", null));
-            Dialogue(name, "\"" + (ctx.Standing.Respected ? "Sit, sit. What will it be?" : "Pennies first, talk after.") + "\"", opts.ToArray());
-        }
-
-        private int OtherMattersCount(RunContext ctx, Settlement s)
-        {
-            int n = 0;
-            if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) n++;
-            var company = s != null && s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
-            if (company != null && !ctx.Service.Active) n++;
-            if (ctx.Service.Active && ctx.Siege == null) n++;
-            if (intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) n++;
-            if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) n++;
-            if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) n++;
-            return n;
-        }
-
-        /// <summary>War, plots and building: the talk that happens over the counter in a low voice.</summary>
-        private void OtherMatters(string name)
-        {
-            var ctx = RunSession.Context; var s = ctx.Current;
-            var opts = new List<(string, System.Action)>(8);
-            if (encounter != null && Festivals.IsFair(Festivals.FeastOn(clock.Calendar))) opts.Add(("Enter the festival melee (stake 1 penny)", () => encounter.FestivalMelee(1)));
-            var company = s != null && s.Type >= SettlementType.Town ? EnsureCompany(s) : null;
-            if (company != null && !ctx.Service.Active) opts.Add(($"Sign with {company.Name} ({company.Captain}, for {company.Employer}, {_balance.service.mercenaryWagePerDay}d a day)", () => Enlist(company)));
-            if (ctx.Service.Active && ctx.Siege == null)
-            {
-                opts.Add(($"Report to the muster of {ctx.Service.CompanyName}: march to battle", MarchToBattle));
-                var hostile = NearestHostileCastle(ctx, ctx.Service.Side);
-                if (hostile != null && siege != null && ctx.Service.Role != ServiceRole.Household) opts.Add(($"Report to the muster: the company marches to besiege {hostile.Name}", () => siege.BeginAsGrunt(hostile)));
-                opts.Add(("Spend a day in camp", CampDay)); opts.Add(("Desert (slip away in the night)", DesertService));
-            }
-            if (intrigue != null && ctx.Plot != null && ctx.Plot.WarningsGiven > 0) opts.Add(("Act on your suspicions", intrigue.Suspicions));
-            if (s != null && s.Type == SettlementType.Village && siege != null && ctx.Siege == null && ctx.Estate == null && (ctx.Castle == null || ctx.Castle.Stage == CastleStage.None)) opts.Add(("Raise a castle on this land (unlicensed)", RaiseCastle));
-            if (s != null && s.Type >= SettlementType.Town && ctx.Castle != null && ctx.Castle.Stage != CastleStage.None) opts.Add(($"Hire ten spears for your garrison ({10 * _balance.siege.garrisonHirePennies} pennies)", HireGarrison));
-            opts.Add(("Nothing", null));
-            Dialogue(name, "She wipes the counter and waits.", opts.ToArray());
+            activity.BeginRest("A pot of ale", "E to drink up and go", seat, RestPose.Sitting, 1f, _balance.activity.mealTimeScale, true, (hours, early) => { _busy = false; _openKind = Open.None; Say("Rumour", Rumour()); });
         }
 
         private string KeepPrompt()
@@ -391,48 +562,7 @@ namespace AshesAndCrowns.Game
             if (s != null && lordship != null && ctx.Estate != null && ctx.Estate.SettlementId == s.Id) { lordship.Hall(); return; }
             if (household != null && household.AtPatronSeat(ctx, s)) { household.ReportForDuty(); return; }
             if (s != null && (s.Type == SettlementType.Castle || s.Type == SettlementType.City || s.Type == SettlementType.Town)) { Audience(); return; }
-            Dialogue("The gate", "A porter with a stick. \"Nobody here for the likes of you.\"", ("Leave", null));
-        }
-
-        private void AskForWork()
-        {
-            var ctx = RunSession.Context; var s = ctx.Current;
-            if (s == null) { Dialogue("Work", "Nobody here hires strangers.", ("Leave", null)); return; }
-            if (ctx.ActiveJob != null && ctx.ActiveJob.State == JobState.Taken)
-            {
-                var to = ctx.FindSettlement(ctx.ActiveJob.ToId);
-                Dialogue("Your work", $"You already carry {ctx.ActiveJob.Employer}'s business: {JobBoard.KindName(ctx.ActiveJob.Kind)} to {(to != null ? to.Name : ctx.ActiveJob.ToId)}, due in {ctx.ActiveJob.DeadlineDay - JobBoard.Today(clock.Calendar)} days.", ("Abandon it (your name suffers)", () => { ctx.ActiveJob.State = JobState.Failed; ctx.Standing.DebtDefaulted(); ctx.Reputation.Record(Deed.BrokeContract); ctx.ActiveJob = null; }), ("Keep it", null));
-                return;
-            }
-            var rng = GameBootstrap.Instance.Rng.Fork(103); rng.State ^= (ulong)clock.Calendar.TotalHours;
-            int next = ctx.NextJobId;
-            JobBoard.Refresh(s, ctx.Settlements, ctx.MapSideKm, _balance.settlements, _balance.jobs, clock.Calendar, new NameGenerator(ctx.Names, rng.Fork(1)), rng, ref next);
-            ctx.NextJobId = next;
-            var opts = new List<(string, System.Action)>(4);
-            foreach (Job j in s.Jobs)
-            {
-                if (j.State != JobState.Offered) continue;
-                Job job = j; bool can = JobBoard.CanTake(job, ctx.Character, ctx.Inventory);
-                opts.Add((JobBoard.KindName(job.Kind) + ": " + job.Blurb + (can ? "" : "  [not for you]"), () =>
-                {
-                    if (!can) { Dialogue(job.Employer, "\"Not you.\" The employer looks past you.", ("Leave", null)); return; }
-                    JobBoard.Take(job, ctx.Character); ctx.ActiveJob = job;
-                    Dialogue(job.Employer, "\"Good. Don't make me regret it.\"" + (job.Advance > 0 ? $" {job.Advance} pennies pressed into your hand." : ""), ("Leave", null));
-                }));
-            }
-            opts.Add(("Nothing today", null));
-            Dialogue("Work in " + s.Name, "The alewife knows who is hiring.", opts.ToArray());
-        }
-
-        private void DeliverJob(Settlement s)
-        {
-            var ctx = RunSession.Context; var job = ctx.ActiveJob;
-            int pay = JobBoard.Complete(job, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing);
-            ctx.Reputation.Record(pay > 0 ? Deed.HonouredContract : Deed.BrokeContract);
-            if (pay > 0) ctx.Character.Use(Skill.Haggling, _balance.character, 0.5f);
-            Dialogue("At " + s.Name, pay > 0 ? $"You hand over {job.Employer}'s business and are paid {pay} pennies." : "You arrive too late. Nobody pays for yesterday's errand, and they will remember it.", ("...", null));
-            ctx.ActiveJob = null;
-            saveManager?.SaveNow(AffairsChoice.None);
+            Say("The gate", "A porter with a stick. \"Nobody here for the likes of you.\"");
         }
 
         private void ServeDay()
@@ -446,10 +576,10 @@ namespace AshesAndCrowns.Game
             {
                 int pay = JobBoard.Complete(job, ctx.Character, JobBoard.Today(clock.Calendar), ctx.Standing);
                 ctx.Reputation.Record(Deed.HonouredContract);
-                Dialogue("Paid off", $"The days are served. {pay} pennies.", ("...", null));
+                Say("Paid off", $"The days are served. {pay} pennies.");
                 ctx.ActiveJob = null;
             }
-            else Dialogue("Another day", $"Day {job.DaysServed} of {job.DaysRequired}. Bread, a fire, and the long hours.", ("...", null));
+            else Say("Another day", $"Day {job.DaysServed} of {job.DaysRequired}. Bread, a fire, and the long hours.");
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
@@ -481,7 +611,7 @@ namespace AshesAndCrowns.Game
         private void RaiseCastle()
         {
             var ctx = RunSession.Context; var s = ctx.Current;
-            if (!CastleRules.CanStart(ctx.Character, s, ctx.Castle, _balance.siege, out string why)) { Dialogue("The ditch", why, ("...", null)); return; }
+            if (!CastleRules.CanStart(ctx.Character, s, ctx.Castle, _balance.siege, out string why)) { Say("The ditch", why); return; }
             string name = ctx.Character.Name + "'s Tower";
             Dialogue("A castle", $"A motte here, a palisade, a tower: {_balance.siege.motteCost + _balance.siege.palisadeCost + _balance.siege.towerCost} pennies over two months, if nobody objects. Nobody will license it. You must be here to see it dug.",
                 ($"Dig. Call it {name}", () => { ctx.Castle = CastleRules.Start(name, s); hud.Toast("The first spade goes in."); saveManager?.SaveNow(AffairsChoice.None); }),
@@ -513,7 +643,7 @@ namespace AshesAndCrowns.Game
             ctx.Service.Enlist(ServiceRole.Mercenary, co.Name, co.Captain, co.Employer, _balance.service.mercenaryWagePerDay);
             if (co.Employer == Allegiance.Stephen) ctx.Reputation.Record(Deed.FoughtForStephen); else ctx.Reputation.Record(Deed.FoughtForMatilda);
             survival.InCamp = true;
-            Dialogue(co.Captain, $"\"Three pennies a day when there is silver, a share of what we take, and you do what you are told. Welcome to {co.Name}.\" You are a sellsword now.", ("...", null));
+            Say(co.Captain, $"\"Three pennies a day when there is silver, a share of what we take, and you do what you are told. Welcome to {co.Name}.\" You are a sellsword now.");
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
@@ -525,7 +655,7 @@ namespace AshesAndCrowns.Game
             survival.InCamp = true;
             clock.SkipHours(24f);
             if (vitals.IsDead) return;
-            Dialogue("Camp", t + " Dice, rumour, and a man two fires over coughing all night.", ("...", null));
+            Say("Camp", t + " Dice, rumour, and a man two fires over coughing all night.");
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
@@ -536,7 +666,7 @@ namespace AshesAndCrowns.Game
             ctx.Service.Desert(ctx.Crime, s != null ? s.Id : "camp", JobBoard.Today(clock.Calendar), ctx.Reputation, rng);
             if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + CrimeRecord.Severity(CrimeKind.Desertion));
             survival.InCamp = false;
-            Dialogue("Gone", "You walk out past the pickets with a story about firewood. By morning you are a deserter, and the provost hangs deserters.", ("Keep walking", null));
+            Say("Gone", "You walk out past the pickets with a story about firewood. By morning you are a deserter, and the provost hangs deserters.");
         }
 
         private void MarchToBattle()
@@ -575,7 +705,7 @@ namespace AshesAndCrowns.Game
             string t = ServiceRules.ResolveLevy(choice, ctx.Character, ctx.Service, side, lordName, ctx.Crime, ctx.Reputation, s.Id, JobBoard.Today(clock.Calendar), _balance.service, rng, out bool leave);
             if (ctx.Service.Deserter) s.WantedHere = Mathf.Min(1f, s.WantedHere + CrimeRecord.Severity(CrimeKind.Desertion));
             survival.InCamp = ctx.Service.Active;
-            Dialogue(lordName + "'s levy", t + (ctx.Service.Active ? " Report to the muster at the alehouse when you are ready, or they will come again." : string.Empty), ("...", null));
+            Say(lordName + "'s levy", t + (ctx.Service.Active ? " Report to the muster at the alehouse when you are ready, or they will come again." : string.Empty));
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
@@ -591,7 +721,7 @@ namespace AshesAndCrowns.Game
                 opts.Add(("Ask for land for your service", () =>
                 {
                     var manor = NearestUnheldVillage(ctx, lord);
-                    if (manor == null) { Dialogue(lord.FullName, "\"I have nothing to give that is not already given.\"", ("...", null)); return; }
+                    if (manor == null) { Say(lord.FullName, "\"I have nothing to give that is not already given.\""); return; }
                     Dialogue(lord.FullName, $"\"You have bled for me. {manor.Name} is yours, and its villeins, and its troubles. Kneel.\" You swear on his sword and rise a landed man.", ("Rise", () => lordship.Grant(manor, "by " + lord.FullName + "'s grant.")));
                 }));
             if (hasDaughter && (suit == null || suit.FatherLordId != lord.Id) && !(suit != null && suit.Married))
@@ -602,7 +732,7 @@ namespace AshesAndCrowns.Game
                 opts.Add(($"Ask for {suit.Heiress}'s hand", () =>
                 {
                     bool ok = SuitRules.Propose(suit, ctx.Character, ctx.Service.Renown, _balance.lordship, out string text);
-                    if (!ok) { Dialogue(lord.FullName, text, ("...", null)); return; }
+                    if (!ok) { Say(lord.FullName, text); return; }
                     Dialogue(lord.FullName, text, ("Marry her", () =>
                     {
                         var rng = GameBootstrap.Instance.Rng.Fork(162); rng.State ^= (ulong)clock.Calendar.TotalHours;
@@ -627,7 +757,7 @@ namespace AshesAndCrowns.Game
             ctx.Character.Use(Skill.Leadership, _balance.character);
             clock.SkipHours(3f);
             saveManager?.SaveNow(AffairsChoice.None);
-            Dialogue(suit.Heiress, t + (suit.Favour >= _balance.lordship.suitConsentFavour ? " You could ask her father now." : string.Empty), ("...", null));
+            Say(suit.Heiress, t + (suit.Favour >= _balance.lordship.suitConsentFavour ? " You could ask her father now." : string.Empty));
         }
 
         private static Settlement NearestUnheldVillage(RunContext ctx, MinorLord lord)
@@ -663,7 +793,7 @@ namespace AshesAndCrowns.Game
                     return;
                 }
             }
-            if (ctx.Character.Rank >= Rank.Knight) { Dialogue(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are.", ("Leave", null)); return; }
+            if (ctx.Character.Rank >= Rank.Knight) { Say(lordName, "\"Sir. What do you want?\" He is busy, and you are already what you are."); return; }
             bool ok = ServiceRules.KnighthoodCheck(sv, ctx.Inventory, _balance.service, out string missing);
             if (ok)
             {
@@ -673,7 +803,7 @@ namespace AshesAndCrowns.Game
             else
             {
                 string tone = sv.PatronFavour >= _balance.service.patronDispositionNeeded ? "\"I know your name. Come back when you are equipped like a knight.\"" : sv.Renown > 0 ? "\"I have heard something of you. Not enough.\"" : "\"Who let this man in?\"";
-                Dialogue(lordName, tone + "\n\nStill wanting: " + missing + ".", ("Leave", null));
+                Say(lordName, tone + "\n\nStill wanting: " + missing + ".");
             }
         }
 
@@ -688,16 +818,6 @@ namespace AshesAndCrowns.Game
             }
             string[] generic = { "The king has let the Scots keep Carlisle. Men laugh and do not laugh.", "Bread will be dear by Candlemas, the alewife says, and she is usually right.", "A company of Flemings passed on the Oxford road. They paid for nothing.", "The empress is in Normandy with her husband, who nobody likes.", "Bishop Henry sits in Winchester with the treasury and smiles at everyone." };
             return generic[rng.Range(0, generic.Length)];
-        }
-
-        private void Home()
-        {
-            var ctx = RunSession.Context;
-            Dialogue("Your hut", $"A hearth, a pallet, a chest. Hunger {Mathf.RoundToInt(ctx.Needs.Hunger * 100)}%, rest {Mathf.RoundToInt(ctx.Needs.Rest * 100)}%.",
-                ("Lie down until Prime", SleepUntilPrime),
-                ("Sit and eat", EatAtHearth),
-                ("Clean and bind your wounds", () => { int n = vitals.Body.TreatAll(); ctx.Character.Use(Skill.Medicine, _balance.character, n > 0 ? 1f : 0.2f); clock.SkipHours(0.5f); Dialogue("Wounds", n > 0 ? $"You wash and bind {n} wound{(n == 1 ? "" : "s")} with what linen you have." : "Nothing needs binding.", ("Done", null)); }),
-                ("Leave", null));
         }
 
         private void SleepUntilPrime()
@@ -717,7 +837,7 @@ namespace AshesAndCrowns.Game
                     if (vitals.IsDead) return;
                     saveManager?.SaveNow(AffairsChoice.None);
                     string woke = early ? $"You wake in the dark after {slept:0.#} hours and lie listening to the rain." : $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry.");
-                    Dialogue(early ? "Night" : "Morning", woke, ("Rise", null));
+                    Say(early ? "Night" : "Morning", woke);
                 });
                 return;
             }
@@ -728,7 +848,7 @@ namespace AshesAndCrowns.Game
             survival.RestingAtHome = false;
             if (vitals.IsDead) return;
             saveManager?.SaveNow(AffairsChoice.None);
-            Dialogue("Morning", $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry."), ("Rise", null));
+            Say("Morning", $"The bells ring Prime. {clock.Calendar.LongDate()}. " + (ctx.Disease.Current != Sickness.None ? "You wake sweating and weak." : "You wake hungry."));
         }
 
         /// <summary>A proper meal at your own hearth: you sit, it takes a while, it does you more good than bread on the road.</summary>
@@ -784,7 +904,7 @@ namespace AshesAndCrowns.Game
                 _sb.Append(ctx.Inventory.CountAt(i)).Append(" x ").Append(def != null ? def.name : ctx.Inventory.IdAt(i)).Append('\n');
             }
             _sb.Append("\nG eats the best food you carry.");
-            Dialogue("What you carry", _sb.ToString(), ("Close", null));
+            Say("What you carry", _sb.ToString());
         }
 
         // ------------------------------------------------------------------ work
@@ -812,8 +932,8 @@ namespace AshesAndCrowns.Game
             var ctx = RunSession.Context;
             string tradeId = ctx.Apprenticeship.Active ? ctx.Apprenticeship.Trade : ctx.Character.Trade;
             TradeDef def = string.IsNullOrEmpty(tradeId) ? null : ctx.Trades.Find(tradeId);
-            if (def == null) { Dialogue("Work", "You have no trade here. Hunting is open to all: speak to the hunter.", ("Leave", null)); return; }
-            if (clock.Calendar.HourOfDay > 14f) { Dialogue("Work", "Too late in the day to start. Sleep, and begin at Prime.", ("Leave", null)); return; }
+            if (def == null) { Say("Work", "You have no trade here. Hunting is open to all: speak to the hunter."); return; }
+            if (clock.Calendar.HourOfDay > 14f) { Say("Work", "Too late in the day to start. Sleep, and begin at Prime."); return; }
             if (Festivals.FeastOn(clock.Calendar) != Feast.None && ctx.Standing.Value > 0.35f) { Dialogue("Work", "Nobody works on a holy day, not where the priest can see. The village would talk.", ("Work anyway (the village will talk)", () => StartWork(def, true)), ("Leave", null)); return; }
             StartWork(def, false);
         }
@@ -836,7 +956,7 @@ namespace AshesAndCrowns.Game
                 if (vitals.IsDead) return;
                 var prod = ctx.Items.Find(r.Product);
                 string made = r.UnitsProduced > 0 ? $"{r.UnitsProduced} x {(prod != null ? prod.name : r.Product)}" : "nothing worth the name";
-                Dialogue("The day's work", $"Ten hours at the {def.id}'s work ({(quality > 0.75f ? "good hands today" : quality > 0.4f ? "steady" : "clumsy")}). You made {made}. {r.Note}{(r.Injured ? " You hurt yourself." : "")}", ("Done", null));
+                Say("The day's work", $"Ten hours at the {def.id}'s work ({(quality > 0.75f ? "good hands today" : quality > 0.4f ? "steady" : "clumsy")}). You made {made}. {r.Note}{(r.Injured ? " You hurt yourself." : "")}");
                 saveManager?.SaveNow(AffairsChoice.None);
             };
             if (activity != null) activity.BeginWork(def, 10f, finish);
@@ -860,7 +980,7 @@ namespace AshesAndCrowns.Game
                 var rng = GameBootstrap.Instance.Rng.Fork(86); rng.State ^= (ulong)clock.Calendar.TotalHours;
                 ctx.Character.Use(Skill.Hunting, _balance.character, 1f);
                 bool hit = deer != null && !deer.Dead && rng.Chance(Mathf.Lerp(w.hitChanceAtWorst, w.hitChanceAtPerfect, quality));
-                if (hit) { deer.Kill(); Dialogue("The shot", "The shaft takes it behind the shoulder. It runs three strides and folds. Dress it before the light goes.", ("Good", null)); }
+                if (hit) { deer.Kill(); Say("The shot", "The shaft takes it behind the shoulder. It runs three strides and folds. Dress it before the light goes."); }
                 else Dialogue("The shot", quality > 0.5f ? "The arrow skips off a root. White tails everywhere." : "You draw too soon; the herd is gone before the string sings.", ("Curse", null));
             });
         }
@@ -883,7 +1003,7 @@ namespace AshesAndCrowns.Game
                 if (s != null) s.WantedHere = Mathf.Min(1f, s.WantedHere + wanted);
                 tail = " A man in green watched you from the trees and did not come closer. The lord's deer, the lord's forester.";
             }
-            Dialogue("The kill", $"{w.meatPerDeer} haunches of venison and a hide, and blood to the elbow." + tail, ("Done", null));
+            Say("The kill", $"{w.meatPerDeer} haunches of venison and a hide, and blood to the elbow." + tail);
             saveManager?.SaveNow(AffairsChoice.None);
         }
 
@@ -891,9 +1011,9 @@ namespace AshesAndCrowns.Game
         private void CutWood(Transform oak)
         {
             var ctx = RunSession.Context;
-            if (ctx.Inventory.Count("axe") <= 0) { Dialogue("The oak", "Bark like iron. You have no axe.", ("Leave", null)); return; }
+            if (ctx.Inventory.Count("axe") <= 0) { Say("The oak", "Bark like iron. You have no axe."); return; }
             if (activity == null) { ctx.Inventory.Add("firewood", 2); clock.SkipHours(2f); hud.Toast("Two hours of chopping. Two bundles."); return; }
-            if (clock.Calendar.HourOfDay > 19f || clock.Calendar.HourOfDay < 5f) { Dialogue("The oak", "Too dark to swing an axe without losing a foot.", ("Leave", null)); return; }
+            if (clock.Calendar.HourOfDay > 19f || clock.Calendar.HourOfDay < 5f) { Say("The oak", "Too dark to swing an axe without losing a foot."); return; }
             _busy = true; _openKind = Open.Moment;
             Vector3 face = oak.position - player.transform.position; face.y = 0f;
             if (face.sqrMagnitude > 0.01f) player.transform.rotation = Quaternion.LookRotation(face.normalized, Vector3.up);
@@ -906,7 +1026,7 @@ namespace AshesAndCrowns.Game
                 ctx.Character.Use(Skill.Carpentry, _balance.character, 0.5f);
                 bool hurt = quality < 0.2f && GameBootstrap.Instance.Rng.Fork(77).Chance(0.3f);
                 if (hurt) vitals.Body.ApplyHit(BodyPart.LeftLeg, 0.08f, "your own axe");
-                Dialogue("Firewood", $"Two hours of swinging. {bundles} bundle{(bundles == 1 ? "" : "s")} of split oak, a penny each at any market, and a back that knows about it." + (hurt ? " The axe glanced and opened your shin." : ""), ("Done", null));
+                Say("Firewood", $"Two hours of swinging. {bundles} bundle{(bundles == 1 ? "" : "s")} of split oak, a penny each at any market, and a back that knows about it." + (hurt ? " The axe glanced and opened your shin." : ""));
                 saveManager?.SaveNow(AffairsChoice.None);
             });
         }
@@ -927,28 +1047,25 @@ namespace AshesAndCrowns.Game
             var tag = t.GetComponent<VillagerTag>(); if (tag == null) return;
             var ctx = RunSession.Context;
             var v = t.GetComponent<Villager>();
-            if (v != null && !v.WillTalk) { Dialogue(MasterName(t), $"{tag.displayName} is {v.Doing}.", ("Leave them", null)); return; }
-            if (v != null && tag.trade == "priest")
-            {
-                Dialogue("Father " + tag.displayName, $"The priest is {v.Doing}. \"God keep you. Mass is sung on Sundays and feasts between Terce and Sext; the altar is open to any who kneel.\"", ("Confess (half an hour)", () => { clock.SkipHours(0.5f); ctx.Standing.Prayed(0.01f); Dialogue("Confession", "You tell him the smaller sins. He gives you three paternosters and a look.", ("Leave", null)); }), ("Leave", null));
-                return;
-            }
-            if (v != null && tag.trade == "brewer") { Alewife(t); return; }
+            string name = MasterName(t);
+            if (v != null && !v.WillTalk) { Say(name, $"{tag.displayName} is {v.Doing}."); return; }
             string doing = v != null ? $"{tag.displayName} is {v.Doing}. " : string.Empty;
-            if (v != null && (v.Activity == VillagerActivity.Drinking || v.Activity == VillagerActivity.Idling) && !tag.trade.StartsWith("your "))
-            {
-                var opts = new List<(string, System.Action)>(4) { ("Pass the time of day", () => Dialogue(MasterName(t), doing + $"\"{Greeting(tag)}\"", ("Leave", null))) };
-                if (ctx.Character.Trade != tag.trade && !(ctx.Apprenticeship.Active)) opts.Add(("Ask to be taken on as an apprentice", () => Apprentice(t, tag)));
-                opts.Add(("Lift their purse while they look away", () => Steal(tag.displayName)));
-                opts.Add(("Leave", null));
-                Dialogue(MasterName(t), doing, opts.ToArray()); return;
-            }
-            if (ctx.Apprenticeship.Active && ctx.Apprenticeship.Trade == tag.trade)
-            { Dialogue(MasterName(t), $"\"Back to work. {ctx.Apprenticeship.SeasonsRemaining:F1} seasons and you might be worth your bread.\"", ("Yes, master", null)); return; }
-            if (ctx.Character.Trade == tag.trade) { Dialogue(MasterName(t), doing + "\"Weather for it, isn't it.\" You talk shop for a while.", ("Leave", null)); return; }
-            Dialogue(MasterName(t), doing + $"\"{Greeting(tag)}\"",
-                ("Ask to be taken on as an apprentice", () => Apprentice(t, tag)),
-                ("Leave", null));
+            if (tag.trade == "priest") { Say(name, doing + "\"God keep you. Mass is sung on Sundays and feasts between Terce and Sext; the altar is open to any who kneel.\""); return; }
+            if (tag.trade == "brewer") { Say(name, doing + "\"" + (ctx.Standing.Respected ? "Sit, sit. " : "Pennies first. ") + Rumour() + "\""); return; }
+            if (tag.trade.StartsWith("your ")) { Say(name, doing + "\"" + KinLine(ctx, tag) + "\""); return; }
+            if (ctx.Apprenticeship.Active && ctx.Apprenticeship.Trade == tag.trade) { Say(name, $"\"Back to work. {ctx.Apprenticeship.SeasonsRemaining:F1} seasons and you might be worth your bread.\""); return; }
+            if (ctx.Character.Trade == tag.trade) { Say(name, doing + "\"Weather for it, isn't it.\" You talk shop for a while."); return; }
+            Say(name, doing + $"\"{Greeting(tag)}\"");
+        }
+
+        private string KinLine(RunContext ctx, VillagerTag tag)
+        {
+            float h = ctx.Needs.Hunger;
+            if (tag.trade == "your mother") return h < 0.4f ? "You have not eaten. Sit." : "Mind the cold. And mind the reeve.";
+            if (tag.trade == "your father") return ctx.Standing.Despised ? "They talk about you at the well. I hear it." : "The strips will not plough themselves.";
+            if (tag.trade == "your spouse") return ctx.Character.Coins < 3 ? "Three pennies in the pot. Three." : "Come home before Compline.";
+            if (tag.trade == "your child") return "Will there be bread?";
+            return "Well?";
         }
 
         private void Apprentice(Transform t, VillagerTag tag)
@@ -958,7 +1075,7 @@ namespace AshesAndCrowns.Game
             bool ok = Apprenticeship.TryConvince(ctx.Character, tag.disposition, ctx.Standing.Value, rng, out string reply);
             if (ok) ctx.Apprenticeship.Begin(tag.trade, tag.npcId, 2f);
             ctx.Character.Use(Skill.Haggling, _balance.character, 0.3f);
-            Dialogue(MasterName(t), "\"" + reply + "\"" + (ok ? "\n\nYou are apprenticed. Half pay, two seasons, and you do as you are told." : ""), ("Leave", null));
+            Say(MasterName(t), "\"" + reply + "\"" + (ok ? " You are apprenticed. Half pay, two seasons, and you do as you are told." : ""));
         }
 
         private static string Greeting(VillagerTag tag)

@@ -48,11 +48,11 @@ namespace AshesAndCrowns.Game
                         Prop(b, "HearthStone", PrimitiveType.Cylinder, new Vector3(0f, f + 0.08f, -0.2f), new Vector3(1.1f, 0.08f, 1.1f), stone);
                         Prop(b, "Embers", PrimitiveType.Sphere, new Vector3(0f, f + 0.2f, -0.2f), new Vector3(0.45f, 0.18f, 0.45f), fire);
                         Prop(b, "Pallet", PrimitiveType.Cube, new Vector3(-1.9f, f + 0.17f, -1.0f), new Vector3(1.0f, 0.3f, 2.0f), linen, collider: true);
-                        Prop(b, "Chest", PrimitiveType.Cube, new Vector3(2.0f, f + 0.3f, -1.3f), new Vector3(0.9f, 0.6f, 0.55f), wood, collider: true);
+                        Prop(b, "ChestBox", PrimitiveType.Cube, new Vector3(2.0f, f + 0.3f, -1.3f), new Vector3(0.9f, 0.6f, 0.55f), wood, collider: true);
                         Prop(b, "Stool", PrimitiveType.Cylinder, new Vector3(1.2f, f + 0.2f, 0.4f), new Vector3(0.4f, 0.2f, 0.4f), wood);
                         Prop(b, "Shelf", PrimitiveType.Cube, new Vector3(0f, f + 1.5f, -1.75f), new Vector3(2.2f, 0.06f, 0.3f), wood);
                         Prop(b, "Pot", PrimitiveType.Sphere, new Vector3(0.4f, f + 1.65f, -1.75f), new Vector3(0.26f, 0.26f, 0.26f), iron);
-                        Marker(b, "Hearth", new Vector3(0.9f, f, -0.2f)); Marker(b, "Bed", new Vector3(-1.2f, f, -1.0f));
+                        Marker(b, "Hearth", new Vector3(0.9f, f, -0.2f)); Marker(b, "Bed", new Vector3(-1.2f, f, -1.0f)); Marker(b, "Chest", new Vector3(2.0f, f, -0.6f));
                         if (withLight) Light(b, new Vector3(0f, f + 0.7f, -0.2f), new Color(1f, 0.6f, 0.3f), 7f, 1.6f);
                         break;
                     }
@@ -72,6 +72,8 @@ namespace AshesAndCrowns.Game
                         Prop(b, "HearthStone", PrimitiveType.Cylinder, new Vector3(-1.5f, f + 0.08f, 1.8f), new Vector3(1.3f, 0.08f, 1.3f), stone);
                         Prop(b, "Fire", PrimitiveType.Sphere, new Vector3(-1.5f, f + 0.25f, 1.8f), new Vector3(0.6f, 0.3f, 0.6f), fire);
                         Marker(b, "Bar", new Vector3(-3.0f, f, -1.4f)); Marker(b, "Hearth", new Vector3(-1.5f, f, 0.6f));
+                        Prop(b, "NoticeBoard", PrimitiveType.Cube, new Vector3(1.8f, f + 1.5f, 3.5f + 0.3f), new Vector3(0.9f, 0.7f, 0.06f), wood);
+                        Marker(b, "Notice", new Vector3(1.8f, f, 3.5f + 1.2f));
                         Marker(b, "Seat", new Vector3(0.2f, f, 0f)); Marker(b, "Seat", new Vector3(1.8f, f, 0f)); Marker(b, "Seat", new Vector3(2.8f, f, 0f)); Marker(b, "Seat", new Vector3(4.4f, f, 0f));
                         if (withLight) { Light(b, new Vector3(-1.5f, f + 0.9f, 1.8f), new Color(1f, 0.62f, 0.3f), 10f, 2.2f); Light(b, new Vector3(2.5f, f + 2.2f, 0f), new Color(1f, 0.75f, 0.45f), 7f, 0.9f); }
                         break;
@@ -93,10 +95,10 @@ namespace AshesAndCrowns.Game
                         }
                         Prop(b, "Pallet", PrimitiveType.Cube, new Vector3(3.9f, f + 0.25f, -2.0f), new Vector3(1.3f, 0.45f, 2.2f), linen, collider: true);
                         Prop(b, "Curtain", PrimitiveType.Cube, new Vector3(3.0f, f + 1.2f, -1.0f), new Vector3(0.06f, 2.3f, 2.6f), linen);
-                        Prop(b, "Chest", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 1.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
-                        Prop(b, "Chest", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 2.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
+                        Prop(b, "ChestBox", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 1.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
+                        Prop(b, "ChestBox", PrimitiveType.Cube, new Vector3(4.2f, f + 0.35f, 2.6f), new Vector3(1.1f, 0.7f, 0.6f), wood, collider: true);
                         Prop(b, "Shield", PrimitiveType.Cylinder, new Vector3(-4.75f, f + 2.0f, 0f), new Vector3(0.9f, 0.04f, 0.9f), iron);
-                        Marker(b, "Hearth", new Vector3(1.0f, f, 0f)); Marker(b, "Bed", new Vector3(3.9f, f, -0.5f)); Marker(b, "Dais", new Vector3(-3.0f, f + 0.24f, 0f));
+                        Marker(b, "Hearth", new Vector3(1.0f, f, 0f)); Marker(b, "Bed", new Vector3(3.9f, f, -0.5f)); Marker(b, "Dais", new Vector3(-3.0f, f + 0.24f, 0f)); Marker(b, "Chest", new Vector3(3.4f, f, 2.1f));
                         Marker(b, "Seat", new Vector3(1.0f, f, -1.2f)); Marker(b, "Seat", new Vector3(1.0f, f, 1.2f)); Marker(b, "Seat", new Vector3(-0.2f, f, -2.6f)); Marker(b, "Seat", new Vector3(2.2f, f, 2.6f));
                         if (withLight) { Light(b, new Vector3(0f, f + 1.0f, 0f), new Color(1f, 0.62f, 0.3f), 11f, 2.4f); Light(b, new Vector3(-3.6f, f + 2.0f, 0f), new Color(1f, 0.75f, 0.45f), 7f, 0.9f); }
                         break;

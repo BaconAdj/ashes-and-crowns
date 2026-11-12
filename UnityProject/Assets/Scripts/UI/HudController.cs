@@ -28,7 +28,8 @@ namespace AshesAndCrowns.UI
 
         private VisualElement _root, _bloodFill, _staminaFill, _hungerFill, _hitFlash, _death, _chronicle, _quit, _narration, _info, _dialogue, _market, _moment, _momentTrack, _momentMarker, _momentZone;
         private Label _orderBanner, _orderShout, _prompt, _standing, _toast, _dialogueTitle, _dialogueBody, _marketTitle, _marketMsg, _momentTitle, _momentHint;
-        private VisualElement _dialogueButtons, _marketList, _mapOverlay, _mapImage;
+        private VisualElement _marketList, _mapOverlay, _mapImage;
+        private Label _dialogueButtons;
         private Label _mapCaption;
         private float _toastUntil;
         private System.Action<float> _momentDone; private float _momentT, _momentSpeed, _momentZoneWidth; private int _momentBeats; private float _momentQuality;
@@ -230,13 +231,72 @@ namespace AshesAndCrowns.UI
 
         public void Toast(string text) { if (_toast == null) return; _toast.text = text; _toast.style.display = DisplayStyle.Flex; _toastUntil = Time.unscaledTime + 4f; }
 
+        private (string label, System.Action act)[] _dialogueOptions = System.Array.Empty<(string, System.Action)>();
+        private System.Action<int> _dialogueOnPick; private int _dialogueIndex; private float _dialogueOpenedAt, _speechUntil; private bool _speechOnly;
+        private readonly System.Text.StringBuilder _dsb = new System.Text.StringBuilder(160);
+
+        /// <summary>Someone speaks or something happens: a panel with the words, no choices. E or a few seconds closes it; it never stops you moving.</summary>
+        public void Speak(string title, string line, float seconds = 7f)
+        {
+            if (_dialogue == null) return;
+            _dialogueTitle.text = title; _dialogueBody.text = line; _dialogueOptions = System.Array.Empty<(string, System.Action)>(); _dialogueOnPick = null;
+            _speechOnly = true; _speechUntil = Time.unscaledTime + seconds; _dialogueOpenedAt = Time.unscaledTime;
+            _dialogueButtons.text = string.Empty;
+            _dialogue.style.display = DisplayStyle.Flex;
+        }
+
+        /// <summary>A choice that must be made here and now. There are no buttons: E takes the shown option, F shows the next, Q takes the way out.
+        /// Places and people are the real menu; this is for the moments the world puts a question to you.</summary>
         public void ShowDialogue(string title, string body, (string label, System.Action act)[] options, System.Action<int> onPick)
         {
             if (_dialogue == null) return;
-            _dialogueTitle.text = title; _dialogueBody.text = body; _dialogueButtons.Clear();
-            for (int i = 0; i < options.Length; i++) { int idx = i; var b = MakeButton($"{i + 1}.  {options[i].label}"); b.clicked += () => onPick(idx); _dialogueButtons.Add(b); }
+            _dialogueTitle.text = title; _dialogueBody.text = body;
+            _dialogueOptions = options ?? System.Array.Empty<(string, System.Action)>(); _dialogueOnPick = onPick; _dialogueIndex = 0; _speechOnly = false;
+            _dialogueOpenedAt = Time.unscaledTime;
+            RefreshDialoguePrompt();
             _dialogue.style.display = DisplayStyle.Flex;
-            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+        }
+
+        private static bool IsLeaveLabel(string l)
+        {
+            if (string.IsNullOrEmpty(l)) return false;
+            string s = l.TrimStart();
+            return s.StartsWith("Leave") || s.StartsWith("Done") || s.StartsWith("Enough") || s.StartsWith("Nothing") || s.StartsWith("Stay") || s.StartsWith("Go out") || s.StartsWith("Keep it") || s.StartsWith("Decline") || s.StartsWith("Curse") || s.StartsWith("Good") || s.StartsWith("Rise") || s.StartsWith("...") || s.StartsWith("Yes, master") || s.StartsWith("Leave them") || s.StartsWith("Leave quickly");
+        }
+
+        private void RefreshDialoguePrompt()
+        {
+            int n = _dialogueOptions.Length;
+            _dsb.Clear();
+            if (n == 0) _dsb.Append("[E] ...");
+            else
+            {
+                _dsb.Append("[E] ").Append(_dialogueOptions[_dialogueIndex].label);
+                if (n > 1) _dsb.Append("      [F] next  (").Append(_dialogueIndex + 1).Append('/').Append(n).Append(')');
+                int leave = LeaveIndex();
+                if (leave >= 0 && leave != _dialogueIndex) _dsb.Append("      [Q] ").Append(_dialogueOptions[leave].label);
+            }
+            _dialogueButtons.text = _dsb.ToString();
+        }
+
+        private int LeaveIndex() { for (int i = _dialogueOptions.Length - 1; i >= 0; i--) if (IsLeaveLabel(_dialogueOptions[i].label)) return i; return -1; }
+
+        private void UpdateDialogueKeys()
+        {
+            if (_dialogue == null || _dialogue.style.display != DisplayStyle.Flex) return;
+            if (_speechOnly)
+            {
+                var k = UnityEngine.InputSystem.Keyboard.current;
+                if (Time.unscaledTime > _speechUntil || (k != null && k.qKey.wasPressedThisFrame)) HideDialogue();   // E stays free for the next action
+                return;
+            }
+            if (Time.unscaledTime - _dialogueOpenedAt < 0.2f) return;   // the E that opened it must not also answer it
+            var kb = UnityEngine.InputSystem.Keyboard.current; if (kb == null) return;
+            int n = _dialogueOptions.Length;
+            if (n == 0) { if (kb.eKey.wasPressedThisFrame || kb.qKey.wasPressedThisFrame) HideDialogue(); return; }
+            if (kb.fKey.wasPressedThisFrame && n > 1) { _dialogueIndex = (_dialogueIndex + 1) % n; RefreshDialoguePrompt(); return; }
+            if (kb.eKey.wasPressedThisFrame) { var pick = _dialogueOnPick; int i = _dialogueIndex; _dialogueOpenedAt = Time.unscaledTime; pick?.Invoke(i); return; }
+            if (kb.qKey.wasPressedThisFrame) { int leave = LeaveIndex(); if (leave >= 0) { var pick = _dialogueOnPick; _dialogueOpenedAt = Time.unscaledTime; pick?.Invoke(leave); } }
         }
 
         /// <summary>True while any director's dialogue is on screen; the panel is shared, so nobody opens over somebody else.</summary>
@@ -245,8 +305,8 @@ namespace AshesAndCrowns.UI
         public void HideDialogue()
         {
             if (_dialogue == null) return;
-            _dialogue.style.display = DisplayStyle.None;
-            if (_market.style.display != DisplayStyle.Flex) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+            _dialogue.style.display = DisplayStyle.None; _speechOnly = false;
+            if (_market.style.display != DisplayStyle.Flex && _quit.style.display != DisplayStyle.Flex) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
         }
 
         public void ShowMarket(Market market, ItemsData items, Inventory inventory, int month, float standing, System.Func<string, bool, string> onBuy, System.Func<string, string> onSell, System.Action onClose)
@@ -477,11 +537,13 @@ namespace AshesAndCrowns.UI
             _root.Add(promptPanel);
 
             // Dialogue
-            _dialogue = MakeOverlay(0.55f); _dialogue.pickingMode = PickingMode.Position;
-            var dbox = new VisualElement(); dbox.style.width = 700; dbox.style.backgroundColor = Panel; dbox.style.paddingTop = dbox.style.paddingBottom = 16; dbox.style.paddingLeft = dbox.style.paddingRight = 20;
-            _dialogueTitle = MakeLabel(string.Empty, 20, Parchment); _dialogueTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
-            _dialogueBody = MakeLabel(string.Empty, 14, Parchment); _dialogueBody.style.whiteSpace = WhiteSpace.Normal; _dialogueBody.style.marginBottom = 12;
-            _dialogueButtons = new VisualElement();
+            // Speech: a lower-third panel. The world stays visible; there are no buttons, only the keys printed under the words.
+            _dialogue = new VisualElement { pickingMode = PickingMode.Ignore };
+            _dialogue.style.position = Position.Absolute; _dialogue.style.bottom = 200; _dialogue.style.left = new Length(50, LengthUnit.Percent); _dialogue.style.marginLeft = -380; _dialogue.style.width = 760; _dialogue.style.display = DisplayStyle.None;
+            var dbox = MakePanel(null, null, null, null, 760); dbox.style.position = Position.Relative; dbox.style.paddingTop = dbox.style.paddingBottom = 14; dbox.style.paddingLeft = dbox.style.paddingRight = 20;
+            _dialogueTitle = MakeLabel(string.Empty, 18, Parchment); _dialogueTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _dialogueBody = MakeLabel(string.Empty, 14, Parchment); _dialogueBody.style.whiteSpace = WhiteSpace.Normal; _dialogueBody.style.marginBottom = 10;
+            _dialogueButtons = MakeLabel(string.Empty, 12, new Color(0.80f, 0.70f, 0.48f)); _dialogueButtons.style.whiteSpace = WhiteSpace.Normal;
             dbox.Add(_dialogueTitle); dbox.Add(_dialogueBody); dbox.Add(_dialogueButtons); _dialogue.Add(dbox);
             _root.Add(_dialogue);
 
@@ -569,6 +631,7 @@ namespace AshesAndCrowns.UI
             UpdateMoment();
             UpdateGuard();
             UpdatePlaceBanner();
+            UpdateDialogueKeys();
             if (_toast != null && _toast.style.display == DisplayStyle.Flex && Time.unscaledTime > _toastUntil) _toast.style.display = DisplayStyle.None;
             if (_whisper != null && _whisper.style.display == DisplayStyle.Flex && Time.unscaledTime > _whisperUntil) _whisper.style.display = DisplayStyle.None;
             if (Time.unscaledTime < _nextTextUpdate) return;

@@ -40,6 +40,15 @@ namespace AshesAndCrowns.Game
                 }
                 BuildVillage(s, terrainSize, rng.Fork(MapGeometry.StableHash(s.Id)));
             }
+            // Stalls: every settlement lays out what its market has, Ashby included (its market exists only once the run does).
+            var ctx = RunSession.Context;
+            if (ctx != null)
+                foreach (var site in _sites)
+                {
+                    var s = ctx.FindSettlement(site.settlementId);
+                    if (s == null || s.Market == null || site.goods.Count > 0) continue;
+                    VillageKit.BuildMarket(site, site.transform, s.Market, ctx.Items, assets.darkWood, assets.linen != null ? assets.linen : assets.wattle, assets.terrain, s.Type >= SettlementType.Town);
+                }
         }
 
         /// <summary>The player's kin, spawned under the player's roof when a life begins: they share the hearth, work the same

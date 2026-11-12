@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AshesAndCrowns.Sim;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ namespace AshesAndCrowns.Game
             new Color(0.30f, 0.32f, 0.38f), new Color(0.42f, 0.34f, 0.22f), new Color(0.26f, 0.24f, 0.22f), new Color(0.38f, 0.30f, 0.30f),
         };
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        public static bool IsTrade(string t) { foreach (string x in Trades) if (x == t) return true; return false; }
         public static Color Dye(int id) => Dyes[((id % Dyes.Length) + Dyes.Length) % Dyes.Length];
 
         /// <summary>Furnish every building of a village and people it. Huts are assigned to villagers round robin; each trade
@@ -124,6 +126,52 @@ namespace AshesAndCrowns.Game
             if (terrain != null) pos.y = terrain.SampleHeight(pos) + terrain.transform.position.y;
             yard.position = pos;
             v.workStation = yard; v.workBuilding = null;
+        }
+
+        private static readonly Color[] GoodColours = { new Color(0.55f, 0.48f, 0.30f), new Color(0.62f, 0.58f, 0.48f), new Color(0.30f, 0.31f, 0.33f), new Color(0.45f, 0.30f, 0.20f), new Color(0.50f, 0.42f, 0.26f) };
+
+        /// <summary>Stalls on the green: trestles with the goods the market has to spare laid out on them, three to a stall.
+        /// Buying and selling happen at the good itself. Towns also get a banner post: the muster.</summary>
+        public static void BuildMarket(SettlementSite site, Transform root, Market market, ItemsData items, Material wood, Material linen, Terrain terrain, bool town)
+        {
+            if (site == null || site.centre == null || market == null) return;
+            var stalls = new GameObject("Market").transform; stalls.SetParent(root, true);
+            var list = new List<MarketGood>(16);
+            foreach (var g in market.Goods) if (g.Stock >= 1f && items.Find(g.Id) != null) list.Add(g);
+            list.Sort((a, b) => b.Stock.CompareTo(a.Stock));
+            int count = Mathf.Min(list.Count, town ? 15 : 9);
+            float green = 16f;
+            for (int i = 0; i < count; i++)
+            {
+                int stall = i / 3, slot = i % 3;
+                float a = (0.75f + stall * 0.5f) * Mathf.PI;   // stalls around the south and west of the green, off the church and alehouse sides
+                Vector3 sc = site.centre.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (green - 4f);
+                if (terrain != null) sc.y = terrain.SampleHeight(sc) + terrain.transform.position.y;
+                Quaternion face = Quaternion.LookRotation((site.centre.position - sc).normalized, Vector3.up);
+                if (slot == 0)
+                {
+                    var table = GameObject.CreatePrimitive(PrimitiveType.Cube); table.name = "Stall"; table.transform.SetParent(stalls, true);
+                    table.transform.SetPositionAndRotation(sc + Vector3.up * 0.75f, face); table.transform.localScale = new Vector3(2.6f, 0.08f, 0.9f); table.GetComponent<Renderer>().sharedMaterial = wood;
+                    var awning = GameObject.CreatePrimitive(PrimitiveType.Cube); awning.name = "Awning"; Object.DestroyImmediate(awning.GetComponent<Collider>()); awning.transform.SetParent(stalls, true);
+                    awning.transform.SetPositionAndRotation(sc + Vector3.up * 2.2f + face * Vector3.back * 0.2f, face * Quaternion.Euler(12f, 0f, 0f)); awning.transform.localScale = new Vector3(2.8f, 0.04f, 1.6f); awning.GetComponent<Renderer>().sharedMaterial = linen;
+                    for (int k = -1; k <= 1; k += 2) { var post = GameObject.CreatePrimitive(PrimitiveType.Cube); post.name = "Post"; Object.DestroyImmediate(post.GetComponent<Collider>()); post.transform.SetParent(stalls, true); post.transform.SetPositionAndRotation(sc + face * new Vector3(k * 1.3f, 1.1f, -0.5f), face); post.transform.localScale = new Vector3(0.08f, 2.2f, 0.08f); post.GetComponent<Renderer>().sharedMaterial = wood; }
+                }
+                var good = GameObject.CreatePrimitive(i % 2 == 0 ? PrimitiveType.Cube : PrimitiveType.Sphere); good.name = "Good_" + list[i].Id; Object.DestroyImmediate(good.GetComponent<Collider>());
+                good.transform.SetParent(stalls, true);
+                good.transform.SetPositionAndRotation(sc + face * new Vector3((slot - 1) * 0.8f, 0.95f, 0f), face); good.transform.localScale = new Vector3(0.32f, 0.3f, 0.32f);
+                var mr = good.GetComponent<Renderer>(); mr.sharedMaterial = linen;
+                var block = new MaterialPropertyBlock(); block.SetColor(BaseColor, GoodColours[i % GoodColours.Length]); mr.SetPropertyBlock(block);
+                var tag = good.AddComponent<MarketGoodTag>(); tag.itemId = list[i].Id;
+                site.goods.Add(tag);
+            }
+            if (town)
+            {
+                Vector3 mp = site.centre.position + new Vector3(0f, 0f, -green + 3f); if (terrain != null) mp.y = terrain.SampleHeight(mp) + terrain.transform.position.y;
+                var post = GameObject.CreatePrimitive(PrimitiveType.Cube); post.name = "MusterPost"; post.transform.SetParent(stalls, true); post.transform.position = mp + Vector3.up * 2.0f; post.transform.localScale = new Vector3(0.14f, 4.0f, 0.14f); post.GetComponent<Renderer>().sharedMaterial = wood;
+                var banner = GameObject.CreatePrimitive(PrimitiveType.Cube); banner.name = "Banner"; Object.DestroyImmediate(banner.GetComponent<Collider>()); banner.transform.SetParent(stalls, true); banner.transform.position = mp + new Vector3(0.5f, 3.4f, 0f); banner.transform.localScale = new Vector3(0.9f, 0.6f, 0.03f);
+                var bmr = banner.GetComponent<Renderer>(); bmr.sharedMaterial = linen; var bb = new MaterialPropertyBlock(); bb.SetColor(BaseColor, new Color(0.45f, 0.10f, 0.08f)); bmr.SetPropertyBlock(bb);
+                site.muster = post.transform;
+            }
         }
 
         /// <summary>Deer herds in the woods beyond the fields. Each herd is a parent with its ground as the centre.</summary>
